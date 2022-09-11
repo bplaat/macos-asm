@@ -21,6 +21,7 @@
     %define LC_DYSYMTAB 0x0b
     %define LC_LOAD_DYLINKER 0xe
     %define LC_LOAD_DYLIB 0xc
+    %define LC_DYLD_INFO_ONLY (0x22 | LC_REQ_DYLD)
     %define LC_MAIN (0x28 | LC_REQ_DYLD)
 
     %define VM_PROT_NONE 0x0
@@ -33,12 +34,18 @@
     %define S_ATTR_SOME_INSTRUCTIONS 0x00000400
     %define x86_THREAD_STATE64 0x4
 
+    %define BIND_TYPE_POINTER 1
+    %define BIND_OPCODE_SET_DYLIB_ORDINAL_IMM 0x10
+    %define BIND_OPCODE_SET_TYPE_IMM 0x50
+    %define BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM 0x40
+    %define BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB 0x72
+    %define BIND_OPCODE_DO_BIND 0x90
+    %define BIND_OPCODE_DONE 0
+
     %define	N_EXT 0x01
     %define	N_SECT 0xe
 
-    %define sys_exit 0x2000001
-    %define sys_write 0x2000004
-    %define stdout 1
+    %define NULL 0
 
 ; Macho Header
 macho_header:
@@ -46,7 +53,7 @@ macho_header:
     dd CPU_TYPE_X86_64                    ; cpu type
     dd CPU_SUBTYPE_X86_64_ALL             ; cpu subtype
     dd MH_EXECUTE                         ; file type
-    dd 8                                  ; number of load commands
+    dd 10                                 ; number of load commands
     dd commands_end - commands            ; size of load commands
     dd MH_NOUNDEFS | MH_DYLDLINK | MH_PIE ; flags
     dd 0                                  ; reserved
@@ -121,11 +128,25 @@ commands:
         dd 0                      ; reserved3
     data_section_end:
 
+    linkedit_section:
+        dd LC_SEGMENT_64                   ; command
+        dd linkedit_section_end - linkedit_section ; command size
+        db "__LINKEDIT", 0, 0, 0, 0, 0, 0  ; segment name
+        dq linkedit_start                      ; vm address
+        dq linkedit_raw_end - linkedit_start       ; vm size
+        dq linkedit_start - origin             ; file offset
+        dq linkedit_raw_end - linkedit_start       ; file size
+        dd VM_PROT_READ    ; maximum protection
+        dd VM_PROT_READ    ; initial protection
+        dd 0                               ; number of sections
+        dd 0x0                             ; flags
+    linkedit_section_end:
+
     symtab:
         dd LC_SYMTAB             ; command
         dd symtab_end - symtab   ; command size
         dd symbols               ; symbol table offset
-        dd 2                     ; number of symbols
+        dd 3                     ; number of symbols
         dd strings               ; string table offset
         dd strings_end - strings ; string table size
     symtab_end:
@@ -135,7 +156,7 @@ commands:
         dd dysymtab_end - dysymtab ; command size
         times 2 dd 0 ; ?
         dd 0 ; external symbols index
-        dd 2 ; external symbols size
+        dd 3 ; external symbols size
         times 14 dd 0 ; ?
     dysymtab_end:
 
@@ -148,13 +169,6 @@ commands:
         align 8, db 0
     load_dylinker_end:
 
-    main:
-        dd LC_MAIN         ; command
-        dd main_end - main ; command size
-        dq _start - origin ; entry point offset
-        dq 0               ; init stack size
-    main_end:
-
     load_libsystem:
         dd LC_LOAD_DYLIB                       ; command
         dd load_libsystem_end - load_libsystem ; command size
@@ -166,35 +180,43 @@ commands:
         db '/usr/lib/libSystem.B.dylib'
         align 8, db 0
     load_libsystem_end:
+
+    dyld_info:
+        dd LC_DYLD_INFO_ONLY             ; command
+        dd dyld_info_end - dyld_info ; command size
+        times 2 dd 0
+        dd bindings - origin             ; bindings offset
+        dd bindings_end - bindings       ; bindings size
+        times 6 dd 0
+    dyld_info_end:
+
+    main:
+        dd LC_MAIN         ; command
+        dd main_end - main ; command size
+        dq _start - origin ; entry point offset
+        dq 0               ; init stack size
+    main_end:
 commands_end:
 
 ; Text section
 text_start:
 
 _start:
-    lea rdi, [rel hello]
-    call strlen
+    lea rdi, [rel hello_string]
+    call printf
 
-    mov edx, eax
-    lea rsi, [rel hello]
-    mov edi, stdout
-    mov eax, sys_write
-    syscall
+    mov rdi, NULL
+    call time
+    mov rsi, rax
 
-    xor edi, edi
-    mov eax, sys_exit
-    syscall
+    lea rdi, [rel time_string]
+    call printf
 
-strlen:
-    mov rax, rdi
-.repeat:
-    cmp byte [rax], 0
-    je .done
-    inc rax
-    jmp .repeat
-.done:
-    sub rax, rdi
+    mov rax, 0
     ret
+
+printf: jmp [rel _printf]
+time: jmp [rel _time]
 
 text_end:
     align alignment, db 0
@@ -202,13 +224,39 @@ text_raw_end:
 
 ; Data section
 data_start:
+_printf dq 0
+_time dq 0
 
-hello: db "Hello macOS from x86_64 assembly!", 10, 0
+hello_string db `Hello macOS from x86_64 assembly!\n`, 0
+time_string db `It is now %ld seconds after UNIX epoch.\n`, 0
 
 data_end:
     align alignment, db 0
 data_raw_end:
 
+; Linkedit section
+linkedit_start:
+
+bindings:
+    db BIND_OPCODE_SET_DYLIB_ORDINAL_IMM | 1 ; Select first loaded dylib
+    db BIND_OPCODE_SET_TYPE_IMM | BIND_TYPE_POINTER
+
+    db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_printf', 0
+    db BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB, 0
+    db BIND_OPCODE_DO_BIND
+
+    db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_time', 0
+    db BIND_OPCODE_DO_BIND
+
+    db BIND_OPCODE_DONE
+    align 8, db 0
+bindings_end:
+
+linkedit_end:
+    align alignment, db 0
+linkedit_raw_end:
+
+; Symbols
 symbols:
     dd L_start - strings ; string table offset
     db N_SECT | N_EXT    ; type flag
@@ -216,17 +264,24 @@ symbols:
     dw 0x0000            ; extra flags
     dq _start            ; address
 
-    dd L_strlen - strings ; string table offset
-    db N_SECT | N_EXT     ; type flag
-    db 1                  ; section number
-    dw 0x0000             ; extra flags
-    dq strlen             ; address
+    dd Lprintf - strings ; string table offset
+    db N_SECT | N_EXT    ; type flag
+    db 1                 ; section number
+    dw 0x0000            ; extra flags
+    dq printf            ; address
+
+    dd Ltime - strings   ; string table offset
+    db N_SECT | N_EXT    ; type flag
+    db 1                 ; section number
+    dw 0x0000            ; extra flags
+    dq time              ; address
 symbols_end:
 
 strings:
     db 0
-    L_start: db '_start', 0
-    L_strlen: db 'strlen', 0
+    L_start db '_start', 0
+    Lprintf db 'printf', 0
+    Ltime db 'time', 0
     align 8, db 0
 strings_end:
 

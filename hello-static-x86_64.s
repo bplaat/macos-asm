@@ -159,7 +159,7 @@ text_raw_end:
 ; Data section
 data_start:
 
-hello: db "Hello macOS from x86_64 assembly!", 10, 0
+hello db `Hello macOS from x86_64 assembly!\n`, 0
 
 data_end:
     align alignment, db 0
