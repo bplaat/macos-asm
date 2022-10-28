@@ -1,8 +1,10 @@
-; A simple pure assembly macho-o x86_64 adhoc code signed dynamicly linked executable with symbols for macOS
-; nasm -f bin hello-x86_64.s -o hello-x86_64 && chmod +x hello-x86_64 && codesign -s - hello-x86_64 && ./hello-x86_64
+; A simple pure assembly macho-o ARM64 adhoc code signed 'static' executable for macOS
+; It is realy a dynamic linked executable but static linked ARM64 MACHO executable dont run on the macOS kernel
+; When an executable is not following some strict rules it is killed before it will start
+; nasm -f bin hello-arm64.s -o hello-arm64 && chmod +x hello-arm64 && codesign -s - hello-arm64 && ./hello-arm64
 
     origin equ 0x100000000
-    alignment equ 0x1000
+    alignment equ 0x4000
 
     bits 64
     org origin
@@ -12,8 +14,8 @@
     %define MH_NOUNDEFS 0x00000001
     %define MH_DYLDLINK 0x00000004
     %define MH_PIE 0x00200000
-    %define CPU_TYPE_X86_64 0x01000007
-    %define CPU_SUBTYPE_X86_64_ALL 0x00000003
+    %define CPU_TYPE_ARM64 0x0100000c
+    %define CPU_SUBTYPE_ARM64_ALL 0x00000000
 
     %define LC_REQ_DYLD 0x80000000
     %define LC_SEGMENT_64 0x19
@@ -21,8 +23,12 @@
     %define LC_DYSYMTAB 0x0b
     %define LC_LOAD_DYLINKER 0xe
     %define LC_LOAD_DYLIB 0xc
-    %define LC_DYLD_INFO_ONLY (0x22 | LC_REQ_DYLD)
     %define LC_MAIN (0x28 | LC_REQ_DYLD)
+    %define LC_UUID 0x1b
+    %define LC_BUILD_VERSION 0x32
+    %define LC_SOURCE_VERSION 0x2a
+    %define LC_FUNCTION_STARTS 0x26
+    %define LC_DATA_IN_CODE 0x29
 
     %define VM_PROT_NONE 0x0
     %define VM_PROT_READ 0x1
@@ -33,26 +39,16 @@
     %define S_ATTR_PURE_INSTRUCTIONS 0x80000000
     %define S_ATTR_SOME_INSTRUCTIONS 0x00000400
 
-    %define BIND_TYPE_POINTER 1
-    %define BIND_OPCODE_SET_DYLIB_ORDINAL_IMM 0x10
-    %define BIND_OPCODE_SET_TYPE_IMM 0x50
-    %define BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM 0x40
-    %define BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB 0x72
-    %define BIND_OPCODE_DO_BIND 0x90
-    %define BIND_OPCODE_DONE 0
-
     %define	N_EXT 0x01
     %define	N_SECT 0xe
-
-    %define NULL 0
 
 ; Macho Header
 macho_header:
     dd MH_MAGIC_64                        ; magic
-    dd CPU_TYPE_X86_64                    ; cpu type
-    dd CPU_SUBTYPE_X86_64_ALL             ; cpu subtype
+    dd CPU_TYPE_ARM64                     ; cpu type
+    dd CPU_SUBTYPE_ARM64_ALL              ; cpu subtype
     dd MH_EXECUTE                         ; file type
-    dd 10                                 ; number of load commands
+    dd 14                                 ; number of load commands
     dd commands_end - commands            ; size of load commands
     dd MH_NOUNDEFS | MH_DYLDLINK | MH_PIE ; flags
     dd 0                                  ; reserved
@@ -141,11 +137,49 @@ commands:
         dd 0x0                                     ; flags
     linkedit_section_end:
 
+    uuid:
+        dd LC_UUID
+        dd uuid_end - uuid
+        dq 0xC87149209AB63944
+        dq 0xAF0BD8F57BC63E5C
+    uuid_end:
+
+    build_version:
+        dd LC_BUILD_VERSION
+        dd build_version_end - build_version
+        dd 1
+        dd 0x000c0000
+        dd 0x000c0300
+        dd 1
+        dd 3
+        dd 0x02fc0000
+    build_version_end:
+
+    source_version:
+        dd LC_SOURCE_VERSION
+        dd source_version_end - source_version
+        dq 0
+    source_version_end:
+
+    function_starts:
+        dd LC_FUNCTION_STARTS
+        dd function_starts_end - function_starts
+        dd _function_starts - origin
+        dd _function_starts_end - _function_starts
+    function_starts_end:
+
+    data_in_code:
+        dd LC_DATA_IN_CODE
+        dd data_in_code_end - data_in_code
+        dd _data_in_code - origin
+        dd data_in_code_end - _data_in_code
+    data_in_code_end:
+
     symtab:
         dd LC_SYMTAB             ; command
         dd symtab_end - symtab   ; command size
         dd symbols               ; symbol table offset
-        dd 3                     ; number of symbols
+        dd 1                     ; number of symbols
         dd strings               ; string table offset
         dd strings_end - strings ; string table size
     symtab_end:
@@ -155,7 +189,7 @@ commands:
         dd dysymtab_end - dysymtab ; command size
         times 2 dd 0 ; ?
         dd 0 ; external symbols index
-        dd 3 ; external symbols size
+        dd 1 ; external symbols size
         times 14 dd 0 ; ?
     dysymtab_end:
 
@@ -172,22 +206,13 @@ commands:
         dd LC_LOAD_DYLIB                       ; command
         dd load_libsystem_end - load_libsystem ; command size
         dd load_libsystem_str - load_libsystem ; string offset
-        dd 0                                   ; timestamp
-        dw 0, 1                                ; current version
+        dd 2                                   ; timestamp
+        dw 0x6403, 0x051F                      ; current version
         dw 0, 1                                ; compatibility version
     load_libsystem_str:
         db '/usr/lib/libSystem.B.dylib'
         align 8, db 0
     load_libsystem_end:
-
-    dyld_info:
-        dd LC_DYLD_INFO_ONLY             ; command
-        dd dyld_info_end - dyld_info     ; command size
-        times 2 dd 0
-        dd bindings - origin             ; bindings offset
-        dd bindings_end - bindings       ; bindings size
-        times 6 dd 0
-    dyld_info_end:
 
     main:
         dd LC_MAIN         ; command
@@ -203,21 +228,8 @@ commands_end:
 text_start:
 
 _start:
-    lea rdi, [rel hello_string]
-    call printf
-
-    mov rdi, NULL
-    call time
-    mov rsi, rax
-
-    lea rdi, [rel time_string]
-    call printf
-
-    mov rax, 0
-    ret
-
-printf: jmp [rel _printf]
-time: jmp [rel _time]
+    dd 0xD28008A0 ; mov x0, 69
+    dd 0xD65F03C0 ; ret
 
 text_end:
     align alignment, db 0
@@ -225,11 +237,8 @@ text_raw_end:
 
 ; Data section
 data_start:
-_printf dq 0
-_time dq 0
 
-hello_string db `Hello macOS from x86_64 assembly!\n`, 0
-time_string db `It is now %ld seconds after UNIX epoch.\n`, 0
+hello_string db `Hello macOS from ARM64 assembly!\n`, 0
 
 data_end:
     align alignment, db 0
@@ -238,20 +247,13 @@ data_raw_end:
 ; Linkedit section
 linkedit_start:
 
-bindings:
-    db BIND_OPCODE_SET_DYLIB_ORDINAL_IMM | 1 ; Select first loaded dylib
-    db BIND_OPCODE_SET_TYPE_IMM | BIND_TYPE_POINTER
-
-    db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_printf', 0
-    db BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB, 0
-    db BIND_OPCODE_DO_BIND
-
-    db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_time', 0
-    db BIND_OPCODE_DO_BIND
-
-    db BIND_OPCODE_DONE
+_function_starts:
     align 8, db 0
-bindings_end:
+_function_starts_end:
+
+_data_in_code:
+    align 8, db 0
+_data_in_code_end:
 
 ; Symbols
 symbols:
@@ -260,25 +262,11 @@ symbols:
     db 1                 ; section number
     dw 0x0000            ; extra flags
     dq _start            ; address
-
-    dd Lprintf - strings ; string table offset
-    db N_SECT | N_EXT    ; type flag
-    db 1                 ; section number
-    dw 0x0000            ; extra flags
-    dq printf            ; address
-
-    dd Ltime - strings   ; string table offset
-    db N_SECT | N_EXT    ; type flag
-    db 1                 ; section number
-    dw 0x0000            ; extra flags
-    dq time              ; address
 symbols_end:
 
 strings:
     db 0
-    L_start db '_start', 0
-    Lprintf db 'printf', 0
-    Ltime db 'time', 0
+    L_start: db '_start', 0
     align 8, db 0
 strings_end:
 
