@@ -37,6 +37,10 @@
     %define	N_EXT 0x01
     %define	N_SECT 0xe
 
+    %define sys_exit 1
+    %define sys_write 4
+    %define stdout 1
+
 ; Macho Header
 macho_header:
     dd MH_MAGIC_64                        ; magic
@@ -136,7 +140,7 @@ commands:
         dd LC_SYMTAB             ; command
         dd symtab_end - symtab   ; command size
         dd symbols               ; symbol table offset
-        dd 1                     ; number of symbols
+        dd 2                     ; number of symbols
         dd strings               ; string table offset
         dd strings_end - strings ; string table size
     symtab_end:
@@ -146,7 +150,7 @@ commands:
         dd dysymtab_end - dysymtab ; command size
         times 2 dd 0 ; ?
         dd 0 ; external symbols index
-        dd 1 ; external symbols size
+        dd 2 ; external symbols size
         times 14 dd 0 ; ?
     dysymtab_end:
 
@@ -184,9 +188,54 @@ commands_end:
 ; Text section
 text_start:
 
+; Hacky macro system to use some arm64 instruction in NASM because GAS sucks hard :)
+%define x0 0
+%define x1 1
+%define x2 2
+%define x16 16
+%macro arm64_mov 2
+    dd 0xAA0003E0 | ((%2 & 31) << 16) | (%1 & 31))
+%endmacro
+%macro arm64_mov_imm 2
+    dd 0xD2800000 | ((%2 & 0xffff) << 5) | (%1 & 31))
+%endmacro
+%macro arm64_sub 3
+    dd 0xCB000000 | ((%3 & 31) << 16) | (%2 & 31) << 5) | (%1 & 31))
+%endmacro
+%macro arm64_adr 2
+    dd 0x10000000 | (((%2 >> 2) << 5) | (%1 & 31))
+%endmacro
+%macro arm64_bl 1
+    dd 0x94000000 | (%1 >> 2)
+%endmacro
+%macro arm64_ret 0
+    dd 0xD65F03C0
+%endmacro
+%macro arm64_svc 1
+    dd 0xD4000001 | (%1 << 5)
+%endmacro
+
 _start:
-    dd 0xD28008A0 ; mov x0, 69
-    dd 0xD65F03C0 ; ret
+    arm64_adr x0, hello_string - $
+    arm64_bl strlen - $
+
+    arm64_mov x2, x0
+    arm64_adr x1, hello_string - $
+    arm64_mov_imm x0, stdout
+    arm64_mov_imm x16, sys_write
+    arm64_svc 0x80
+
+    arm64_mov_imm x0, 0
+    arm64_mov_imm x16, sys_exit
+    arm64_svc 0x80
+
+strlen:
+    arm64_mov x1, x0
+.repeat:
+    dd 0x38401422 ; ldrb w2, [x1], 1
+    dd 0x35000002 | ((-1 & 524287) << 5); cbnz w2, .repeat
+    arm64_sub x0, x1, x0
+    arm64_ret
 
 text_end:
     align alignment, db 0
@@ -211,11 +260,18 @@ symbols:
     db 1                 ; section number
     dw 0x0000            ; extra flags
     dq _start            ; address
+
+    dd Lstrlen - strings ; string table offset
+    db N_SECT | N_EXT    ; type flag
+    db 1                 ; section number
+    dw 0x0000            ; extra flags
+    dq strlen            ; address
 symbols_end:
 
 strings:
     db 0
     L_start: db '_start', 0
+    Lstrlen: db 'strlen', 0
     align 8, db 0
 strings_end:
 
