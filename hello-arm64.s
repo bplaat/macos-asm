@@ -140,7 +140,7 @@ commands:
         dd LC_SYMTAB             ; command
         dd symtab_end - symtab   ; command size
         dd symbols               ; symbol table offset
-        dd 2                     ; number of symbols
+        dd 3                     ; number of symbols
         dd strings               ; string table offset
         dd strings_end - strings ; string table size
     symtab_end:
@@ -167,7 +167,7 @@ commands:
         dd LC_LOAD_DYLIB                       ; command
         dd load_libsystem_end - load_libsystem ; command size
         dd load_libsystem_str - load_libsystem ; string offset
-        dd 2                                   ; timestamp
+        dd 3                                   ; timestamp
         dw 0x6403, 0x051F                      ; current version
         dw 0, 1                                ; compatibility version
     load_libsystem_str:
@@ -205,6 +205,9 @@ text_start:
 %macro arm64_adr 2
     dd 0x10000000 | (((%2 >> 2) << 5) | (%1 & 31))
 %endmacro
+%macro arm64_cbnz 2
+    dd 0x35000002 | ((((%2 >> 2) & 524287) << 5) | (%1 & 31))
+%endmacro
 %macro arm64_bl 1
     dd 0x94000000 | (%1 >> 2)
 %endmacro
@@ -233,7 +236,7 @@ strlen:
     arm64_mov x1, x0
 .repeat:
     dd 0x38401422 ; ldrb w2, [x1], 1
-    dd 0x35000002 | ((-1 & 524287) << 5); cbnz w2, .repeat
+    arm64_cbnz x2, .repeat - $
     arm64_sub x0, x1, x0
     arm64_ret
 
@@ -266,12 +269,19 @@ symbols:
     db 1                 ; section number
     dw 0x0000            ; extra flags
     dq strlen            ; address
+
+    dd Lstrlen.repeat - strings ; string table offset
+    db N_SECT | N_EXT    ; type flag
+    db 1                 ; section number
+    dw 0x0000            ; extra flags
+    dq strlen.repeat     ; address
 symbols_end:
 
 strings:
     db 0
     L_start: db '_start', 0
     Lstrlen: db 'strlen', 0
+    Lstrlen.repeat: db '.repeat', 0
     align 8, db 0
 strings_end:
 
