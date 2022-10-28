@@ -24,11 +24,6 @@
     %define LC_LOAD_DYLINKER 0xe
     %define LC_LOAD_DYLIB 0xc
     %define LC_MAIN (0x28 | LC_REQ_DYLD)
-    %define LC_UUID 0x1b
-    %define LC_BUILD_VERSION 0x32
-    %define LC_SOURCE_VERSION 0x2a
-    %define LC_FUNCTION_STARTS 0x26
-    %define LC_DATA_IN_CODE 0x29
 
     %define VM_PROT_NONE 0x0
     %define VM_PROT_READ 0x1
@@ -48,7 +43,7 @@ macho_header:
     dd CPU_TYPE_ARM64                     ; cpu type
     dd CPU_SUBTYPE_ARM64_ALL              ; cpu subtype
     dd MH_EXECUTE                         ; file type
-    dd 14                                 ; number of load commands
+    dd 9                                  ; number of load commands
     dd commands_end - commands            ; size of load commands
     dd MH_NOUNDEFS | MH_DYLDLINK | MH_PIE ; flags
     dd 0                                  ; reserved
@@ -137,44 +132,6 @@ commands:
         dd 0x0                                     ; flags
     linkedit_section_end:
 
-    uuid:
-        dd LC_UUID
-        dd uuid_end - uuid
-        dq 0xC87149209AB63944
-        dq 0xAF0BD8F57BC63E5C
-    uuid_end:
-
-    build_version:
-        dd LC_BUILD_VERSION
-        dd build_version_end - build_version
-        dd 1
-        dd 0x000c0000
-        dd 0x000c0300
-        dd 1
-        dd 3
-        dd 0x02fc0000
-    build_version_end:
-
-    source_version:
-        dd LC_SOURCE_VERSION
-        dd source_version_end - source_version
-        dq 0
-    source_version_end:
-
-    function_starts:
-        dd LC_FUNCTION_STARTS
-        dd function_starts_end - function_starts
-        dd _function_starts - origin
-        dd _function_starts_end - _function_starts
-    function_starts_end:
-
-    data_in_code:
-        dd LC_DATA_IN_CODE
-        dd data_in_code_end - data_in_code
-        dd _data_in_code - origin
-        dd data_in_code_end - _data_in_code
-    data_in_code_end:
-
     symtab:
         dd LC_SYMTAB             ; command
         dd symtab_end - symtab   ; command size
@@ -246,14 +203,6 @@ data_raw_end:
 
 ; Linkedit section
 linkedit_start:
-
-_function_starts:
-    align 8, db 0
-_function_starts_end:
-
-_data_in_code:
-    align 8, db 0
-_data_in_code_end:
 
 ; Symbols
 symbols:
