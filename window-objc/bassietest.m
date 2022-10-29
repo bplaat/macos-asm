@@ -22,9 +22,6 @@ NSWindow *window;
     [appMenu addItem:quitMenuItem];
 
     // Create window
-    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-    [NSApp activateIgnoringOtherApps:YES];
-
     window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 1024, 768)
         styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
         backing:NSBackingStoreBuffered
