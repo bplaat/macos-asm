@@ -1,5 +1,6 @@
 #import <Cocoa/Cocoa.h>
 
+NSApplication *application;
 NSWindow *window;
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
@@ -8,8 +9,8 @@ NSWindow *window;
 @implementation AppDelegate
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Create menu
-    NSMenu *menubar = [[NSMenu alloc]init];
-    [NSApp setMainMenu:menubar];
+    NSMenu *menubar = [[NSMenu alloc] init];
+    [application setMainMenu:menubar];
 
     NSMenuItem *menuBarItem = [[NSMenuItem alloc] init];
     [menubar addItem:menuBarItem];
@@ -27,11 +28,11 @@ NSWindow *window;
         backing:NSBackingStoreBuffered
         defer:NO];
     window.title = @"BassieTest";
-    CGFloat windowX = NSWidth(window.screen.frame) / 2 - NSWidth(window.frame) / 2;
-    CGFloat windowY = NSHeight(window.screen.frame) / 2 - NSHeight(window.frame) / 2;
+    CGFloat windowX = (NSWidth(window.screen.frame) - NSWidth(window.frame)) / 2;
+    CGFloat windowY = (NSHeight(window.screen.frame) - NSHeight(window.frame)) / 2;
     [window setFrame:NSMakeRect(windowX, windowY, NSWidth(window.frame), NSHeight(window.frame)) display:YES];
     window.minSize = NSMakeSize(320, 240);
-    window.backgroundColor = NSColor.redColor;
+    window.backgroundColor = [NSColor colorWithRed:0 green:0.5 blue:0.5 alpha:1];
     [window makeKeyAndOrderFront:nil];
 }
 
@@ -44,7 +45,7 @@ NSWindow *window;
 @end
 
 int main(void) {
-    NSApplication *application = [NSApplication sharedApplication];
+    application = [NSApplication sharedApplication];
     AppDelegate *delegate = [[AppDelegate alloc] init];
     [application setDelegate:delegate];
     [application run];
