@@ -40,8 +40,7 @@ NSWindow *window;
     return YES;
 }
 
-- (void)applicationWillTerminate:(NSNotification *)aNotification {
-}
+- (void)applicationWillTerminate:(NSNotification *)aNotification {}
 @end
 
 int main(void) {

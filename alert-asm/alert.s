@@ -43,8 +43,6 @@
     %define	N_EXT 0x01
     %define	N_SECT 0xe
 
-    %define NULL 0
-
 ; Macho Header
 macho_header:
     dd MH_MAGIC_64                        ; magic
