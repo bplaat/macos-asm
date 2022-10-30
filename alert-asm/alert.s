@@ -1,6 +1,5 @@
-; A simple pure assembly macho-o x86_64 adhoc code signed dynamicly linked executable with symbols for macOS
-; nasm -f bin hello-x86_64.s -o hello-x86_64 && chmod +x hello-x86_64 && codesign -s - hello-x86_64 && ./hello-x86_64
-
+; This is a example of how you can call Objective-C Cocoa API's in Assembly and
+; bundle the executable to an App Bundle which you can run and distribute easy!
     origin equ 0x100000000
     alignment equ 0x1000
 
@@ -52,7 +51,7 @@ macho_header:
     dd CPU_TYPE_X86_64                    ; cpu type
     dd CPU_SUBTYPE_X86_64_ALL             ; cpu subtype
     dd MH_EXECUTE                         ; file type
-    dd 10                                 ; number of load commands
+    dd 12                                 ; number of load commands
     dd commands_end - commands            ; size of load commands
     dd MH_NOUNDEFS | MH_DYLDLINK | MH_PIE ; flags
     dd 0                                  ; reserved
@@ -145,7 +144,7 @@ commands:
         dd LC_SYMTAB             ; command
         dd symtab_end - symtab   ; command size
         dd symbols               ; symbol table offset
-        dd 3                     ; number of symbols
+        dd 4                     ; number of symbols
         dd strings               ; string table offset
         dd strings_end - strings ; string table size
     symtab_end:
@@ -155,7 +154,7 @@ commands:
         dd dysymtab_end - dysymtab ; command size
         times 2 dd 0 ; ?
         dd 0 ; external symbols index
-        dd 3 ; external symbols size
+        dd 4 ; external symbols size
         times 14 dd 0 ; ?
     dysymtab_end:
 
@@ -168,6 +167,18 @@ commands:
         align 8, db 0
     load_dylinker_end:
 
+    load_cocoa:
+        dd LC_LOAD_DYLIB                       ; command
+        dd load_cocoa_end - load_cocoa         ; command size
+        dd load_cocoa_str - load_cocoa         ; string offset
+        dd 0                                   ; timestamp
+        dw 0, 1                                ; current version
+        dw 0, 1                                ; compatibility version
+    load_cocoa_str:
+        db '/System/Library/Frameworks/Cocoa.Framework/Versions/A/Cocoa', 0
+        align 8, db 0
+    load_cocoa_end:
+
     load_libsystem:
         dd LC_LOAD_DYLIB                       ; command
         dd load_libsystem_end - load_libsystem ; command size
@@ -179,6 +190,18 @@ commands:
         db '/usr/lib/libSystem.B.dylib', 0
         align 8, db 0
     load_libsystem_end:
+
+    load_libobjc:
+        dd LC_LOAD_DYLIB                       ; command
+        dd load_libobjc_end - load_libobjc     ; command size
+        dd load_libobjc_str - load_libobjc     ; string offset
+        dd 0                                   ; timestamp
+        dw 0, 1                                ; current version
+        dw 0, 1                                ; compatibility version
+    load_libobjc_str:
+        db '/usr/lib/libobjc.A.dylib', 0
+        align 8, db 0
+    load_libobjc_end:
 
     dyld_info:
         dd LC_DYLD_INFO_ONLY             ; command
@@ -203,21 +226,72 @@ commands_end:
 text_start:
 
 _start:
-    lea rdi, [rel hello_string]
-    call printf
+    ; id alert;
+    ; id message;
+    push rbp
+    mov rbp, rsp
+    sub rsp, 16
 
-    mov rdi, NULL
-    call time
+    ; alert = objc_msgSend(objc_msgSend(objc_getClass("NSAlert") sel_getUid("alloc")), sel_getUid("init"));
+    lea rdi, [rel init]
+    call sel_getUid
+    push rax
+
+        lea rdi, [rel alloc]
+        call sel_getUid
+        push rax
+
+        lea rdi, [rel NSAlert]
+        call objc_getClass
+
+        pop rsi
+        mov rdi, rax
+        call objc_msgSend
+
+    pop rsi
+    mov rdi, rax
+    call objc_msgSend
+    mov qword [rbp - 8], rax
+
+    ; message = objc_msgSend(objc_getClass("NSString"), sel_getUid("stringWithUTF8String:"), "Hello Cocoa from x86_64 assembly");
+    lea rdi, [rel stringWithUTF8String]
+    call sel_getUid
+    push rax
+
+    lea rdi, [rel NSString]
+    call objc_getClass
+
+    lea rdx, [rel hello_string]
+    pop rsi
+    mov rdi, rax
+    call objc_msgSend
+    mov qword [rbp - 16], rax
+
+    ; objc_msgSend(alert, sel_getUid("setMessageText:"), message);
+    lea rdi, [rel setMessageText]
+    call sel_getUid
+
+    mov rdx, qword [rbp - 16]
     mov rsi, rax
+    mov rdi, qword [rbp - 8]
+    call objc_msgSend
 
-    lea rdi, [rel time_string]
-    call printf
+    ; objc_msgSend(alert, sel_getUid("runModal:"));
+    lea rdi, [rel runModal]
+    call sel_getUid
 
-    mov rax, 0
+    mov rsi, rax
+    mov rdi, qword [rbp - 8]
+    call objc_msgSend
+
+    ; return 0;
+    xor rax, rax
+    leave
     ret
 
-printf: jmp [rel _printf]
-time: jmp [rel _time]
+objc_getClass: jmp [rel _objc_getClass]
+objc_msgSend: jmp [rel _objc_msgSend]
+sel_getUid: jmp [rel _sel_getUid]
 
 text_end:
     align alignment, db 0
@@ -225,11 +299,19 @@ text_raw_end:
 
 ; Data section
 data_start:
-_printf dq 0
-_time dq 0
+_objc_getClass dq 0
+_objc_msgSend dq 0
+_sel_getUid dq 0
 
-hello_string db `Hello macOS from x86_64 assembly!\n`, 0
-time_string db `It is now %ld seconds after UNIX epoch.\n`, 0
+NSAlert db 'NSAlert', 0
+alloc db 'alloc', 0
+init db 'init', 0
+NSString db 'NSString', 0
+stringWithUTF8String db 'stringWithUTF8String:', 0
+setMessageText db 'setMessageText:', 0
+runModal db 'runModal', 0
+
+hello_string db 'Hello Cocoa from x86_64 assembly!', 0
 
 data_end:
     align alignment, db 0
@@ -239,14 +321,17 @@ data_raw_end:
 linkedit_start:
 
 bindings:
-    db BIND_OPCODE_SET_DYLIB_ORDINAL_IMM | 1 ; Select first loaded dylib
+    db BIND_OPCODE_SET_DYLIB_ORDINAL_IMM | 3 ; Select libobjc loaded dylib
     db BIND_OPCODE_SET_TYPE_IMM | BIND_TYPE_POINTER
 
-    db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_printf', 0
+    db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_objc_getClass', 0
     db BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB, 0
     db BIND_OPCODE_DO_BIND
 
-    db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_time', 0
+    db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_objc_msgSend', 0
+    db BIND_OPCODE_DO_BIND
+
+    db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_sel_getUid', 0
     db BIND_OPCODE_DO_BIND
 
     db BIND_OPCODE_DONE
@@ -261,24 +346,31 @@ symbols:
     dw 0x0000            ; extra flags
     dq _start            ; address
 
-    dd Lprintf - strings ; string table offset
+    dd Lobjc_getClass - strings ; string table offset
     db N_SECT | N_EXT    ; type flag
     db 1                 ; section number
     dw 0x0000            ; extra flags
-    dq printf            ; address
+    dq objc_getClass     ; address
 
-    dd Ltime - strings   ; string table offset
+    dd Lobjc_msgSend - strings ; string table offset
     db N_SECT | N_EXT    ; type flag
     db 1                 ; section number
     dw 0x0000            ; extra flags
-    dq time              ; address
+    dq objc_msgSend      ; address
+
+    dd Lsel_getUid - strings ; string table offset
+    db N_SECT | N_EXT    ; type flag
+    db 1                 ; section number
+    dw 0x0000            ; extra flags
+    dq sel_getUid        ; address
 symbols_end:
 
 strings:
     db 0
     L_start db '_start', 0
-    Lprintf db 'printf', 0
-    Ltime db 'time', 0
+    Lobjc_getClass db 'objc_getClass', 0
+    Lobjc_msgSend db 'objc_msgSend', 0
+    Lsel_getUid db 'sel_getUid', 0
     align 8, db 0
 strings_end:
 

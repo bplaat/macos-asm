@@ -6,7 +6,7 @@
 #define cls objc_getClass
 #define sel sel_getUid
 #define msg ((id (*)(id, SEL))objc_msgSend)
-#define msg_id  ((id (*)(id, SEL, id))objc_msgSend)
+#define msg_id ((id (*)(id, SEL, id))objc_msgSend)
 #define msg_ptr ((id (*)(id, SEL, void *))objc_msgSend)
 #define msg_cls ((id (*)(Class, SEL))objc_msgSend)
 #define msg_cls_id ((id (*)(Class, SEL, id))objc_msgSend)

@@ -171,7 +171,7 @@ commands:
         dw 0x6403, 0x051F                      ; current version
         dw 0, 1                                ; compatibility version
     load_libsystem_str:
-        db '/usr/lib/libSystem.B.dylib'
+        db '/usr/lib/libSystem.B.dylib', 0
         align 8, db 0
     load_libsystem_end:
 
