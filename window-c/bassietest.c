@@ -7,11 +7,16 @@
 #define sel sel_getUid
 #define msg ((id (*)(id, SEL))objc_msgSend)
 #define msg_id ((id (*)(id, SEL, id))objc_msgSend)
-#define msg_ptr ((id (*)(id, SEL, void *))objc_msgSend)
 #define msg_cls ((id (*)(Class, SEL))objc_msgSend)
 #define msg_cls_id ((id (*)(Class, SEL, id))objc_msgSend)
 
 typedef double CGFloat;
+
+typedef struct CGSize {
+    CGFloat width;
+    CGFloat height;
+} CGSize;
+typedef CGSize NSSize;
 
 typedef struct CGRect {
     CGFloat x;
@@ -19,15 +24,7 @@ typedef struct CGRect {
     CGFloat width;
     CGFloat height;
 } CGRect;
-
-typedef struct CGSize {
-    CGFloat width;
-    CGFloat height;
-} CGSize;
-
-typedef enum NSApplicationActivationPolicy {
-    NSApplicationActivationPolicyRegular = 0
-} NSApplicationActivationPolicy;
+typedef CGRect NSRect;
 
 typedef enum NSWindowStyleMask {
     NSWindowStyleMaskTitled = 1,
@@ -63,27 +60,27 @@ void applicationDidFinishLaunching(id self, SEL cmd) {
     msg_id(appMenu, sel("addItem:"), quitMenuItem);
 
     // Create window
-    window = ((id (*)(id, SEL, CGRect, int, int, int))objc_msgSend)(
+    window = ((id (*)(id, SEL, NSRect, int, int, int))objc_msgSend)(
         msg_cls(cls("NSWindow"), sel("alloc")),
         sel("initWithContentRect:styleMask:backing:defer:"),
-        (CGRect){0, 0, 1024, 768},
+        (NSRect){0, 0, 1024, 768},
         NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable,
         NSBackingStoreBuffered,
         NO
     );
     msg_id(window, sel("setTitle:"), NSString("BassieTest"));
 
-    id screen = msg(window, sel_getUid("screen"));
-    CGRect screenFrame = ((CGRect (*)(id, SEL))objc_msgSend)(screen, sel_getUid("frame"));
-    CGRect windowFrame = ((CGRect (*)(id, SEL))objc_msgSend)(window, sel_getUid("frame"));
+    id screen = msg(window, sel("screen"));
+    NSRect screenFrame = ((NSRect (*)(id, SEL))objc_msgSend)(screen, sel("frame"));
+    NSRect windowFrame = ((NSRect (*)(id, SEL))objc_msgSend)(window, sel("frame"));
     CGFloat windowX = (screenFrame.width - windowFrame.width) / 2;
     CGFloat windowY = (screenFrame.height - windowFrame.height) / 2;
-    ((id (*)(id, SEL, CGRect, BOOL))objc_msgSend)(window, sel("setFrame:display:"), (CGRect){windowX, windowY, windowFrame.width, windowFrame.height}, YES);
+    ((id (*)(id, SEL, NSRect, BOOL))objc_msgSend)(window, sel("setFrame:display:"), (NSRect){windowX, windowY, windowFrame.width, windowFrame.height}, YES);
 
-    ((id (*)(id, SEL, CGSize))objc_msgSend)(window, sel("setMinSize:"), (CGSize){320, 240});
+    ((id (*)(id, SEL, NSSize))objc_msgSend)(window, sel("setMinSize:"), (NSSize){320, 240});
     msg_id(window, sel("setBackgroundColor:"), ((id (*)(Class, SEL, CGFloat, CGFloat, CGFloat, CGFloat))objc_msgSend)(
         cls("NSColor"), sel("colorWithRed:green:blue:alpha:"), 0, 0.5, 0.5, 1));
-    msg_ptr(window, sel("makeKeyAndOrderFront:"), nil);
+    ((id (*)(id, SEL, void *))objc_msgSend)(window, sel("makeKeyAndOrderFront:"), nil);
 }
 
 BOOL applicationShouldTerminateAfterLastWindowClosed(id self, SEL cmd) {
@@ -101,7 +98,7 @@ int main(void) {
 
     application = msg_cls(cls("NSApplication"), sel("sharedApplication"));
     id delegate = msg(msg_cls(AppDelegate, sel("alloc")), sel("init"));
-    msg_ptr(application, sel("setDelegate:"), delegate);
+    msg_id(application, sel("setDelegate:"), delegate);
     msg(application, sel("run"));
     return EXIT_SUCCESS;
 }
