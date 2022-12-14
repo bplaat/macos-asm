@@ -1,6 +1,6 @@
 ; A simple pure assembly macho-o ARM64 adhoc code signed 'static' executable for macOS
-; It is realy a dynamic linked executable but static linked ARM64 MACHO executable dont run on the macOS kernel
-; When an executable is not following some strict rules it is killed before it will start
+; It is realy a dynamic linked executable but static linked ARM64 MACHO executables dont exists,
+; because when an executable is not following some strict rules it is killed before it will start
 ; nasm -f bin hello-arm64.s -o hello-arm64 && chmod +x hello-arm64 && codesign -s - hello-arm64 && ./hello-arm64
 
     origin equ 0x100000000
@@ -140,7 +140,7 @@ commands:
         dd LC_SYMTAB             ; command
         dd symtab_end - symtab   ; command size
         dd symbols               ; symbol table offset
-        dd 3                     ; number of symbols
+        dd 4                     ; number of symbols
         dd strings               ; string table offset
         dd strings_end - strings ; string table size
     symtab_end:
@@ -150,7 +150,7 @@ commands:
         dd dysymtab_end - dysymtab ; command size
         times 2 dd 0 ; ?
         dd 0 ; external symbols index
-        dd 2 ; external symbols size
+        dd 4 ; external symbols size
         times 14 dd 0 ; ?
     dysymtab_end:
 
@@ -167,8 +167,8 @@ commands:
         dd LC_LOAD_DYLIB                       ; command
         dd load_libsystem_end - load_libsystem ; command size
         dd load_libsystem_str - load_libsystem ; string offset
-        dd 3                                   ; timestamp
-        dw 0x6403, 0x051F                      ; current version
+        dd 0                                   ; timestamp
+        dw 0, 1                                ; current version
         dw 0, 1                                ; compatibility version
     load_libsystem_str:
         db '/usr/lib/libSystem.B.dylib', 0
@@ -199,31 +199,43 @@ text_start:
 %macro arm64_mov_imm 2
     dd 0xD2800000 | ((%2 & 0xffff) << 5) | (%1 & 31))
 %endmacro
+%macro arm64_add 3
+    dd 0x8B000000 | ((%3 & 31) << 16) | (%2 & 31) << 5) | (%1 & 31))
+%endmacro
+%macro arm64_add_imm 3
+    dd 0x91000000 | (((%3 & 0x1fff) << 10) | (%2 & 31) << 5) | (%1 & 31))
+%endmacro
 %macro arm64_sub 3
     dd 0xCB000000 | ((%3 & 31) << 16) | (%2 & 31) << 5) | (%1 & 31))
 %endmacro
-%macro arm64_adr 2
-    dd 0x10000000 | (((%2 >> 2) << 5) | (%1 & 31))
+%macro arm64_sub_imm 3
+    dd 0xD1000000 | (((%3 & 0x1fff) << 10) | (%2 & 31) << 5) | (%1 & 31))
 %endmacro
-%macro arm64_cbnz 2
-    dd 0x35000002 | ((((%2 >> 2) & 524287) << 5) | (%1 & 31))
+%macro arm64_adr 2
+    dd 0x10000000 | ((((%2 - $) >> 2) << 5) | (%1 & 31))
+%endmacro
+%macro arm64_cbz 2
+    dd 0xB4000000 | (((((%2 - $) >> 2) & 0x7ffff) << 5) | (%1 & 31))
+%endmacro
+%macro arm64_b 1
+    dd 0x14000000 | (((%1 - $) >> 2) & 0x7ffffff)
 %endmacro
 %macro arm64_bl 1
-    dd 0x94000000 | (%1 >> 2)
+    dd 0x94000000 | (((%1 - $) >> 2) & 0x7ffffff)
 %endmacro
 %macro arm64_ret 0
     dd 0xD65F03C0
 %endmacro
 %macro arm64_svc 1
-    dd 0xD4000001 | (%1 << 5)
+    dd 0xD4000001 | ((%1 & 0xffff) << 5)
 %endmacro
 
 _start:
-    arm64_adr x0, hello_string - $
-    arm64_bl strlen - $
+    arm64_adr x0, hello_string
+    arm64_bl strlen
 
     arm64_mov x2, x0
-    arm64_adr x1, hello_string - $
+    arm64_adr x1, hello_string
     arm64_mov_imm x0, stdout
     arm64_mov_imm x16, sys_write
     arm64_svc 0x80
@@ -235,8 +247,11 @@ _start:
 strlen:
     arm64_mov x1, x0
 .repeat:
-    dd 0x38401422 ; ldrb w2, [x1], 1
-    arm64_cbnz x2, .repeat - $
+    dd 0x39400022 ; ldrb w2, [x1]
+    arm64_cbz x2, .done
+    arm64_add_imm x1, x1, 1
+    arm64_b .repeat
+.done:
     arm64_sub x0, x1, x0
     arm64_ret
 
@@ -275,6 +290,12 @@ symbols:
     db 1                 ; section number
     dw 0x0000            ; extra flags
     dq strlen.repeat     ; address
+
+    dd Lstrlen.done - strings ; string table offset
+    db N_SECT | N_EXT    ; type flag
+    db 1                 ; section number
+    dw 0x0000            ; extra flags
+    dq strlen.done       ; address
 symbols_end:
 
 strings:
@@ -282,6 +303,7 @@ strings:
     L_start: db '_start', 0
     Lstrlen: db 'strlen', 0
     Lstrlen.repeat: db '.repeat', 0
+    Lstrlen.done: db '.done', 0
     align 8, db 0
 strings_end:
 
