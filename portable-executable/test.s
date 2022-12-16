@@ -58,11 +58,11 @@ _ms_dos_stub:
 
 _shell_script:
     db `\n'\n`
-    db `if [ '$(uname -s)' = Darwin ]; then\n`
-    db `dd if='$0' of='$0' bs=1 skip=512 count=4096 conv=notrunc 2> /dev/null\n`
-    db `exec '$0' '$@'\n`
+    db `if [ "$(uname -s)" = Darwin ]; then\n`
+    db `dd if="$0" of="$0" bs=1 skip=512 count=4096 conv=notrunc 2> /dev/null\n`
+    db `exec "$0" "$@"\n`
     db `else\n`
-    db `echo 'linux todo'\n`
+    db `echo "linux todo"\n`
     db `fi\n`
     db `exit 1\n`
     align 0x100, db 0
