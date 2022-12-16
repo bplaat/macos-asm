@@ -58,11 +58,11 @@ _ms_dos_stub:
 
 _shell_script:
     db `\n'\n`
-    db `if [ "$(uname -s)" = Darwin ]; then\n`
-    db `dd if="$0" of="$0" bs=1 skip=512 count=4096 conv=notrunc 2> /dev/null\n`
-    db `exec "$0" "$@"\n`
+    db `if [ '$(uname -s)' = Darwin ]; then\n`
+    db `dd if='$0' of='$0' bs=1 skip=512 count=4096 conv=notrunc 2> /dev/null\n`
+    db `exec '$0' '$@'\n`
     db `else\n`
-    db `echo "linux todo"\n`
+    db `echo 'linux todo'\n`
     db `fi\n`
     db `exit 1\n`
     align 0x100, db 0
@@ -81,7 +81,7 @@ _macho_commands:
     _command_page_zero:
         dd LC_SEGMENT_64                  ; cmd
         dd _command_page_zero_size        ; cmdsize
-        db "__PAGEZERO", 0, 0, 0, 0, 0, 0 ; segment name
+        db '__PAGEZERO', 0, 0, 0, 0, 0, 0 ; segment name
         dq 0                              ; vm address
         dq _macho_origin                  ; vm size
         dq 0                              ; file offset
@@ -93,57 +93,53 @@ _macho_commands:
     _command_page_zero_size equ $ - _command_page_zero
 
     _command_text_section:
-        dd LC_SEGMENT_64                   ; command
-        dd _command_text_section_size ; command size
-        db "__TEXT", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq _macho_origin                         ; vm address
-        dq _header_raw_size + _section_text_raw_size          ; vm size
-        dq 0                               ; file offset
-        dq _header_raw_size + _section_text_raw_size          ; file size
-        dd VM_PROT_READ | VM_PROT_EXECUTE  ; maximum protection
-        dd VM_PROT_READ | VM_PROT_EXECUTE  ; initial protection
-        dd 1                               ; number of _sections
-        dd 0x0                             ; flags
+        dd LC_SEGMENT_64                             ; command
+        dd _command_text_section_size                ; command size
+        db '__TEXT', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0    ; segment name
+        dq _macho_origin                             ; vm address
+        dq _header_raw_size + _section_text_raw_size ; vm size
+        dq 0                                         ; file offset
+        dq _header_raw_size + _section_text_raw_size ; file size
+        dd VM_PROT_READ | VM_PROT_EXECUTE            ; maximum protection
+        dd VM_PROT_READ | VM_PROT_EXECUTE            ; initial protection
+        dd 1                                         ; number of _sections
+        dd 0x0                                       ; flags
 
-        db "__text", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; section name
-        db "__TEXT", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq _macho_origin + _section_text             ; address
-        dq _section_text_size  ; size
-        dd _section_text   ; offset
-        dd 2                      ; align
-        dd 0                      ; relocations offset
-        dd 0                      ; number of relocations
+        db '__text', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0                          ; section name
+        db '__TEXT', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0                          ; segment name
+        dq _macho_origin + _section_text                                   ; address
+        dq _section_text_size                                              ; size
+        dd _section_text                                                   ; offset
+        dd 2                                                               ; align
+        dd 0                                                               ; relocations offset
+        dd 0                                                               ; number of relocations
         dd S_REGULAR | S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS ; flags
-        dd 0                      ; reserved1
-        dd 0                      ; reserved2
-        dd 0                      ; reserved3
+        times 3 dd 0                                                       ; reserved
     _command_text_section_size equ $ - _command_text_section
 
     _command_data_section:
-        dd LC_SEGMENT_64                   ; command
-        dd _command_data_section_size ; command size
-        db "__DATA", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq _macho_origin + _section_data                      ; vm address
-        dq _section_data_raw_size       ; vm size
-        dq _section_data             ; file offset
-        dq _section_data_raw_size       ; file size
-        dd VM_PROT_READ | VM_PROT_WRITE    ; maximum protection
-        dd VM_PROT_READ | VM_PROT_WRITE    ; initial protection
-        dd 1                               ; number of _sections
-        dd 0x0                             ; flags
+        dd LC_SEGMENT_64                          ; command
+        dd _command_data_section_size             ; command size
+        db '__DATA', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
+        dq _macho_origin + _section_data          ; vm address
+        dq _section_data_raw_size                 ; vm size
+        dq _section_data                          ; file offset
+        dq _section_data_raw_size                 ; file size
+        dd VM_PROT_READ | VM_PROT_WRITE           ; maximum protection
+        dd VM_PROT_READ | VM_PROT_WRITE           ; initial protection
+        dd 1                                      ; number of _sections
+        dd 0x0                                    ; flags
 
-        db "__data", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; section name
-        db "__DATA", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq _macho_origin + _section_data             ; address
-        dq _section_data_size  ; size
-        dd _section_data                      ; offset
-        dd 0                      ; align
-        dd 0                      ; relocations offset
-        dd 0                      ; number of relocations
-        dd S_REGULAR              ; flags
-        dd 0                      ; reserved1
-        dd 0                      ; reserved2
-        dd 0                      ; reserved3
+        db '__data', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; section name
+        db '__DATA', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
+        dq _macho_origin + _section_data          ; address
+        dq _section_data_size                     ; size
+        dd _section_data                          ; offset
+        dd 0                                      ; align
+        dd 0                                      ; relocations offset
+        dd 0                                      ; number of relocations
+        dd S_REGULAR                              ; flags
+        times 3 dd 0                              ; reserved
     _command_data_section_size equ $ - _command_data_section
 
     _command_unix_thread:
@@ -158,7 +154,7 @@ _macho_commands:
 _macho_commands_size equ $ - _macho_commands
 
 _pe_header:
-    db "PE", 0, 0               ; Signature
+    db 'PE', 0, 0               ; Signature
     dw 0x8664                   ; Machine
     dw 2                        ; NumberOfSections
     dd __?POSIX_TIME?__         ; TimeDateStamp
@@ -204,7 +200,7 @@ _pe_optional_header:
 _pe_optional_header_size equ $ - _pe_optional_header
 
 _pe_sections:
-    db ".text", 0, 0, 0       ; Name
+    db '.text', 0, 0, 0       ; Name
     dd _section_text_size     ; VirtualSize
     dd _section_text          ; VirtualAddress
     dd _section_text_raw_size ; SizeOfRawData
@@ -215,7 +211,7 @@ _pe_sections:
     dw 0                      ; NumberOfLinenumbers
     dd 0x60000020             ; Characteristics
 
-    db ".data", 0, 0, 0       ; Name
+    db '.data', 0, 0, 0       ; Name
     dd _section_data_size     ; VirtualSize
     dd _section_data          ; VirtualAddress
     dd _section_data_raw_size ; SizeOfRawData
@@ -389,10 +385,10 @@ kernel32_table:
     WriteConsoleA dq _WriteConsoleA
     dq 0
 
-    kernel32_name db "KERNEL32.DLL", 0
-    _ExitProcess db 0, 0, "ExitProcess", 0
-    _GetStdHandle db 0, 0, "GetStdHandle", 0
-    _WriteConsoleA db 0, 0, "WriteConsoleA", 0
+    kernel32_name db 'KERNEL32.DLL', 0
+    _ExitProcess db 0, 0, 'ExitProcess', 0
+    _GetStdHandle db 0, 0, 'GetStdHandle', 0
+    _WriteConsoleA db 0, 0, 'WriteConsoleA', 0
 
 _pe_import_table_size equ $ - _pe_import_table
 
