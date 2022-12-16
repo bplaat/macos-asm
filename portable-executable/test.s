@@ -44,7 +44,7 @@
 _header:
 
 _ms_dos_header:
-    db 0x4D, 0x5A, '=',  `'`,  0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00
+    db `MZ='\n`, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00
     db 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -57,8 +57,9 @@ _ms_dos_stub:
     db 0x6D, 0x6F, 0x64, 0x65, 0x2E, 0x0D, 0x0D, 0x0A, 0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 
 _shell_script:
+    db `\n'\n`
     db `if [ "$(uname -s)" = Darwin ]; then\n`
-    db `dd if="$0" of="$0" bs=1 skip=256 count=4096 conv=notrunc 2> /dev/null\n`
+    db `dd if="$0" of="$0" bs=1 skip=512 count=4096 conv=notrunc 2> /dev/null\n`
     db `exec "$0" "$@"\n`
     db `else\n`
     db `echo "linux todo"\n`
@@ -96,9 +97,9 @@ _macho_commands:
         dd _command_text_section_size ; command size
         db "__TEXT", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
         dq _macho_origin                         ; vm address
-        dq _section_text_raw_size          ; vm size
+        dq _header_raw_size + _section_text_raw_size          ; vm size
         dq 0                               ; file offset
-        dq _section_text_raw_size          ; file size
+        dq _header_raw_size + _section_text_raw_size          ; file size
         dd VM_PROT_READ | VM_PROT_EXECUTE  ; maximum protection
         dd VM_PROT_READ | VM_PROT_EXECUTE  ; initial protection
         dd 1                               ; number of _sections
