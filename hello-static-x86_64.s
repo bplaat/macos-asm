@@ -10,7 +10,7 @@
     %define MH_MAGIC_64 0xfeedfacf
     %define MH_EXECUTE 2
     %define MH_NOUNDEFS 0x0000001
-    %define MH_PIE 0x0020000
+    %define MH_PIE 0x00200000
     %define CPU_TYPE_X86_64 0x01000007
     %define CPU_SUBTYPE_X86_64_ALL 0x00000003
 
