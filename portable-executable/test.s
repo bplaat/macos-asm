@@ -1,10 +1,13 @@
-; Portable / multiplatform native executable
+; Portable / multiplatform native executable written in pure x86_64 assembler
 ; Inspired by: https://justine.lol/ape.html
-; - windows x86_64 / MS-DOS DONE
-; - macos x86_64 DONE
+; Supports:
+; - windows x86_64 / MS-DOS (stub)
+; - macos x86_64
 ; - linux x86_64
-; macOS: nasm -f bin test.s -o test && chmod +x test && ./test
-; Windows: nasm -f bin test.s -o test.exe && ./test
+; Build instructions:
+; - windows: nasm -f bin test.s -o test.exe && ./test
+; - macos: nasm -f bin test.s -o test && chmod +x test && sh ./test
+; - linux: nasm -f bin test.s -o test && chmod +x test && ./test
 
     ; MACH-O consts
     %define MH_MAGIC_64 0xfeedfacf
@@ -27,16 +30,21 @@
     %define S_ATTR_SOME_INSTRUCTIONS 0x00000400
     %define x86_THREAD_STATE64 0x4
 
+    ; ELF consts
+    %define PT_LOAD 1
+    %define PF_X 1
+    %define PF_W 2
+    %define PF_R 4
+
     ; Program consts
-    %define STD_OUTPUT_HANDLE -11
     %define NULL 0
+    %define STD_OUTPUT_HANDLE -11
     %define stdout 1
-    %define macos_sys_exit 0x2000001
-    %define macos_sys_write 0x2000004
 
 %macro header 0
-    _macho_origin equ 0x0000000100000000
     _pe_origin equ 0x0000000000400000
+    _macho_origin equ 0x0000000100000000
+    _elf_origin equ 0x0000000100000000
     _alignment equ 0x1000
 
     bits 64
@@ -59,12 +67,85 @@ _ms_dos_stub:
 _shell_script:
     db `\n'\n`
     db `if [ "$(uname -s)" = Darwin ]; then\n`
-    db `dd if="$0" of="$0" bs=1 skip=512 count=4096 conv=notrunc 2> /dev/null\n`
+    db `dd if="$0" of="$0" bs=1 skip=1024 count=3072 conv=notrunc 2> /dev/null\n`
     db `exec "$0" "$@"\n`
-    db `else\n`
-    db `echo "linux todo"\n`
+    db `fi\n`
+    db `if [ "$(uname -s)" = Linux ]; then\n`
+    db `dd if="$0" of="$0" bs=1 skip=1792 count=2304 conv=notrunc 2> /dev/null\n`
+    db `exec "$0" "$@"\n`
     db `fi\n`
     db `exit 1\n`
+    align 0x100, db 0
+
+_pe_header:
+    db 'PE', 0, 0               ; Signature
+    dw 0x8664                   ; Machine
+    dw 2                        ; NumberOfSections
+    dd __?POSIX_TIME?__         ; TimeDateStamp
+    dd 0                        ; PointerToSymbolTable
+    dd 0                        ; NumberOfSymbols
+    dw _pe_optional_header_size ; SizeOfOptionalHeader
+    dw 0x030f                   ; Characteristics
+
+_pe_optional_header:
+    dw 0x020b                 ; Magic
+    db 0                      ; MajorLinkerVersion
+    db 0                      ; MinorLinkerVersion
+    dd _section_text_raw_size ; SizeOfCode
+    dd _section_data_raw_size ; SizeOfInitializedData
+    dd 0                      ; SizeOfUninitializedData
+    dd win32__start           ; AddressOfEntryPoint
+    dd _section_text          ; BaseOfCode
+    dq _pe_origin             ; ImageBase
+    dd _alignment             ; SectionAlignment
+    dd _alignment             ; FileAlignment
+    dw 4                      ; MajorOperatingSystemVersion
+    dw 0                      ; MinorOperatingSystemVersion
+    dw 0                      ; MajorImageVersion
+    dw 0                      ; MinorImageVersion
+    dw 4                      ; MajorSubsystemVersion
+    dw 0                      ; MinorSubsystemVersion
+    dd 0                      ; Win32VersionValue
+    dd _file_size             ; SizeOfImage
+    dd _header_raw_size       ; SizeOfHeaders
+    dd 0                      ; CheckSum
+    dw 3                      ; Subsystem
+    dw 0                      ; DllCharacteristics
+    dq 0x100000               ; SizeOfStackReserve
+    dq 0x1000                 ; SizeOfStackCommit
+    dq 0x100000               ; SizeOfHeapReserve
+    dq 0x1000                 ; SizeOfHeapCommit
+    dd 0                      ; LoaderFlags
+    dd 16                     ; NumberOfRvaAndSizes
+
+    dd 0, 0
+    dd _pe_import_table, _pe_import_table_size
+    times 14 dd 0, 0
+_pe_optional_header_size equ $ - _pe_optional_header
+
+_pe_sections:
+    db '.text', 0, 0, 0       ; Name
+    dd _section_text_size     ; VirtualSize
+    dd _section_text          ; VirtualAddress
+    dd _section_text_raw_size ; SizeOfRawData
+    dd _section_text          ; PointerToRawData
+    dd 0                      ; PointerToRelocations
+    dd 0                      ; PointerToLinenumbers
+    dw 0                      ; NumberOfRelocations
+    dw 0                      ; NumberOfLinenumbers
+    dd 0x60000020             ; Characteristics
+
+    db '.data', 0, 0, 0       ; Name
+    dd _section_data_size     ; VirtualSize
+    dd _section_data          ; VirtualAddress
+    dd _section_data_raw_size ; SizeOfRawData
+    dd _section_data          ; PointerToRawData
+    dd 0                      ; PointerToRelocations
+    dd 0                      ; PointerToLinenumbers
+    dw 0                      ; NumberOfRelocations
+    dw 0                      ; NumberOfLinenumbers
+    dd 0xc0000040             ; Characteristics
+
     align 0x100, db 0
 
 _macho_header:
@@ -153,74 +234,49 @@ _macho_commands:
     _command_unix_thread_size equ $ - _command_unix_thread
 _macho_commands_size equ $ - _macho_commands
 
-_pe_header:
-    db 'PE', 0, 0               ; Signature
-    dw 0x8664                   ; Machine
-    dw 2                        ; NumberOfSections
-    dd __?POSIX_TIME?__         ; TimeDateStamp
-    dd 0                        ; PointerToSymbolTable
-    dd 0                        ; NumberOfSymbols
-    dw _pe_optional_header_size ; SizeOfOptionalHeader
-    dw 0x030f                   ; Characteristics
+    align 0x100, db 0
 
-_pe_optional_header:
-    dw 0x020b                 ; Magic
-    db 0                      ; MajorLinkerVersion
-    db 0                      ; MinorLinkerVersion
-    dd _section_text_raw_size ; SizeOfCode
-    dd _section_data_raw_size ; SizeOfInitializedData
-    dd 0                      ; SizeOfUninitializedData
-    dd win32__start           ; AddressOfEntryPoint
-    dd _section_text          ; BaseOfCode
-    dq _pe_origin             ; ImageBase
-    dd _alignment             ; SectionAlignment
-    dd _alignment             ; FileAlignment
-    dw 4                      ; MajorOperatingSystemVersion
-    dw 0                      ; MinorOperatingSystemVersion
-    dw 0                      ; MajorImageVersion
-    dw 0                      ; MinorImageVersion
-    dw 4                      ; MajorSubsystemVersion
-    dw 0                      ; MinorSubsystemVersion
-    dd 0                      ; Win32VersionValue
-    dd _file_size             ; SizeOfImage
-    dd _header_raw_size       ; SizeOfHeaders
-    dd 0                      ; CheckSum
-    dw 3                      ; Subsystem
-    dw 0                      ; DllCharacteristics
-    dq 0x100000               ; SizeOfStackReserve
-    dq 0x1000                 ; SizeOfStackCommit
-    dq 0x100000               ; SizeOfHeapReserve
-    dq 0x1000                 ; SizeOfHeapCommit
-    dd 0                      ; LoaderFlags
-    dd 16                     ; NumberOfRvaAndSizes
+_elf_header:
+    db 0x7f, 'ELF'                       ; e_ident[EI_MAG]
+    db 2                                 ; e_ident[EI_CLASS]
+    db 1                                 ; e_ident[EI_DATA]
+    db 1                                 ; e_ident[EI_VERSION]
+    db 0                                 ; e_ident[EI_OSABI]
+    dq 0                                 ; e_ident[EI_ABIVERSION]
+    dw 2                                 ; e_type
+    dw 0x3e                              ; e_machine
+    dd 1                                 ; e_version
+    dq _elf_origin + linux__start        ; e_entry
+    dq _elf_program_header - _elf_header ; e_phoff
+    dq 0                                 ; e_shoff
+    dd 0                                 ; e_flags
+    dw _elf_header_size                  ; e_ehsize
+    dw _elf_program_entry_size           ; e_phentsize
+    dw 2                                 ; e_phnum
+    dw 0                                 ; e_shentsize
+    dw 0                                 ; e_shnum
+    dw 0                                 ; e_shstrndx
+_elf_header_size equ $ - _elf_header
 
-    dd 0, 0
-    dd _pe_import_table, _pe_import_table_size
-    times 14 dd 0, 0
-_pe_optional_header_size equ $ - _pe_optional_header
+_elf_program_header:
+    dd PT_LOAD                      ; p_type
+    dd PF_R | PF_X                  ; p_flags
+    dq _section_text                ; p_offset
+    dq _elf_origin + _section_text  ; p_vaddr
+    dq _elf_origin + _section_text  ; p_paddr
+    dq _section_text_raw_size       ; p_filesz
+    dq _section_text_raw_size       ; p_memsz
+    dq _alignment                   ; p_align
+_elf_program_entry_size equ $ - _elf_program_header
 
-_pe_sections:
-    db '.text', 0, 0, 0       ; Name
-    dd _section_text_size     ; VirtualSize
-    dd _section_text          ; VirtualAddress
-    dd _section_text_raw_size ; SizeOfRawData
-    dd _section_text          ; PointerToRawData
-    dd 0                      ; PointerToRelocations
-    dd 0                      ; PointerToLinenumbers
-    dw 0                      ; NumberOfRelocations
-    dw 0                      ; NumberOfLinenumbers
-    dd 0x60000020             ; Characteristics
-
-    db '.data', 0, 0, 0       ; Name
-    dd _section_data_size     ; VirtualSize
-    dd _section_data          ; VirtualAddress
-    dd _section_data_raw_size ; SizeOfRawData
-    dd _section_data          ; PointerToRawData
-    dd 0                      ; PointerToRelocations
-    dd 0                      ; PointerToLinenumbers
-    dw 0                      ; NumberOfRelocations
-    dw 0                      ; NumberOfLinenumbers
-    dd 0xc0000040             ; Characteristics
+    dd PT_LOAD                      ; p_type
+    dd PF_R | PF_W                  ; p_flags
+    dq _section_data                ; p_offset
+    dq _elf_origin + _section_data  ; p_vaddr
+    dq _elf_origin + _section_data  ; p_paddr
+    dq _section_data_raw_size       ; p_filesz
+    dq _section_data_raw_size       ; p_memsz
+    dq _alignment                   ; p_align
 
 _header_size equ $ - _header
     align _alignment, db 0
@@ -250,7 +306,7 @@ header
 
 section_text
 
-; Windows Codes
+; Windows code
 win32__start:
     lea rax, qword [rel win32_print]
     mov qword [rel print], rax
@@ -288,13 +344,26 @@ win32_exit:
 
 ; macOS code
 macos__start:
-    lea rax, qword [rel macos_print]
+    lea rax, qword [rel unix_print]
     mov qword [rel print], rax
-    lea rax, qword [rel macos_exit]
+    lea rax, qword [rel unix_exit]
     mov qword [rel exit], rax
+    mov dword [rel sys_exit], 0x2000001
+    mov dword [rel sys_write], 0x2000004
     jmp _start
 
-macos_print:
+; Linux code
+linux__start:
+    lea rax, qword [rel unix_print]
+    mov qword [rel print], rax
+    lea rax, qword [rel unix_exit]
+    mov qword [rel exit], rax
+    mov dword [rel sys_exit], 60
+    mov dword [rel sys_write], 1
+    jmp _start
+
+; Unix code
+unix_print:
     push rbp
     mov rbp, rsp
     sub rsp, 16
@@ -306,14 +375,14 @@ macos_print:
 
     mov rsi, qword [rbp - 8]
     mov edi, stdout
-    mov eax, macos_sys_write
+    mov eax, dword [rel sys_write]
     syscall
 
     leave
     ret
 
-macos_exit:
-    mov eax, macos_sys_exit
+unix_exit:
+    mov eax, dword [rel sys_exit]
     syscall
 
 ; Shared code
@@ -371,6 +440,8 @@ section_data
 
 print dq 0
 exit dq 0
+sys_exit dd 0
+sys_write dd 0
 
 message db `Hello World!`, 0
 newline db `\n`, 0
