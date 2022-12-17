@@ -12,9 +12,9 @@
 ; - linux x86_64
 ;
 ; Build instructions:
-; - windows: nasm -f bin hello.s -o hello.exe && ./hello
-; - macos: nasm -f bin hello.s -o hello && chmod +x hello && sh ./hello
-; - linux: nasm -f bin hello.s -o hello && chmod +x hello && ./hello
+; - windows: nasm -f bin hello.s -o hello.com && ./hello.com
+; - macos: nasm -f bin hello.s -o hello.com && chmod +x hello.com && sh ./hello.com
+; - linux: nasm -f bin hello.s -o hello.com && chmod +x hello.com && ./hello.com
 ;
 ; TODO items:
 ; - A sections and so section names to the Linux header so that `objdump -S` works

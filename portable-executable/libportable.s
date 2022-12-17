@@ -69,15 +69,15 @@ _shell_script:
     db `\n'\n`
     db `if [ "$(uname -s)" = Darwin ]; then\n`
         db `if [ "$(arch)" = arm64 ]; then\n`
-            db `dd if="$0" of="$0" bs=1 skip=2048 count=4096 conv=notrunc 2> /dev/null\n`
+            db `dd if="$0" of="$0" bs=1 skip=2048 count=14336 conv=notrunc 2> /dev/null\n`
             db `codesign -s - "$0"\n`
         db `else\n`
-            db `dd if="$0" of="$0" bs=1 skip=1280 count=4096 conv=notrunc 2> /dev/null\n`
+            db `dd if="$0" of="$0" bs=1 skip=1280 count=15104 conv=notrunc 2> /dev/null\n`
         db `fi\n`
         db `exec "$0" "$@"\n`
     db `fi\n`
     db `if [ "$(uname -s)" = Linux ]; then\n`
-        db `dd if="$0" of="$0" bs=1 skip=1792 count=4096 conv=notrunc 2> /dev/null\n`
+        db `dd if="$0" of="$0" bs=1 skip=2816 count=13568 conv=notrunc 2> /dev/null\n`
         db `exec "$0" "$@"\n`
     db `fi\n`
     db `exit 1\n`
