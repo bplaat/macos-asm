@@ -1,13 +1,23 @@
-; Portable / multiplatform native executable written in pure x86_64 assembler
-; Inspired by: https://justine.lol/ape.html
+; A portable / multiplatform native executable written in pure x86_64 assembler
+; The working is inspired by: https://justine.lol/ape.html
+; It uses a self modifing shell script header to copy the right MACH-O or ELF header to the front of the file
+; On Windows (and so also MS-DOS) the header is already present
+; The program uses the System-V ABI so whe need stubs to call win32 functions
+;
 ; Supports:
 ; - windows x86_64 / MS-DOS (stub)
 ; - macos x86_64
 ; - linux x86_64
+;
 ; Build instructions:
-; - windows: nasm -f bin test.s -o test.exe && ./test
-; - macos: nasm -f bin test.s -o test && chmod +x test && sh ./test
-; - linux: nasm -f bin test.s -o test && chmod +x test && ./test
+; - windows: nasm -f bin hello.s -o hello.exe && ./hello
+; - macos: nasm -f bin hello.s -o hello && chmod +x hello && sh ./hello
+; - linux: nasm -f bin hello.s -o hello && chmod +x hello && ./hello
+;
+; TODO items:
+; - A sections and so section names to the Linux header so that `objdump -S` works
+; - Add macOS arm64 support
+; - Add linux arm64 support
 
     ; MACH-O consts
     %define MH_MAGIC_64 0xfeedfacf
@@ -77,6 +87,7 @@ _shell_script:
     db `exit 1\n`
     align 0x100, db 0
 
+    ; PE header
 _pe_header:
     db 'PE', 0, 0               ; Signature
     dw 0x8664                   ; Machine
@@ -106,7 +117,7 @@ _pe_optional_header:
     dw 4                      ; MajorSubsystemVersion
     dw 0                      ; MinorSubsystemVersion
     dd 0                      ; Win32VersionValue
-    dd _file_size             ; SizeOfImage
+    dd _header_raw_size + _section_text_raw_size + _section_data_raw_size ; SizeOfImage
     dd _header_raw_size       ; SizeOfHeaders
     dd 0                      ; CheckSum
     dw 3                      ; Subsystem
@@ -148,6 +159,7 @@ _pe_sections:
 
     align 0x100, db 0
 
+    ; MACH-O header
 _macho_header:
     dd MH_MAGIC_64            ; magic
     dd CPU_TYPE_X86_64        ; cputype
@@ -186,16 +198,16 @@ _macho_commands:
         dd 1                                         ; number of _sections
         dd 0x0                                       ; flags
 
-        db '__text', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0                          ; section name
-        db '__TEXT', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0                          ; segment name
-        dq _macho_origin + _section_text                                   ; address
-        dq _section_text_size                                              ; size
-        dd _section_text                                                   ; offset
-        dd 2                                                               ; align
-        dd 0                                                               ; relocations offset
-        dd 0                                                               ; number of relocations
+        db '__text', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; section name
+        db '__TEXT', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
+        dq _macho_origin + _section_text          ; address
+        dq _section_text_size                     ; size
+        dd _section_text                          ; offset
+        dd 2                                      ; align
+        dd 0                                      ; relocations offset
+        dd 0                                      ; number of relocations
         dd S_REGULAR | S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS ; flags
-        times 3 dd 0                                                       ; reserved
+        times 3 dd 0                              ; reserved
     _command_text_section_size equ $ - _command_text_section
 
     _command_data_section:
@@ -236,6 +248,7 @@ _macho_commands_size equ $ - _macho_commands
 
     align 0x100, db 0
 
+    ; ELF header
 _elf_header:
     db 0x7f, 'ELF'                       ; e_ident[EI_MAG]
     db 2                                 ; e_ident[EI_CLASS]
@@ -291,6 +304,7 @@ _section_text_size equ $ - _section_text
     align _alignment, db 0
 _section_text_raw_size equ $ - _section_text
 %endmacro
+
 %macro section_data 0
 _section_data:
 %endmacro
@@ -300,7 +314,9 @@ _section_data_size equ $ - _section_data
 _section_data_raw_size equ $ - _section_data
 %endmacro
 
-; ####################################################################
+; ##############################################################################################
+; ##############################################################################################
+; ##############################################################################################
 
 header
 
@@ -464,5 +480,3 @@ kernel32_table:
 _pe_import_table_size equ $ - _pe_import_table
 
 section_data_end
-
-_file_size equ $
