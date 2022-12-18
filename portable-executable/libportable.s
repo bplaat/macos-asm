@@ -42,6 +42,14 @@
 %define STD_OUTPUT_HANDLE -11
 %define stdout 1
 
+%macro number_ascii 1
+    db ((%1 / 10000) % 10) + 0x30
+    db ((%1 / 1000) % 10) + 0x30
+    db ((%1 / 100) % 10) + 0x30
+    db ((%1 / 10) % 10) + 0x30
+    db (%1 % 10) + 0x30
+%endmacro
+
 %macro header 0
     _pe_origin equ 0x0000000000400000
     _macho_origin equ 0x0000000100000000
@@ -69,23 +77,38 @@ _shell_script:
     db `\n'\n`
     db `if [ "$(uname -s)" = Darwin ]; then\n`
         db `if [ "$(arch)" = arm64 ]; then\n`
-            db `dd if="$0" of="$0" bs=1 skip=2048 count=14336 conv=notrunc 2> /dev/null\n`
+            db `dd if="$0" of="$0" bs=1 skip=`
+            number_ascii (_macho_arm64_header - _header)
+            db ` count=`
+            number_ascii _alignment
+            db ` conv=notrunc 2> /dev/null\n`
             db `codesign -s - "$0"\n`
         db `else\n`
-            db `dd if="$0" of="$0" bs=1 skip=1280 count=15104 conv=notrunc 2> /dev/null\n`
+            db `dd if="$0" of="$0" bs=1 skip=`
+            number_ascii (_macho_x86_64_header - _header)
+            db ` count=`
+            number_ascii _alignment
+            db ` conv=notrunc 2> /dev/null\n`
         db `fi\n`
         db `exec "$0" "$@"\n`
     db `fi\n`
     db `if [ "$(uname -s)" = Linux ]; then\n`
         db `if [ "$(uname -m)" = aarch64 ]; then\n`
-            db `dd if="$0" of="$0" bs=1 skip=3072 count=13312 conv=notrunc 2> /dev/null\n`
+            db `dd if="$0" of="$0" bs=1 skip=`
+            number_ascii (_elf_arm64_header - _header)
+            db ` count=`
+            number_ascii _alignment
+            db ` conv=notrunc 2> /dev/null\n`
         db `else\n`
-            db `dd if="$0" of="$0" bs=1 skip=2816 count=13568 conv=notrunc 2> /dev/null\n`
+            db `dd if="$0" of="$0" bs=1 skip=`
+            number_ascii (_elf_x86_64_header - _header)
+            db ` count=`
+            number_ascii _alignment
+            db ` conv=notrunc 2> /dev/null\n`
         db `fi\n`
         db `exec "$0" "$@"\n`
     db `fi\n`
     db `exit 1\n`
-    align 0x100, db 0
 
 ; ########################################################################################
 
@@ -158,8 +181,6 @@ _pesections:
     dw 0                      ; NumberOfRelocations
     dw 0                      ; NumberOfLinenumbers
     dd 0xc0000040             ; Characteristics
-
-    align 0x100, db 0
 
 ; ########################################################################################
 
@@ -249,8 +270,6 @@ _macho_x86_64_commands:
         dq _macho_origin + _macos_start, 0x0, 0x0, 0x0, 0x0 ; rip, ...
     _x86_64_cmd_unix_thread_size equ $ - _x86_64_cmd_unix_thread
 _macho_x86_64_commands_size equ $ - _macho_x86_64_commands
-
-    align 0x100, db 0
 
 ; ########################################################################################
 
@@ -385,8 +404,6 @@ _macho_arm64_commands:
     _arm64_cmd_main_size equ $ - _arm64_cmd_main
 _macho_arm64_commands_size equ $ - _macho_arm64_commands
 
-    align 0x100, db 0
-
 ; ########################################################################################
 
     ; ELF x86_64 header
@@ -401,40 +418,16 @@ _elf_x86_64_header:
     dw 0x3e                              ; e_machine
     dd 1                                 ; e_version
     dq _elf_origin + _linux_start        ; e_entry
-    dq _elf_x86_64_program_header - _elf_x86_64_header ; e_phoff
+    dq _elf_program_header - _elf_x86_64_header ; e_phoff
     dq 0                                 ; e_shoff
     dd 0                                 ; e_flags
     dw _elf_x86_64_header_size           ; e_ehsize
-    dw _elf_x86_64_program_entry_size    ; e_phentsize
+    dw _elf_program_entry_size           ; e_phentsize
     dw 2                                 ; e_phnum
     dw 0                                 ; e_shentsize
     dw 0                                 ; e_shnum
     dw 0                                 ; e_shstrndx
 _elf_x86_64_header_size equ $ - _elf_x86_64_header
-
-_elf_x86_64_program_header:
-    dd PT_LOAD                     ; p_type
-    dd PF_R | PF_X                 ; p_flags
-    dq _section_text               ; p_offset
-    dq _elf_origin + _section_text ; p_vaddr
-    dq _elf_origin + _section_text ; p_paddr
-    dq _section_text_raw_size      ; p_filesz
-    dq _section_text_raw_size      ; p_memsz
-    dq _alignment                  ; p_align
-_elf_x86_64_program_entry_size equ $ - _elf_x86_64_program_header
-
-    dd PT_LOAD                     ; p_type
-    dd PF_R | PF_W                 ; p_flags
-    dq _section_data               ; p_offset
-    dq _elf_origin + _section_data ; p_vaddr
-    dq _elf_origin + _section_data ; p_paddr
-    dq _section_data_raw_size      ; p_filesz
-    dq _section_data_raw_size      ; p_memsz
-    dq _alignment                  ; p_align
-
-    align 0x100, db 0
-
-; ########################################################################################
 
     ; ELF arm64 header
 _elf_arm64_header:
@@ -448,18 +441,19 @@ _elf_arm64_header:
     dw 0xb7                              ; e_machine
     dd 1                                 ; e_version
     dq _elf_origin + _arm64_linux_start  ; e_entry
-    dq _elf_arm64_program_header - _elf_arm64_header ; e_phoff
+    dq _elf_program_header - _elf_arm64_header ; e_phoff
     dq 0                                 ; e_shoff
     dd 0                                 ; e_flags
     dw _elf_arm64_header_size            ; e_ehsize
-    dw _elf_arm64_program_entry_size     ; e_phentsize
+    dw _elf_program_entry_size           ; e_phentsize
     dw 2                                 ; e_phnum
     dw 0                                 ; e_shentsize
     dw 0                                 ; e_shnum
     dw 0                                 ; e_shstrndx
 _elf_arm64_header_size equ $ - _elf_arm64_header
 
-_elf_arm64_program_header:
+    ; Shared ELF program header
+_elf_program_header:
     dd PT_LOAD                     ; p_type
     dd PF_R | PF_X                 ; p_flags
     dq _section_text               ; p_offset
@@ -468,7 +462,7 @@ _elf_arm64_program_header:
     dq _section_text_raw_size      ; p_filesz
     dq _section_text_raw_size      ; p_memsz
     dq _alignment                  ; p_align
-_elf_arm64_program_entry_size equ $ - _elf_arm64_program_header
+_elf_program_entry_size equ $ - _elf_program_header
 
     dd PT_LOAD                     ; p_type
     dd PF_R | PF_W                 ; p_flags
