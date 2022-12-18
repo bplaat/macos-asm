@@ -563,7 +563,7 @@ _pe_import_table_size equ $ - _pe_import_table
 %1:
     %rotate 1
     %rep (%0 - 1) / 2
-        %1 dq _%1
+        @%1 dq _%1
         %rotate 2
     %endrep
     dq 0

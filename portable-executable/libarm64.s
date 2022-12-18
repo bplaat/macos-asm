@@ -10,7 +10,29 @@
 %define x6 6
 %define x7 7
 %define x8 8
+%define x9 9
+%define x10 10
+%define x11 11
+%define x12 12
+%define x13 13
+%define x14 14
+%define x15 15
 %define x16 16
+%define x17 17
+%define x18 18
+%define x19 19
+%define x20 20
+%define x21 21
+%define x22 22
+%define x23 23
+%define x24 24
+%define x25 25
+%define x26 26
+%define x27 27
+%define x28 28
+%define x29 29
+%define x30 30
+%define x31 31
 
 %macro arm64_mov 2
     dd 0xAA0003E0 | ((%2 & 31) << 16) | (%1 & 31))
@@ -36,11 +58,17 @@
 %macro arm64_cbz 2
     dd 0xB4000000 | (((((%2 - $) >> 2) & 0x7ffff) << 5) | (%1 & 31))
 %endmacro
+%macro arm64_cbnz 2
+    dd 0xB5000000 | (((((%2 - $) >> 2) & 0x7ffff) << 5) | (%1 & 31))
+%endmacro
 %macro arm64_b 1
     dd 0x14000000 | (((%1 - $) >> 2) & 0x7ffffff)
 %endmacro
 %macro arm64_bl 1
     dd 0x94000000 | (((%1 - $) >> 2) & 0x7ffffff)
+%endmacro
+%macro arm64_blr 1
+    dd 0xD63F0000 | ((%1 & 31) << 5)
 %endmacro
 %macro arm64_ret 0
     dd 0xD65F03C0

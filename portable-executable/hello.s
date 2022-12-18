@@ -43,71 +43,77 @@ win32_print:
     push rbp
     mov rbp, rsp
     sub rsp, 16
-
     mov qword [rbp - 8], rdi
-
     mov r9, NULL
     mov rcx, NULL
-
     mov rdi, qword [rbp - 8]
     call strlen
     mov rdx, rax
-
     mov rsi, qword [rbp - 8]
-
     mov rdi, STD_OUTPUT_HANDLE
     call GetStdHandle
     mov rdi, rax
-
     call WriteConsoleA
-
     leave
     ret
 
 win32_exit:
     jmp ExitProcess
 
+ms_abi_stub ExitProcess, 1
+ms_abi_stub GetStdHandle, 1
+ms_abi_stub WriteConsoleA, 5
+
 ; macOS code
 _macos_start:
-    lea rax, qword [rel unix_print]
+    lea rax, qword [rel macos_print]
     mov qword [rel print], rax
-    lea rax, qword [rel unix_exit]
+    lea rax, qword [rel macos_exit]
     mov qword [rel exit], rax
-    mov dword [rel sys_exit], 0x2000001
-    mov dword [rel sys_write], 0x2000004
     jmp _start
 
-; Linux code
-_linux_start:
-    lea rax, qword [rel unix_print]
-    mov qword [rel print], rax
-    lea rax, qword [rel unix_exit]
-    mov qword [rel exit], rax
-    mov dword [rel sys_exit], 60
-    mov dword [rel sys_write], 1
-    jmp _start
-
-; Unix code
-unix_print:
+macos_print:
     push rbp
     mov rbp, rsp
     sub rsp, 16
-
     mov qword [rbp - 8], rdi
-
     call strlen
     mov rdx, rax
-
     mov rsi, qword [rbp - 8]
     mov edi, stdout
-    mov eax, dword [rel sys_write]
+    mov eax, 0x2000004 ; write
     syscall
-
     leave
     ret
 
-unix_exit:
-    mov eax, dword [rel sys_exit]
+macos_exit:
+    mov eax, 0x2000001 ; exit
+    syscall
+
+; Linux code
+_linux_start:
+    lea rax, qword [rel linux_print]
+    mov qword [rel print], rax
+    lea rax, qword [rel linux_exit]
+    mov qword [rel exit], rax
+    jmp _start
+
+linux_print:
+    push rbp
+    mov rbp, rsp
+    sub rsp, 16
+    mov qword [rbp - 8], rdi
+    call strlen
+    mov rdx, rax
+    mov rsi, qword [rbp - 8]
+    mov edi, stdout
+    mov eax, 1 ; write
+    syscall
+    leave
+    ret
+
+linux_exit:
+    mov eax, 60 ; exit
     syscall
 
 ; Shared code
@@ -116,7 +122,7 @@ _start:
     call println
 
     xor edi, edi
-    call [rel exit]
+    jmp [rel exit]
 
 strlen:
     mov rax, rdi
@@ -135,62 +141,96 @@ println:
     call [rel print]
     ret
 
-; Win32 stubs
-ms_abi_stub ExitProcess, 1
-ms_abi_stub GetStdHandle, 1
-ms_abi_stub WriteConsoleA, 5
-
 ; ########################################################################################
 
 align 4, db 0
 
+; macOS code
 _arm64_macos_start:
-    arm64_adr x0, message
+    arm64_adr x0, arm64_macos_print
+    arm64_adr x1, print
+    dd 0xF9000020 ; str x0, [x1]
+    arm64_adr x0, arm64_macos_exit
+    arm64_adr x1, exit
+    dd 0xF9000020 ; str x0, [x1]
+    arm64_b _arm64_start
+
+arm64_macos_print:
+    dd 0xA9BE7BFD ; stp x29, x30, [sp, -32]!
+    arm64_mov x29, x31
+    dd 0xF9000FE0 ; str x0, [sp, 24]
     arm64_bl arm64_strlen
     arm64_mov x2, x0
-    arm64_adr x1, message
+    dd 0xF9400FE1 ; ldr x1, [sp, 24]
     arm64_mov_imm x0, stdout
     arm64_mov_imm x16, 4 ; write
     arm64_svc 0x80
+    dd 0xA8C27BFD ; ldp x29, x30, [sp], 32
+    arm64_ret
 
-    arm64_mov_imm x2, 1
-    arm64_adr x1, newline
-    arm64_mov_imm x0, stdout
-    arm64_mov_imm x16, 4 ; write
-    arm64_svc 0x80
-
-    arm64_mov_imm x0, 0
+arm64_macos_exit:
     arm64_mov_imm x16, 1 ; exit
     arm64_svc 0x80
 
+; Linux code
 _arm64_linux_start:
-    arm64_adr x0, message
+    arm64_adr x0, arm64_linux_print
+    arm64_adr x1, print
+    dd 0xF9000020 ; str x0, [x1]
+    arm64_adr x0, arm64_linux_exit
+    arm64_adr x1, exit
+    dd 0xF9000020 ; str x0, [x1]
+    arm64_b _arm64_start
+
+arm64_linux_print:
+    dd 0xA9BE7BFD ; stp x29, x30, [sp, -32]!
+    arm64_mov x29, x31
+    dd 0xF9000FE0 ; str x0, [sp, 24]
     arm64_bl arm64_strlen
     arm64_mov x2, x0
-    arm64_adr x1, message
+    dd 0xF9400FE1 ; ldr x1, [sp, 24]
     arm64_mov_imm x0, stdout
     arm64_mov_imm x8, 64 ; write
     arm64_svc 0x0
+    dd 0xA8C27BFD ; ldp x29, x30, [sp], 32
+    arm64_ret
 
-    arm64_mov_imm x2, 1
-    arm64_adr x1, newline
-    arm64_mov_imm x0, stdout
-    arm64_mov_imm x8, 64 ; write
-    arm64_svc 0x0
-
-    arm64_mov_imm x0, 0
+arm64_linux_exit:
     arm64_mov_imm x8, 93 ; exit
     arm64_svc 0x0
+
+; Shared code
+_arm64_start:
+    arm64_adr x0, message
+    arm64_bl arm64_println
+
+    arm64_mov_imm x0, 0
+    arm64_adr x8, exit
+    dd 0xF9400108 ; ldr x8, [x8]
+    arm64_blr x8
 
 arm64_strlen:
     arm64_mov x1, x0
 .repeat:
-    dd 0x39400022 ; ldrb w2, [x1]
-    arm64_cbz x2, .done
-    arm64_add_imm x1, x1, 1
-    arm64_b .repeat
-.done:
+    dd 0x38401422 ; ldrb w2, [x1], 1
+    arm64_cbnz x2, .repeat
     arm64_sub x0, x1, x0
+    arm64_sub_imm x0, x0, 1
+    arm64_ret
+
+arm64_println:
+    dd 0xF81F0FFE ; str x30, [sp, -16]!
+
+    arm64_adr x8, print
+    dd 0xF9400108 ; ldr x8, [x8]
+    arm64_blr x8
+
+    arm64_adr x0, newline
+    arm64_adr x8, print
+    dd 0xF9400108 ; ldr x8, [x8]
+    arm64_blr x8
+
+    dd 0xF84107FE ; ldr x30, [sp], 16
     arm64_ret
 
 end_section_text
@@ -201,8 +241,6 @@ section_data
 
 print dq 0
 exit dq 0
-sys_exit dd 0
-sys_write dd 0
 
 align 4, db 0
 message db `Hello World!`, 0
@@ -213,9 +251,9 @@ import_table
     library kernel32_table, 'KERNEL32.dll'
 
     import kernel32_table, \
-        @ExitProcess, 'ExitProcess', \
-        @GetStdHandle, 'GetStdHandle', \
-        @WriteConsoleA, 'WriteConsoleA'
+        ExitProcess, 'ExitProcess', \
+        GetStdHandle, 'GetStdHandle', \
+        WriteConsoleA, 'WriteConsoleA'
 end_import_table
 
 end_section_data
