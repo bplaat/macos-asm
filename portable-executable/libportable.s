@@ -1,6 +1,22 @@
 ; A portable native executable library
 ; Written by Bastiaan van der Plaat (https://bplaat.nl/)
 
+; PE consts
+%define IMAGE_FILE_RELOCS_STRIPPED 0x0001
+%define IMAGE_FILE_EXECUTABLE_IMAGE 0x0002
+%define IMAGE_FILE_LINE_NUMS_STRIPPED 0x0004
+%define IMAGE_FILE_LOCAL_SYMS_STRIPPED 0x0008
+%define IMAGE_FILE_LARGE_ADDRESS_AWARE 0x0020
+%define IMAGE_FILE_DEBUG_STRIPPED 0x0200
+
+%define IMAGE_SUBSYSTEM_WINDOWS_CUI 3
+
+%define IMAGE_SCN_CNT_CODE 0x00000020
+%define IMAGE_SCN_CNT_INITIALIZED_DATA 0x00000040
+%define IMAGE_SCN_MEM_EXECUTE 0x20000000
+%define IMAGE_SCN_MEM_READ 0x40000000
+%define IMAGE_SCN_MEM_WRITE 0x80000000
+
 ; MACH-O consts
 %define MH_MAGIC_64 0xfeedfacf
 %define MH_EXECUTE 2
@@ -32,15 +48,16 @@
 %define x86_THREAD_STATE64 0x4
 
 ; ELF consts
+%define ELF_CLASS_64 2
+%define ELF_DATA_LITTLE_ENDIAN 1
+%define ELF_TYPE_EXECUTE 2
+%define ELF_MACHINE_X86_64 0x3e
+%define ELF_MACHINE_AARCH64 0xb7
+
 %define PT_LOAD 1
 %define PF_X 1
 %define PF_W 2
 %define PF_R 4
-
-; Program consts
-%define NULL 0
-%define STD_OUTPUT_HANDLE -11
-%define stdout 1
 
 %macro number_ascii 1
     db %1 >= 10000 ? ((%1 / 10000) % 10) + 0x30 : ' '
@@ -121,45 +138,45 @@ _pe_header:
     dd 0                        ; PointerToSymbolTable
     dd 0                        ; NumberOfSymbols
     dw _pe_optional_header_size ; SizeOfOptionalHeader
-    dw 0x030f                   ; Characteristics
+    dw IMAGE_FILE_RELOCS_STRIPPED | IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_LINE_NUMS_STRIPPED | IMAGE_FILE_LOCAL_SYMS_STRIPPED | IMAGE_FILE_LARGE_ADDRESS_AWARE | IMAGE_FILE_DEBUG_STRIPPED ; Characteristics
 
 _pe_optional_header:
-    dw 0x020b                 ; Magic
-    db 0                      ; MajorLinkerVersion
-    db 0                      ; MinorLinkerVersion
-    dd _section_text_raw_size ; SizeOfCode
-    dd _section_data_raw_size ; SizeOfInitializedData
-    dd 0                      ; SizeOfUninitializedData
-    dd _win32_start           ; AddressOfEntryPoint
-    dd _section_text          ; BaseOfCode
-    dq _pe_origin             ; ImageBase
-    dd _alignment             ; SectionAlignment
-    dd _alignment             ; FileAlignment
-    dw 4                      ; MajorOperatingSystemVersion
-    dw 0                      ; MinorOperatingSystemVersion
-    dw 0                      ; MajorImageVersion
-    dw 0                      ; MinorImageVersion
-    dw 4                      ; MajorSubsystemVersion
-    dw 0                      ; MinorSubsystemVersion
-    dd 0                      ; Win32VersionValue
+    dw 0x020b                      ; Magic
+    db 0                           ; MajorLinkerVersion
+    db 0                           ; MinorLinkerVersion
+    dd _section_text_raw_size      ; SizeOfCode
+    dd _section_data_raw_size      ; SizeOfInitializedData
+    dd 0                           ; SizeOfUninitializedData
+    dd _win32_start                ; AddressOfEntryPoint
+    dd _section_text               ; BaseOfCode
+    dq _pe_origin                  ; ImageBase
+    dd _alignment                  ; SectionAlignment
+    dd _alignment                  ; FileAlignment
+    dw 4                           ; MajorOperatingSystemVersion
+    dw 0                           ; MinorOperatingSystemVersion
+    dw 0                           ; MajorImageVersion
+    dw 0                           ; MinorImageVersion
+    dw 4                           ; MajorSubsystemVersion
+    dw 0                           ; MinorSubsystemVersion
+    dd 0                           ; Win32VersionValue
     dd _header_raw_size + _section_text_raw_size + _section_data_raw_size + _section_linkedit_raw_size ; SizeOfImage
-    dd _header_raw_size       ; SizeOfHeaders
-    dd 0                      ; CheckSum
-    dw 3                      ; Subsystem
-    dw 0                      ; DllCharacteristics
-    dq 0x100000               ; SizeOfStackReserve
-    dq 0x1000                 ; SizeOfStackCommit
-    dq 0x100000               ; SizeOfHeapReserve
-    dq 0x1000                 ; SizeOfHeapCommit
-    dd 0                      ; LoaderFlags
-    dd 16                     ; NumberOfRvaAndSizes
+    dd _header_raw_size            ; SizeOfHeaders
+    dd 0                           ; CheckSum
+    dw IMAGE_SUBSYSTEM_WINDOWS_CUI ; Subsystem
+    dw 0                           ; DllCharacteristics
+    dq 0x100000                    ; SizeOfStackReserve
+    dq 0x1000                      ; SizeOfStackCommit
+    dq 0x100000                    ; SizeOfHeapReserve
+    dq 0x1000                      ; SizeOfHeapCommit
+    dd 0                           ; LoaderFlags
+    dd 16                          ; NumberOfRvaAndSizes
 
     dd 0, 0
     dd _pe_import_table, _pe_import_table_size
     times 14 dd 0, 0
 _pe_optional_header_size equ $ - _pe_optional_header
 
-_pesections:
+_pe_sections:
     db '.text', 0, 0, 0       ; Name
     dd _section_text_size     ; VirtualSize
     dd _section_text          ; VirtualAddress
@@ -169,7 +186,7 @@ _pesections:
     dd 0                      ; PointerToLinenumbers
     dw 0                      ; NumberOfRelocations
     dw 0                      ; NumberOfLinenumbers
-    dd 0x60000020             ; Characteristics
+    dd IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE ; Characteristics
 
     db '.data', 0, 0, 0       ; Name
     dd _section_data_size     ; VirtualSize
@@ -180,25 +197,25 @@ _pesections:
     dd 0                      ; PointerToLinenumbers
     dw 0                      ; NumberOfRelocations
     dw 0                      ; NumberOfLinenumbers
-    dd 0xc0000040             ; Characteristics
+    dd IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE | IMAGE_SCN_CNT_INITIALIZED_DATA ; Characteristics
 
 ; ########################################################################################
 
     ; MACH-O x86_64 header
 _macho_x86_64_header:
-    dd MH_MAGIC_64            ; magic
-    dd CPU_TYPE_X86_64        ; cputype
-    dd CPU_SUBTYPE_X86_64_ALL ; cpusubtype
-    dd MH_EXECUTE             ; filetype
-    dd 4                      ; ncmds
+    dd MH_MAGIC_64                 ; magic
+    dd CPU_TYPE_X86_64             ; cputype
+    dd CPU_SUBTYPE_X86_64_ALL      ; cpusubtype
+    dd MH_EXECUTE                  ; filetype
+    dd 4                           ; ncmds
     dd _macho_x86_64_commands_size ; sizeofcmds
-    dd MH_NOUNDEFS | MH_PIE   ; flags
-    dd 0                      ; reserved
+    dd MH_NOUNDEFS | MH_PIE        ; flags
+    dd 0                           ; reserved
 
 _macho_x86_64_commands:
     _x86_64_cmd_page_zero:
         dd LC_SEGMENT_64                  ; cmd
-        dd _x86_64_cmd_page_zero_size        ; cmdsize
+        dd _x86_64_cmd_page_zero_size     ; cmdsize
         db '__PAGEZERO', 0, 0, 0, 0, 0, 0 ; segment name
         dq 0                              ; vm address
         dq _macho_origin                  ; vm size
@@ -237,7 +254,7 @@ _macho_x86_64_commands:
 
     _x86_64_cmd_section_data:
         dd LC_SEGMENT_64                          ; command
-        dd _x86_64_cmd_section_data_size             ; command size
+        dd _x86_64_cmd_section_data_size          ; command size
         db '__DATA', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
         dq _macho_origin + _section_data          ; vm address
         dq _section_data_raw_size                 ; vm size
@@ -262,7 +279,7 @@ _macho_x86_64_commands:
 
     _x86_64_cmd_unix_thread:
         dd LC_UNIXTHREAD                                    ; cmd
-        dd _x86_64_cmd_unix_thread_size                        ; cmdsize
+        dd _x86_64_cmd_unix_thread_size                     ; cmdsize
         dd x86_THREAD_STATE64                               ; flavour
         dd 42                                               ; count
         dq 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0           ; regs
@@ -287,7 +304,7 @@ _macho_arm64_header:
 _macho_arm64_commands:
     _arm64_cmd_page_zero:
         dd LC_SEGMENT_64                  ; cmd
-        dd _arm64_cmd_page_zero_size        ; cmdsize
+        dd _arm64_cmd_page_zero_size      ; cmdsize
         db '__PAGEZERO', 0, 0, 0, 0, 0, 0 ; segment name
         dq 0                              ; vm address
         dq _macho_origin                  ; vm size
@@ -326,7 +343,7 @@ _macho_arm64_commands:
 
     _arm64_cmd_section_data:
         dd LC_SEGMENT_64                          ; command
-        dd _arm64_cmd_section_data_size             ; command size
+        dd _arm64_cmd_section_data_size           ; command size
         db '__DATA', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
         dq _macho_origin + _section_data          ; vm address
         dq _section_data_raw_size                 ; vm size
@@ -409,13 +426,13 @@ _macho_arm64_commands_size equ $ - _macho_arm64_commands
     ; ELF x86_64 header
 _elf_x86_64_header:
     db 0x7f, 'ELF'                       ; e_ident[EI_MAG]
-    db 2                                 ; e_ident[EI_CLASS]
-    db 1                                 ; e_ident[EI_DATA]
+    db ELF_CLASS_64                      ; e_ident[EI_CLASS]
+    db ELF_DATA_LITTLE_ENDIAN            ; e_ident[EI_DATA]
     db 1                                 ; e_ident[EI_VERSION]
     db 0                                 ; e_ident[EI_OSABI]
     dq 0                                 ; e_ident[EI_ABIVERSION]
-    dw 2                                 ; e_type
-    dw 0x3e                              ; e_machine
+    dw ELF_TYPE_EXECUTE                  ; e_type
+    dw ELF_MACHINE_X86_64                ; e_machine
     dd 1                                 ; e_version
     dq _elf_origin + _linux_start        ; e_entry
     dq _elf_program_header - _elf_x86_64_header ; e_phoff
@@ -432,13 +449,13 @@ _elf_x86_64_header_size equ $ - _elf_x86_64_header
     ; ELF arm64 header
 _elf_arm64_header:
     db 0x7f, 'ELF'                       ; e_ident[EI_MAG]
-    db 2                                 ; e_ident[EI_CLASS]
-    db 1                                 ; e_ident[EI_DATA]
+    db ELF_CLASS_64                      ; e_ident[EI_CLASS]
+    db ELF_DATA_LITTLE_ENDIAN            ; e_ident[EI_DATA]
     db 1                                 ; e_ident[EI_VERSION]
     db 0                                 ; e_ident[EI_OSABI]
     dq 0                                 ; e_ident[EI_ABIVERSION]
-    dw 2                                 ; e_type
-    dw 0xb7                              ; e_machine
+    dw ELF_TYPE_EXECUTE                  ; e_type
+    dw ELF_MACHINE_AARCH64               ; e_machine
     dd 1                                 ; e_version
     dq _elf_origin + _arm64_linux_start  ; e_entry
     dq _elf_program_header - _elf_arm64_header ; e_phoff

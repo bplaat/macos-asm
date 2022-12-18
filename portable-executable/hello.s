@@ -23,6 +23,10 @@
 %include 'libportable.s'
 %include 'libarm64.s'
 
+%define NULL 0
+%define STD_OUTPUT_HANDLE -11
+%define stdout 1
+
 header
 
 section_text
