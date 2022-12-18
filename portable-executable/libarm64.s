@@ -9,6 +9,7 @@
 %define x5 5
 %define x6 6
 %define x7 7
+%define x8 8
 %define x16 16
 
 %macro arm64_mov 2

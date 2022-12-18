@@ -45,7 +45,7 @@
 %macro header 0
     _pe_origin equ 0x0000000000400000
     _macho_origin equ 0x0000000100000000
-    _elf_origin equ 0x0000000100000000
+    _elf_origin equ 0x0000000000400000
     _alignment equ 0x4000
 
     bits 64
@@ -77,7 +77,11 @@ _shell_script:
         db `exec "$0" "$@"\n`
     db `fi\n`
     db `if [ "$(uname -s)" = Linux ]; then\n`
-        db `dd if="$0" of="$0" bs=1 skip=2816 count=13568 conv=notrunc 2> /dev/null\n`
+        db `if [ "$(uname -m)" = aarch64 ]; then\n`
+            db `dd if="$0" of="$0" bs=1 skip=3072 count=13312 conv=notrunc 2> /dev/null\n`
+        db `else\n`
+            db `dd if="$0" of="$0" bs=1 skip=2816 count=13568 conv=notrunc 2> /dev/null\n`
+        db `fi\n`
         db `exec "$0" "$@"\n`
     db `fi\n`
     db `exit 1\n`
@@ -385,8 +389,8 @@ _macho_arm64_commands_size equ $ - _macho_arm64_commands
 
 ; ########################################################################################
 
-    ; ELF header
-_elf_header:
+    ; ELF x86_64 header
+_elf_x86_64_header:
     db 0x7f, 'ELF'                       ; e_ident[EI_MAG]
     db 2                                 ; e_ident[EI_CLASS]
     db 1                                 ; e_ident[EI_DATA]
@@ -397,18 +401,18 @@ _elf_header:
     dw 0x3e                              ; e_machine
     dd 1                                 ; e_version
     dq _elf_origin + _linux_start        ; e_entry
-    dq _elf_program_header - _elf_header ; e_phoff
+    dq _elf_x86_64_program_header - _elf_x86_64_header ; e_phoff
     dq 0                                 ; e_shoff
     dd 0                                 ; e_flags
-    dw _elf_header_size                  ; e_ehsize
-    dw _elf_program_entry_size           ; e_phentsize
+    dw _elf_x86_64_header_size           ; e_ehsize
+    dw _elf_x86_64_program_entry_size    ; e_phentsize
     dw 2                                 ; e_phnum
     dw 0                                 ; e_shentsize
     dw 0                                 ; e_shnum
     dw 0                                 ; e_shstrndx
-_elf_header_size equ $ - _elf_header
+_elf_x86_64_header_size equ $ - _elf_x86_64_header
 
-_elf_program_header:
+_elf_x86_64_program_header:
     dd PT_LOAD                     ; p_type
     dd PF_R | PF_X                 ; p_flags
     dq _section_text               ; p_offset
@@ -417,7 +421,54 @@ _elf_program_header:
     dq _section_text_raw_size      ; p_filesz
     dq _section_text_raw_size      ; p_memsz
     dq _alignment                  ; p_align
-_elf_program_entry_size equ $ - _elf_program_header
+_elf_x86_64_program_entry_size equ $ - _elf_x86_64_program_header
+
+    dd PT_LOAD                     ; p_type
+    dd PF_R | PF_W                 ; p_flags
+    dq _section_data               ; p_offset
+    dq _elf_origin + _section_data ; p_vaddr
+    dq _elf_origin + _section_data ; p_paddr
+    dq _section_data_raw_size      ; p_filesz
+    dq _section_data_raw_size      ; p_memsz
+    dq _alignment                  ; p_align
+
+    align 0x100, db 0
+
+; ########################################################################################
+
+    ; ELF arm64 header
+_elf_arm64_header:
+    db 0x7f, 'ELF'                       ; e_ident[EI_MAG]
+    db 2                                 ; e_ident[EI_CLASS]
+    db 1                                 ; e_ident[EI_DATA]
+    db 1                                 ; e_ident[EI_VERSION]
+    db 0                                 ; e_ident[EI_OSABI]
+    dq 0                                 ; e_ident[EI_ABIVERSION]
+    dw 2                                 ; e_type
+    dw 0xb7                              ; e_machine
+    dd 1                                 ; e_version
+    dq _elf_origin + _arm64_linux_start  ; e_entry
+    dq _elf_arm64_program_header - _elf_arm64_header ; e_phoff
+    dq 0                                 ; e_shoff
+    dd 0                                 ; e_flags
+    dw _elf_arm64_header_size            ; e_ehsize
+    dw _elf_arm64_program_entry_size     ; e_phentsize
+    dw 2                                 ; e_phnum
+    dw 0                                 ; e_shentsize
+    dw 0                                 ; e_shnum
+    dw 0                                 ; e_shstrndx
+_elf_arm64_header_size equ $ - _elf_arm64_header
+
+_elf_arm64_program_header:
+    dd PT_LOAD                     ; p_type
+    dd PF_R | PF_X                 ; p_flags
+    dq _section_text               ; p_offset
+    dq _elf_origin + _section_text ; p_vaddr
+    dq _elf_origin + _section_text ; p_paddr
+    dq _section_text_raw_size      ; p_filesz
+    dq _section_text_raw_size      ; p_memsz
+    dq _alignment                  ; p_align
+_elf_arm64_program_entry_size equ $ - _elf_arm64_program_header
 
     dd PT_LOAD                     ; p_type
     dd PF_R | PF_W                 ; p_flags

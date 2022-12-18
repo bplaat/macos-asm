@@ -9,16 +9,15 @@
 ; Supports:
 ; - windows x86_64, MS-DOS (stub)
 ; - macos x86_64, arm64
-; - linux x86_64
+; - linux x86_64, arm64
 ;
 ; Build instructions:
 ; - windows: nasm -f bin hello.s -o hello.com && ./hello.com
 ; - macos: nasm -f bin hello.s -o hello.com && chmod +x hello.com && sh ./hello.com
-; - linux: nasm -f bin hello.s -o hello.com && chmod +x hello.com && ./hello.com
+; - linux: nasm -f bin hello.s -o hello.com && chmod +x hello.com && sh ./hello.com
 ;
 ; TODO items:
 ; - A sections and so section names to the Linux header so that `objdump -S` works
-; - Add linux arm64 support
 ; - Do macOS codesign without codesign command on first run
 
 %include 'libportable.s'
@@ -166,18 +165,37 @@ _arm64_macos_start:
     arm64_mov x2, x0
     arm64_adr x1, message
     arm64_mov_imm x0, stdout
-    arm64_mov_imm x16, 4
+    arm64_mov_imm x16, 4 ; write
     arm64_svc 0x80
 
     arm64_mov_imm x2, 1
     arm64_adr x1, newline
     arm64_mov_imm x0, stdout
-    arm64_mov_imm x16, 4
+    arm64_mov_imm x16, 4 ; write
     arm64_svc 0x80
 
     arm64_mov_imm x0, 0
-    arm64_mov_imm x16, 1
+    arm64_mov_imm x16, 1 ; exit
     arm64_svc 0x80
+
+_arm64_linux_start:
+    arm64_adr x0, message
+    arm64_bl arm64_strlen
+    arm64_mov x2, x0
+    arm64_adr x1, message
+    arm64_mov_imm x0, stdout
+    arm64_mov_imm x8, 64 ; write
+    arm64_svc 0x0
+
+    arm64_mov_imm x2, 1
+    arm64_adr x1, newline
+    arm64_mov_imm x0, stdout
+    arm64_mov_imm x8, 64 ; write
+    arm64_svc 0x0
+
+    arm64_mov_imm x0, 0
+    arm64_mov_imm x8, 93 ; exit
+    arm64_svc 0x0
 
 arm64_strlen:
     arm64_mov x1, x0
