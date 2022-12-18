@@ -43,10 +43,10 @@
 %define stdout 1
 
 %macro number_ascii 1
-    db ((%1 / 10000) % 10) + 0x30
-    db ((%1 / 1000) % 10) + 0x30
-    db ((%1 / 100) % 10) + 0x30
-    db ((%1 / 10) % 10) + 0x30
+    db %1 >= 10000 ? ((%1 / 10000) % 10) + 0x30 : ' '
+    db %1 >= 1000 ? ((%1 / 1000) % 10) + 0x30 : ' '
+    db %1 >= 100 ? ((%1 / 100) % 10) + 0x30 : ' '
+    db %1 >= 10 ? ((%1 / 10) % 10) + 0x30 : ' '
     db (%1 % 10) + 0x30
 %endmacro
 
@@ -77,34 +77,34 @@ _shell_script:
     db `\n'\n`
     db `if [ "$(uname -s)" = Darwin ]; then\n`
         db `if [ "$(arch)" = arm64 ]; then\n`
-            db `dd if="$0" of="$0" bs=1 skip=`
+            db `dd if="$0" of="$0" bs=1 skip="`
             number_ascii (_macho_arm64_header - _header)
-            db ` count=`
+            db `" count="`
             number_ascii _alignment
-            db ` conv=notrunc 2> /dev/null\n`
+            db `" conv=notrunc 2> /dev/null\n`
             db `codesign -s - "$0"\n`
         db `else\n`
-            db `dd if="$0" of="$0" bs=1 skip=`
+            db `dd if="$0" of="$0" bs=1 skip="`
             number_ascii (_macho_x86_64_header - _header)
-            db ` count=`
+            db `" count="`
             number_ascii _alignment
-            db ` conv=notrunc 2> /dev/null\n`
+            db `" conv=notrunc 2> /dev/null\n`
         db `fi\n`
         db `exec "$0" "$@"\n`
     db `fi\n`
     db `if [ "$(uname -s)" = Linux ]; then\n`
         db `if [ "$(uname -m)" = aarch64 ]; then\n`
-            db `dd if="$0" of="$0" bs=1 skip=`
+            db `dd if="$0" of="$0" bs=1 skip="`
             number_ascii (_elf_arm64_header - _header)
-            db ` count=`
+            db `" count="`
             number_ascii _alignment
-            db ` conv=notrunc 2> /dev/null\n`
+            db `" conv=notrunc 2> /dev/null\n`
         db `else\n`
-            db `dd if="$0" of="$0" bs=1 skip=`
+            db `dd if="$0" of="$0" bs=1 skip="`
             number_ascii (_elf_x86_64_header - _header)
-            db ` count=`
+            db `" count="`
             number_ascii _alignment
-            db ` conv=notrunc 2> /dev/null\n`
+            db `" conv=notrunc 2> /dev/null\n`
         db `fi\n`
         db `exec "$0" "$@"\n`
     db `fi\n`
