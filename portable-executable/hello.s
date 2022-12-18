@@ -56,16 +56,16 @@ win32_print:
     mov rsi, qword [rbp - 8]
 
     mov rdi, STD_OUTPUT_HANDLE
-    call @GetStdHandle
+    call GetStdHandle
     mov rdi, rax
 
-    call @WriteConsoleA
+    call WriteConsoleA
 
     leave
     ret
 
 win32_exit:
-    jmp @ExitProcess
+    jmp ExitProcess
 
 ; macOS code
 _macos_start:
@@ -136,28 +136,9 @@ println:
     ret
 
 ; Win32 stubs
-@ExitProcess:
-    sub rsp, 32
-    mov rcx, rdi
-    jmp [rel ExitProcess]
-
-@GetStdHandle:
-    sub rsp, 32
-    mov rcx, rdi
-    call [rel GetStdHandle]
-    add rsp, 32
-    ret
-
-@WriteConsoleA:
-    sub rsp, 48
-    mov qword [rsp + 4 * 8], r8
-    mov r9, rcx
-    mov r8, rdx
-    mov rdx, rsi
-    mov rcx, rdi
-    call [rel WriteConsoleA]
-    add rsp, 48
-    ret
+ms_abi_stub ExitProcess, 1
+ms_abi_stub GetStdHandle, 1
+ms_abi_stub WriteConsoleA, 5
 
 ; ########################################################################################
 
@@ -228,22 +209,14 @@ message db `Hello World!`, 0
 align 4, db 0
 newline db `\n`, 0
 
-_pe_import_table:
-    dd 0, 0, 0, kernel32_name, kernel32_table
-    dd 0, 0, 0, 0, 0
+import_table
+    library kernel32_table, 'KERNEL32.dll'
 
-kernel32_table:
-    ExitProcess dq _ExitProcess
-    GetStdHandle dq _GetStdHandle
-    WriteConsoleA dq _WriteConsoleA
-    dq 0
-
-    kernel32_name db 'KERNEL32.DLL', 0
-    _ExitProcess db 0, 0, 'ExitProcess', 0
-    _GetStdHandle db 0, 0, 'GetStdHandle', 0
-    _WriteConsoleA db 0, 0, 'WriteConsoleA', 0
-
-_pe_import_table_size equ $ - _pe_import_table
+    import kernel32_table, \
+        @ExitProcess, 'ExitProcess', \
+        @GetStdHandle, 'GetStdHandle', \
+        @WriteConsoleA, 'WriteConsoleA'
+end_import_table
 
 end_section_data
 

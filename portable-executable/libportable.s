@@ -504,6 +504,32 @@ _section_text_size equ $ - _section_text
 _section_text_raw_size equ $ - _section_text
 %endmacro
 
+%macro ms_abi_stub 2
+%1:
+    sub rsp, (((%2 > 4 ? %2 : 4) * 8) + 15) & (~15)
+    %if %2 >= 6
+        mov qword [rsp + 5 * 8], r9
+    %endif
+    %if %2 >= 5
+        mov qword [rsp + 4 * 8], r8
+    %endif
+    %if %2 >= 4
+        mov r9, rcx
+    %endif
+    %if %2 >= 3
+        mov r8, rdx
+    %endif
+    %if %2 >= 2
+        mov rdx, rsi
+    %endif
+    %if %2 >= 1
+        mov rcx, rdi
+    %endif
+    call [rel @%1]
+    add rsp, (((%2 > 4 ? %2 : 4) * 8) + 15) & (~15)
+    ret
+%endmacro
+
 %macro section_data 0
 _section_data:
 %endmacro
@@ -511,6 +537,42 @@ _section_data:
 _section_data_size equ $ - _section_data
     align _alignment, db 0
 _section_data_raw_size equ $ - _section_data
+%endmacro
+
+%macro import_table 0
+_pe_import_table:
+%endmacro
+%macro end_import_table 0
+_pe_import_table_size equ $ - _pe_import_table
+%endmacro
+
+%macro library 2-*
+    %rep %0 / 2
+        dd 0, 0, 0, _%1, %1
+        %rotate 2
+    %endrep
+    dd 0, 0, 0, 0, 0
+
+    %rep %0 / 2
+        _%1 db %2, 0
+        %rotate 2
+    %endrep
+%endmacro
+
+%macro import 3-*
+%1:
+    %rotate 1
+    %rep (%0 - 1) / 2
+        %1 dq _%1
+        %rotate 2
+    %endrep
+    dq 0
+
+    %rotate 1
+    %rep (%0 - 1) / 2
+        _%1 db 0, 0, %2, 0
+        %rotate 2
+    %endrep
 %endmacro
 
 %macro footer 0
