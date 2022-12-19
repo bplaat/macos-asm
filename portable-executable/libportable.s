@@ -31,7 +31,6 @@
 %define LC_REQ_DYLD 0x80000000
 %define LC_SEGMENT_64 0x19
 %define LC_SYMTAB 0x02
-%define LC_UNIXTHREAD 0x05
 %define LC_DYSYMTAB 0x0b
 %define LC_LOAD_DYLIB 0xc
 %define LC_LOAD_DYLINKER 0xe
@@ -45,7 +44,6 @@
 %define S_REGULAR 0x00000000
 %define S_ATTR_PURE_INSTRUCTIONS 0x80000000
 %define S_ATTR_SOME_INSTRUCTIONS 0x00000400
-%define x86_THREAD_STATE64 0x4
 
 ; ELF consts
 %define ELF_CLASS_64 2
@@ -155,6 +153,7 @@ _shell_script:
 
     ; Just fail
     db `exit 1\n`
+    align 8, db 0
 
 ; ########################################################################################
 
@@ -232,14 +231,14 @@ _pe_sections:
 
     ; MACH-O x86_64 header
 _macho_x86_64_header:
-    dd MH_MAGIC_64                 ; magic
-    dd CPU_TYPE_X86_64             ; cputype
-    dd CPU_SUBTYPE_X86_64_ALL      ; cpusubtype
-    dd MH_EXECUTE                  ; filetype
-    dd 4                           ; ncmds
-    dd _macho_x86_64_commands_size ; sizeofcmds
-    dd MH_NOUNDEFS | MH_PIE        ; flags
-    dd 0                           ; reserved
+    dd MH_MAGIC_64                        ; magic
+    dd CPU_TYPE_X86_64                    ; cputype
+    dd CPU_SUBTYPE_X86_64_ALL             ; cpusubtype
+    dd MH_EXECUTE                         ; filetype
+    dd 9                                  ; ncmds
+    dd _macho_x86_64_commands_size        ; sizeofcmds
+    dd MH_NOUNDEFS | MH_DYLDLINK | MH_PIE ; flags
+    dd 0                                  ; reserved
 
 _macho_x86_64_commands:
     _x86_64_cmd_page_zero:
@@ -306,15 +305,59 @@ _macho_x86_64_commands:
         times 3 dd 0                              ; reserved
     _x86_64_cmd_section_data_size equ $ - _x86_64_cmd_section_data
 
-    _x86_64_cmd_unix_thread:
-        dd LC_UNIXTHREAD                                    ; cmd
-        dd _x86_64_cmd_unix_thread_size                     ; cmdsize
-        dd x86_THREAD_STATE64                               ; flavour
-        dd 42                                               ; count
-        dq 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0           ; regs
-        dq 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0           ; ...
-        dq _macho_origin + _macos_start, 0x0, 0x0, 0x0, 0x0 ; rip, ...
-    _x86_64_cmd_unix_thread_size equ $ - _x86_64_cmd_unix_thread
+    _x86_64_cmd_section_linkedit:
+        dd LC_SEGMENT_64                     ; command
+        dd _x86_64_cmd_section_linkedit_size ; command size
+        db "__LINKEDIT", 0, 0, 0, 0, 0, 0    ; segment name
+        dq _macho_origin + _section_linkedit ; vm address
+        dq _section_linkedit_raw_size        ; vm size
+        dq _section_linkedit                 ; file offset
+        dq _section_linkedit_raw_size        ; file size
+        dd VM_PROT_READ                      ; maximum protection
+        dd VM_PROT_READ                      ; initial protection
+        dd 0                                 ; number of sections
+        dd 0x0                               ; flags
+    _x86_64_cmd_section_linkedit_size equ $ - _x86_64_cmd_section_linkedit
+
+    _x86_64_cmd_symtab:
+        dd LC_SYMTAB               ; command
+        dd _x86_64_cmd_symtab_size ; command size
+        times 4 dd 0               ; ?
+    _x86_64_cmd_symtab_size equ $ - _x86_64_cmd_symtab
+
+    _x86_64_cmd_dysymtab:
+        dd LC_DYSYMTAB               ; command
+        dd _x86_64_cmd_dysymtab_size ; command size
+        times 18 dd 0                ; ?
+    _x86_64_cmd_dysymtab_size equ $ - _x86_64_cmd_dysymtab
+
+    _x86_64_cmd_load_dylinker:
+        dd LC_LOAD_DYLINKER               ; command
+        dd _x86_64_cmd_load_dylinker_size ; command size
+        dd _x86_64_cmd_load_dylinker_str - _x86_64_cmd_load_dylinker ; string offset
+    _x86_64_cmd_load_dylinker_str:
+        db '/usr/lib/dyld', 0
+        align 8, db 0
+    _x86_64_cmd_load_dylinker_size equ $ - _x86_64_cmd_load_dylinker
+
+    _x86_64_cmd_load_libsystem:
+        dd LC_LOAD_DYLIB                   ; command
+        dd _x86_64_cmd_load_libsystem_size ; command size
+        dd _x86_64_cmd_load_libsystem_str - _x86_64_cmd_load_libsystem ; string offset
+        dd 0                               ; timestamp
+        dw 0, 1                            ; current version
+        dw 0, 1                            ; compatibility version
+    _x86_64_cmd_load_libsystem_str:
+        db '/usr/lib/libSystem.B.dylib', 0
+        align 8, db 0
+    _x86_64_cmd_load_libsystem_size equ $ - _x86_64_cmd_load_libsystem
+
+    _x86_64_cmd_main:
+        dd LC_MAIN               ; command
+        dd _x86_64_cmd_main_size ; command size
+        dq _macos_start          ; entry point offset
+        dq 0                     ; init stack size
+    _x86_64_cmd_main_size equ $ - _x86_64_cmd_main
 _macho_x86_64_commands_size equ $ - _macho_x86_64_commands
 
 ; ########################################################################################
@@ -425,9 +468,9 @@ _macho_arm64_commands:
     _arm64_cmd_load_dylinker:
         dd LC_LOAD_DYLINKER              ; command
         dd _arm64_cmd_load_dylinker_size ; command size
-        dd _arm64_cmd_load_dylinker_str - _arm64_cmd_load_dylinker ; string offet
+        dd _arm64_cmd_load_dylinker_str - _arm64_cmd_load_dylinker ; string offset
     _arm64_cmd_load_dylinker_str:
-        db '/usr/lib/dyld'
+        db '/usr/lib/dyld', 0
         align 8, db 0
     _arm64_cmd_load_dylinker_size equ $ - _arm64_cmd_load_dylinker
 
