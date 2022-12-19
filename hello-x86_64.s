@@ -162,9 +162,9 @@ commands:
     load_dylinker:
         dd LC_LOAD_DYLINKER                  ; command
         dd load_dylinker_end - load_dylinker ; command size
-        dd load_dylinker_str - load_dylinker ; string offet
+        dd load_dylinker_str - load_dylinker ; string offset
     load_dylinker_str:
-        db '/usr/lib/dyld'
+        db '/usr/lib/dyld', 0
         align 8, db 0
     load_dylinker_end:
 
