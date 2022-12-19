@@ -17,7 +17,6 @@
 ; - linux: nasm -f bin hello.s -o hello.com && chmod +x hello.com && sh ./hello.com
 ;
 ; TODO items:
-; - A sections and so section names to the Linux header so that `objdump -S` works
 ; - Do macOS codesign without codesign command on first run
 
 %include 'libportable.s'

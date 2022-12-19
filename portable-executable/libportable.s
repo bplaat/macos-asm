@@ -59,6 +59,13 @@
 %define PF_W 2
 %define PF_R 4
 
+%define SHT_NULL 0
+%define SHT_PROGBITS 1
+%define SHT_STRTAB 3
+%define SHF_WRITE 0x01
+%define SHF_ALLOC 0x02
+%define SHF_EXECINSTR 0x04
+
 %macro number_ascii 1
     db %1 >= 10000 ? ((%1 / 10000) % 10) + 0x30 : ' '
     db %1 >= 1000 ? ((%1 / 1000) % 10) + 0x30 : ' '
@@ -436,14 +443,14 @@ _elf_x86_64_header:
     dd 1                                 ; e_version
     dq _elf_origin + _linux_start        ; e_entry
     dq _elf_program_header - _elf_x86_64_header ; e_phoff
-    dq 0                                 ; e_shoff
+    dq _elf_section_header - _elf_x86_64_header ; e_shoff
     dd 0                                 ; e_flags
     dw _elf_x86_64_header_size           ; e_ehsize
     dw _elf_program_entry_size           ; e_phentsize
     dw 2                                 ; e_phnum
-    dw 0                                 ; e_shentsize
-    dw 0                                 ; e_shnum
-    dw 0                                 ; e_shstrndx
+    dw _elf_section_entry_size           ; e_shentsize
+    dw 4                                 ; e_shnum
+    dw 3                                 ; e_shstrndx
 _elf_x86_64_header_size equ $ - _elf_x86_64_header
 
     ; ELF arm64 header
@@ -459,14 +466,14 @@ _elf_arm64_header:
     dd 1                                 ; e_version
     dq _elf_origin + _arm64_linux_start  ; e_entry
     dq _elf_program_header - _elf_arm64_header ; e_phoff
-    dq 0                                 ; e_shoff
+    dq _elf_section_header - _elf_arm64_header ; e_shoff
     dd 0                                 ; e_flags
     dw _elf_arm64_header_size            ; e_ehsize
     dw _elf_program_entry_size           ; e_phentsize
     dw 2                                 ; e_phnum
-    dw 0                                 ; e_shentsize
-    dw 0                                 ; e_shnum
-    dw 0                                 ; e_shstrndx
+    dw _elf_section_entry_size           ; e_shentsize
+    dw 4                                 ; e_shnum
+    dw 3                                 ; e_shstrndx
 _elf_arm64_header_size equ $ - _elf_arm64_header
 
     ; Shared ELF program header
@@ -489,6 +496,53 @@ _elf_program_entry_size equ $ - _elf_program_header
     dq _section_data_raw_size      ; p_filesz
     dq _section_data_raw_size      ; p_memsz
     dq _alignment                  ; p_align
+
+    ; Shared ELF section header
+_elf_section_header:
+    dd _elf_null_name - _elf_section_names ; sh_name
+    dd SHT_NULL ; sh_type
+    dq 0        ; sh_flags
+    dq 0        ; sh_addr
+    dq 0        ; sh_offset
+    dq 0        ; sh_size
+    dd 0        ; sh_link
+    dd 0        ; sh_info
+    dq 0        ; sh_addralign
+    dq 0        ; sh_entsize
+_elf_section_entry_size equ $ - _elf_section_header
+
+    dd _elf_text_name - _elf_section_names ; sh_name
+    dd SHT_PROGBITS                ; sh_type
+    dq SHF_ALLOC | SHF_EXECINSTR   ; sh_flags
+    dq _elf_origin + _section_text ; sh_addr
+    dq _section_text               ; sh_offset
+    dq _section_text_size          ; sh_size
+    dd 0                           ; sh_link
+    dd 0                           ; sh_info
+    dq _alignment                  ; sh_addralign
+    dq 0                           ; sh_entsize
+
+    dd _elf_data_name - _elf_section_names ; sh_name
+    dd SHT_PROGBITS                ; sh_type
+    dq SHF_ALLOC | SHF_WRITE       ; sh_flags
+    dq _elf_origin + _section_data ; sh_addr
+    dq _section_data               ; sh_offset
+    dq _section_data_size          ; sh_size
+    dd 0                           ; sh_link
+    dd 0                           ; sh_info
+    dq _alignment                  ; sh_addralign
+    dq 0                           ; sh_entsize
+
+    dd _elf_shstrtab_name - _elf_section_names ; sh_name
+    dd SHT_STRTAB              ; sh_type
+    dq 0                       ; sh_flags
+    dq 0                       ; sh_addr
+    dq _elf_section_names      ; sh_offset
+    dq _elf_section_names_size ; sh_size
+    dd 0                       ; sh_link
+    dd 0                       ; sh_info
+    dq 1                       ; sh_addralign
+    dq 0                       ; sh_entsize
 
 _header_size equ $ - _header
     align _alignment, db 0
@@ -535,6 +589,18 @@ _section_data:
 %endmacro
 %macro end_section_data 0
 _section_data_size equ $ - _section_data
+
+_elf_section_names:
+_elf_null_name:
+    db 0
+_elf_text_name:
+    db '.text', 0
+_elf_data_name:
+    db '.data', 0
+_elf_shstrtab_name:
+    db '.shstrtab', 0
+_elf_section_names_size equ $ - _elf_section_names
+
     align _alignment, db 0
 _section_data_raw_size equ $ - _section_data
 %endmacro
