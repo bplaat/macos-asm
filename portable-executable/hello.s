@@ -25,7 +25,7 @@
 %define STD_OUTPUT_HANDLE -11
 %define stdout 1
 
-header
+header HEADER_X86_64 | HEADER_ARM64
 
 section_text
 

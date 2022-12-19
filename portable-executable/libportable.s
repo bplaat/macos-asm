@@ -62,9 +62,9 @@
 %define SHT_NULL 0
 %define SHT_PROGBITS 1
 %define SHT_STRTAB 3
-%define SHF_WRITE 0x01
-%define SHF_ALLOC 0x02
-%define SHF_EXECINSTR 0x04
+%define SHF_WRITE 1
+%define SHF_ALLOC 2
+%define SHF_EXECINSTR 4
 
 %macro number_ascii 1
     db %1 >= 10000 ? ((%1 / 10000) % 10) + 0x30 : ' '
@@ -74,7 +74,10 @@
     db (%1 % 10) + 0x30
 %endmacro
 
-%macro header 0
+%define HEADER_X86_64 1
+%define HEADER_ARM64 2
+
+%macro header 1
     _pe_origin equ 0x0000000000400000
     _macho_origin equ 0x0000000100000000
     _elf_origin equ 0x0000000000400000
@@ -107,6 +110,7 @@ _shell_script:
 
     ; macOS
     db `if [ "$(uname -s)" = Darwin ]; then\n`
+        %if (%1 & HEADER_ARM64) != 0
         db `if [ "$(arch)" = arm64 ]; then\n`
             db `dd if="$0" of="$0" bs=1 skip="`
             number_ascii (_macho_arm64_header - _header)
@@ -115,17 +119,21 @@ _shell_script:
             db `" conv=notrunc 2> /dev/null\n`
             db `codesign -s - "$0"\n`
         db `else\n`
+        %endif
             db `dd if="$0" of="$0" bs=1 skip="`
             number_ascii (_macho_x86_64_header - _header)
             db `" count="`
             number_ascii _alignment
             db `" conv=notrunc 2> /dev/null\n`
+        %if (%1 & HEADER_ARM64) != 0
         db `fi\n`
+        %endif
         db `exec "$0" "$@"\n`
     db `fi\n`
 
     ; Linux
     db `if [ "$(uname -s)" = Linux ]; then\n`
+        %if (%1 & HEADER_ARM64) != 0
         db `if [ "$(uname -m)" = aarch64 ]; then\n`
             db `dd if="$0" of="$0" bs=1 skip="`
             number_ascii (_elf_arm64_header - _header)
@@ -133,12 +141,15 @@ _shell_script:
             number_ascii _alignment
             db `" conv=notrunc 2> /dev/null\n`
         db `else\n`
+        %endif
             db `dd if="$0" of="$0" bs=1 skip="`
             number_ascii (_elf_x86_64_header - _header)
             db `" count="`
             number_ascii _alignment
             db `" conv=notrunc 2> /dev/null\n`
+        %if (%1 & HEADER_ARM64) != 0
         db `fi\n`
+        %endif
         db `exec "$0" "$@"\n`
     db `fi\n`
 
@@ -308,6 +319,7 @@ _macho_x86_64_commands_size equ $ - _macho_x86_64_commands
 
 ; ########################################################################################
 
+%if (%1 & HEADER_ARM64) != 0
     ; MACH-O arm64 header
 _macho_arm64_header:
     dd MH_MAGIC_64                        ; magic
@@ -438,6 +450,7 @@ _macho_arm64_commands:
         dq 0                    ; init stack size
     _arm64_cmd_main_size equ $ - _arm64_cmd_main
 _macho_arm64_commands_size equ $ - _macho_arm64_commands
+%endif
 
 ; ########################################################################################
 
@@ -464,6 +477,7 @@ _elf_x86_64_header:
     dw 3                                 ; e_shstrndx
 _elf_x86_64_header_size equ $ - _elf_x86_64_header
 
+%if (%1 & HEADER_ARM64) != 0
     ; ELF arm64 header
 _elf_arm64_header:
     db 0x7f, 'ELF'                       ; e_ident[EI_MAG]
@@ -486,6 +500,7 @@ _elf_arm64_header:
     dw 4                                 ; e_shnum
     dw 3                                 ; e_shstrndx
 _elf_arm64_header_size equ $ - _elf_arm64_header
+%endif
 
     ; Shared ELF program header
 _elf_program_header:
