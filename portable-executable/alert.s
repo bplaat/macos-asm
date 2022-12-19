@@ -7,8 +7,8 @@
 ; - (TODO) linux x86_64
 ;
 ; Build instructions:
-; - windows: nasm -f bin hello.s -o hello.com && ./hello.com
-; - unix: nasm -f bin hello.s -o hello.com && chmod +x hello.com && sh ./hello.com
+; - windows: nasm -f bin alert.s -o alert.com && ./alert.com
+; - unix: nasm -f bin alert.s -o alert.com && chmod +x alert.com && sh ./alert.com
 
 %include 'libportable.s'
 
@@ -49,14 +49,14 @@ section_text
 
 ; Windows code
 _windows_start:
-    lea ecx, MB_OK
+    mov ecx, MB_OK
     lea rdx, [rel message_title]
     lea rsi, [rel message_text]
     mov edi, HWND_DESKTOP
-    call [rel MessageBoxA]
+    call MessageBoxA
 
-    xor edi, edi
-    jmp ExitProcess
+    mov edi, 0
+    call ExitProcess
 
 ms_abi_stub ExitProcess, 1
 ms_abi_stub MessageBoxA, 4

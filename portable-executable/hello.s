@@ -33,7 +33,7 @@ section_text
 _windows_start:
     lea rax, qword [rel windows_print]
     mov qword [rel print], rax
-    lea rax, qword [rel windows_exit]
+    lea rax, qword [rel ExitProcess]
     mov qword [rel exit], rax
     jmp _start
 
@@ -54,9 +54,6 @@ windows_print:
     call WriteConsoleA
     leave
     ret
-
-windows_exit:
-    jmp ExitProcess
 
 ms_abi_stub ExitProcess, 1
 ms_abi_stub GetStdHandle, 1
