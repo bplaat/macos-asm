@@ -34,6 +34,7 @@
 %define LC_DYSYMTAB 0x0b
 %define LC_LOAD_DYLIB 0xc
 %define LC_LOAD_DYLINKER 0xe
+%define LC_DYLD_INFO_ONLY (0x22 | LC_REQ_DYLD)
 %define LC_MAIN (0x28 | LC_REQ_DYLD)
 
 %define VM_PROT_NONE 0x0
@@ -44,6 +45,14 @@
 %define S_REGULAR 0x00000000
 %define S_ATTR_PURE_INSTRUCTIONS 0x80000000
 %define S_ATTR_SOME_INSTRUCTIONS 0x00000400
+
+%define BIND_TYPE_POINTER 1
+%define BIND_OPCODE_SET_DYLIB_ORDINAL_IMM 0x10
+%define BIND_OPCODE_SET_TYPE_IMM 0x50
+%define BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM 0x40
+%define BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB 0x72
+%define BIND_OPCODE_DO_BIND 0x90
+%define BIND_OPCODE_DONE 0x00
 
 ; ELF consts
 %define ELF_CLASS_64 2
@@ -175,7 +184,7 @@ _pe_optional_header:
     dd _section_text_raw_size      ; SizeOfCode
     dd _section_data_raw_size      ; SizeOfInitializedData
     dd 0                           ; SizeOfUninitializedData
-    dd _win32_start                ; AddressOfEntryPoint
+    dd _windows_start              ; AddressOfEntryPoint
     dd _section_text               ; BaseOfCode
     dq _pe_origin                  ; ImageBase
     dd _alignment                  ; SectionAlignment
@@ -235,7 +244,11 @@ _macho_x86_64_header:
     dd CPU_TYPE_X86_64                    ; cputype
     dd CPU_SUBTYPE_X86_64_ALL             ; cpusubtype
     dd MH_EXECUTE                         ; filetype
-    dd 9                                  ; ncmds
+    %ifdef _macho_bindings
+        dd 10                             ; ncmds
+    %else
+        dd 9                              ; ncmds
+    %endif
     dd _macho_x86_64_commands_size        ; sizeofcmds
     dd MH_NOUNDEFS | MH_DYLDLINK | MH_PIE ; flags
     dd 0                                  ; reserved
@@ -352,6 +365,17 @@ _macho_x86_64_commands:
         align 8, db 0
     _x86_64_cmd_load_libsystem_size equ $ - _x86_64_cmd_load_libsystem
 
+    %ifdef _macho_bindings
+        _x86_64_cmd_dyld_info:
+            dd LC_DYLD_INFO_ONLY          ; command
+            dd _x86_64_cmd_dyld_info_size ; command size
+            times 2 dd 0
+            dd _macho_bindings            ; bindings offset
+            dd _macho_bindings_size       ; bindings size
+            times 6 dd 0
+        _x86_64_cmd_dyld_info_size equ $ - _x86_64_cmd_dyld_info
+    %endif
+
     _x86_64_cmd_main:
         dd LC_MAIN               ; command
         dd _x86_64_cmd_main_size ; command size
@@ -369,7 +393,11 @@ _macho_arm64_header:
     dd CPU_TYPE_ARM64                     ; cputype
     dd CPU_SUBTYPE_ARM64_ALL              ; cpusubtype
     dd MH_EXECUTE                         ; filetype
-    dd 9                                  ; ncmds
+    %ifdef _macho_bindings
+        dd 10                             ; ncmds
+    %else
+        dd 9                              ; ncmds
+    %endif
     dd _macho_arm64_commands_size         ; sizeofcmds
     dd MH_NOUNDEFS | MH_DYLDLINK | MH_PIE ; flags
     dd 0                                  ; reserved
@@ -485,6 +513,17 @@ _macho_arm64_commands:
         db '/usr/lib/libSystem.B.dylib', 0
         align 8, db 0
     _arm64_cmd_load_libsystem_size equ $ - _arm64_cmd_load_libsystem
+
+    %ifdef _macho_bindings
+        _x86_64_cmd_dyld_info:
+            dd LC_DYLD_INFO_ONLY          ; command
+            dd _x86_64_cmd_dyld_info_size ; command size
+            times 2 dd 0
+            dd _macho_bindings            ; bindings offset
+            dd _macho_bindings_size       ; bindings size
+            times 6 dd 0
+        _x86_64_cmd_dyld_info_size equ $ - _x86_64_cmd_dyld_info
+    %endif
 
     _arm64_cmd_main:
         dd LC_MAIN              ; command
@@ -674,14 +713,14 @@ _elf_section_names_size equ $ - _elf_section_names
 _section_data_raw_size equ $ - _section_data
 %endmacro
 
-%macro import_table 0
+%macro pe_import_table 0
 _pe_import_table:
 %endmacro
-%macro end_import_table 0
+%macro end_pe_import_table 0
 _pe_import_table_size equ $ - _pe_import_table
 %endmacro
 
-%macro library 2-*
+%macro pe_library 2-*
     %rep %0 / 2
         dd 0, 0, 0, _%1, %1
         %rotate 2
@@ -694,7 +733,7 @@ _pe_import_table_size equ $ - _pe_import_table
     %endrep
 %endmacro
 
-%macro import 3-*
+%macro pe_import 3-*
 %1:
     %rotate 1
     %rep (%0 - 1) / 2
@@ -714,4 +753,20 @@ _pe_import_table_size equ $ - _pe_import_table
 _section_linkedit:
     times _alignment db 0
 _section_linkedit_raw_size equ $ - _section_linkedit
+%endmacro
+
+%macro section_linkedit 0
+_section_linkedit:
+%endmacro
+%macro end_section_linkedit 0
+_section_linkedit_size equ $ - _section_linkedit
+    align _alignment, db 0
+_section_linkedit_raw_size equ $ - _section_linkedit
+%endmacro
+
+%macro macho_bindings 0
+_macho_bindings:
+%endmacro
+%macro end_macho_bindings 0
+_macho_bindings_size equ $ - _macho_bindings
 %endmacro

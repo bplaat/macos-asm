@@ -283,7 +283,7 @@ _start:
     call objc_msgSend
 
     ; return 0;
-    xor rax, rax
+    xor eax, eax
     leave
     ret
 

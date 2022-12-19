@@ -30,14 +30,14 @@ header HEADER_X86_64 | HEADER_ARM64
 section_text
 
 ; Windows code
-_win32_start:
-    lea rax, qword [rel win32_print]
+_windows_start:
+    lea rax, qword [rel windows_print]
     mov qword [rel print], rax
-    lea rax, qword [rel win32_exit]
+    lea rax, qword [rel windows_exit]
     mov qword [rel exit], rax
     jmp _start
 
-win32_print:
+windows_print:
     push rbp
     mov rbp, rsp
     sub rsp, 16
@@ -55,7 +55,7 @@ win32_print:
     leave
     ret
 
-win32_exit:
+windows_exit:
     jmp ExitProcess
 
 ms_abi_stub ExitProcess, 1
@@ -245,14 +245,14 @@ message db `Hello World!`, 0
 align 4, db 0
 newline db `\n`, 0
 
-import_table
-    library kernel32_table, 'KERNEL32.dll'
+pe_import_table
+    pe_library kernel32_table, 'KERNEL32.dll'
 
-    import kernel32_table, \
+    pe_import kernel32_table, \
         ExitProcess, 'ExitProcess', \
         GetStdHandle, 'GetStdHandle', \
         WriteConsoleA, 'WriteConsoleA'
-end_import_table
+end_pe_import_table
 
 end_section_data
 
