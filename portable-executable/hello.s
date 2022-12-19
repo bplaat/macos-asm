@@ -13,8 +13,7 @@
 ;
 ; Build instructions:
 ; - windows: nasm -f bin hello.s -o hello.com && ./hello.com
-; - macos: nasm -f bin hello.s -o hello.com && chmod +x hello.com && sh ./hello.com
-; - linux: nasm -f bin hello.s -o hello.com && chmod +x hello.com && sh ./hello.com
+; - unix: nasm -f bin hello.s -o hello.com && chmod +x hello.com && sh ./hello.com
 ;
 ; TODO items:
 ; - Do macOS codesign without codesign command on first run

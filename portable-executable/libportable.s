@@ -99,6 +99,13 @@ _ms_dos_stub:
 
 _shell_script:
     db `\n'\n`
+
+    ; Msys
+    db `if [ "$(uname -o)" = Msys ]; then\n`
+        db `exec "$0" "$@"\n`
+    db `fi\n`
+
+    ; macOS
     db `if [ "$(uname -s)" = Darwin ]; then\n`
         db `if [ "$(arch)" = arm64 ]; then\n`
             db `dd if="$0" of="$0" bs=1 skip="`
@@ -116,6 +123,8 @@ _shell_script:
         db `fi\n`
         db `exec "$0" "$@"\n`
     db `fi\n`
+
+    ; Linux
     db `if [ "$(uname -s)" = Linux ]; then\n`
         db `if [ "$(uname -m)" = aarch64 ]; then\n`
             db `dd if="$0" of="$0" bs=1 skip="`
@@ -132,6 +141,8 @@ _shell_script:
         db `fi\n`
         db `exec "$0" "$@"\n`
     db `fi\n`
+
+    ; Just fail
     db `exit 1\n`
 
 ; ########################################################################################
