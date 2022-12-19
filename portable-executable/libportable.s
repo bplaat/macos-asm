@@ -81,6 +81,20 @@
     db (%1 % 10) + 0x30
 %endmacro
 
+%macro macho_library 2
+    ._cmd_load_%1:
+        dd LC_LOAD_DYLIB                     ; command
+        dd ._cmd_load_%1_size                ; command size
+        dd ._cmd_load_%1_str - ._cmd_load_%1 ; string offset
+        dd 0                                 ; timestamp
+        dw 0, 1                              ; current version
+        dw 0, 1                              ; compatibility version
+    ._cmd_load_%1_str:
+        db %2, 0
+        align 8, db 0
+    ._cmd_load_%1_size equ $ - ._cmd_load_%1
+%endmacro
+
 %define HEADER_X86_64 1
 %define HEADER_ARM64 2
 
@@ -244,10 +258,18 @@ _macho_x86_64_header:
     dd CPU_TYPE_X86_64                    ; cputype
     dd CPU_SUBTYPE_X86_64_ALL             ; cpusubtype
     dd MH_EXECUTE                         ; filetype
-    %ifdef _macho_bindings
-        dd 10                             ; ncmds
+    %ifmacro macho_bindings
+        %ifmacro macho_libraries
+            dd 9 + macho_libraries_count  ; ncmds
+        %else
+            dd 9 + 1                      ; ncmds
+        %endif
     %else
-        dd 9                              ; ncmds
+        %ifmacro macho_libraries
+            dd 8 + macho_libraries_count  ; ncmds
+        %else
+            dd 8 + 1                      ; ncmds
+        %endif
     %endif
     dd _macho_x86_64_commands_size        ; sizeofcmds
     dd MH_NOUNDEFS | MH_DYLDLINK | MH_PIE ; flags
@@ -353,19 +375,13 @@ _macho_x86_64_commands:
         align 8, db 0
     _x86_64_cmd_load_dylinker_size equ $ - _x86_64_cmd_load_dylinker
 
-    _x86_64_cmd_load_libsystem:
-        dd LC_LOAD_DYLIB                   ; command
-        dd _x86_64_cmd_load_libsystem_size ; command size
-        dd _x86_64_cmd_load_libsystem_str - _x86_64_cmd_load_libsystem ; string offset
-        dd 0                               ; timestamp
-        dw 0, 1                            ; current version
-        dw 0, 1                            ; compatibility version
-    _x86_64_cmd_load_libsystem_str:
-        db '/usr/lib/libSystem.B.dylib', 0
-        align 8, db 0
-    _x86_64_cmd_load_libsystem_size equ $ - _x86_64_cmd_load_libsystem
+    %ifmacro macho_libraries
+        macho_libraries
+    %else
+        macho_library libsystem, '/usr/lib/libSystem.B.dylib'
+    %endif
 
-    %ifdef _macho_bindings
+    %ifmacro macho_bindings
         _x86_64_cmd_dyld_info:
             dd LC_DYLD_INFO_ONLY          ; command
             dd _x86_64_cmd_dyld_info_size ; command size
@@ -393,10 +409,18 @@ _macho_arm64_header:
     dd CPU_TYPE_ARM64                     ; cputype
     dd CPU_SUBTYPE_ARM64_ALL              ; cpusubtype
     dd MH_EXECUTE                         ; filetype
-    %ifdef _macho_bindings
-        dd 10                             ; ncmds
+    %ifmacro macho_bindings
+        %ifmacro macho_libraries
+            dd 9 + macho_libraries_count  ; ncmds
+        %else
+            dd 9 + 1                      ; ncmds
+        %endif
     %else
-        dd 9                              ; ncmds
+        %ifmacro macho_libraries
+            dd 8 + macho_libraries_count  ; ncmds
+        %else
+            dd 8 + 1                      ; ncmds
+        %endif
     %endif
     dd _macho_arm64_commands_size         ; sizeofcmds
     dd MH_NOUNDEFS | MH_DYLDLINK | MH_PIE ; flags
@@ -502,27 +526,21 @@ _macho_arm64_commands:
         align 8, db 0
     _arm64_cmd_load_dylinker_size equ $ - _arm64_cmd_load_dylinker
 
-    _arm64_cmd_load_libsystem:
-        dd LC_LOAD_DYLIB                  ; command
-        dd _arm64_cmd_load_libsystem_size ; command size
-        dd _arm64_cmd_load_libsystem_str - _arm64_cmd_load_libsystem ; string offset
-        dd 0                              ; timestamp
-        dw 0, 1                           ; current version
-        dw 0, 1                           ; compatibility version
-    _arm64_cmd_load_libsystem_str:
-        db '/usr/lib/libSystem.B.dylib', 0
-        align 8, db 0
-    _arm64_cmd_load_libsystem_size equ $ - _arm64_cmd_load_libsystem
+    %ifmacro macho_libraries
+        macho_libraries
+    %else
+        macho_library libsystem, '/usr/lib/libSystem.B.dylib'
+    %endif
 
-    %ifdef _macho_bindings
-        _x86_64_cmd_dyld_info:
-            dd LC_DYLD_INFO_ONLY          ; command
-            dd _x86_64_cmd_dyld_info_size ; command size
+    %ifmacro macho_bindings
+        _arm64_cmd_dyld_info:
+            dd LC_DYLD_INFO_ONLY         ; command
+            dd _arm64_cmd_dyld_info_size ; command size
             times 2 dd 0
-            dd _macho_bindings            ; bindings offset
-            dd _macho_bindings_size       ; bindings size
+            dd _macho_bindings           ; bindings offset
+            dd _macho_bindings_size      ; bindings size
             times 6 dd 0
-        _x86_64_cmd_dyld_info_size equ $ - _x86_64_cmd_dyld_info
+        _arm64_cmd_dyld_info_size equ $ - _arm64_cmd_dyld_info
     %endif
 
     _arm64_cmd_main:
@@ -751,22 +769,13 @@ _pe_import_table_size equ $ - _pe_import_table
 
 %macro footer 0
 _section_linkedit:
+%ifmacro macho_bindings
+_macho_bindings:
+    macho_bindings
+_macho_bindings_size equ $ - _macho_bindings
+%else
+    db 0
+%endif
     times _alignment db 0
 _section_linkedit_raw_size equ $ - _section_linkedit
-%endmacro
-
-%macro section_linkedit 0
-_section_linkedit:
-%endmacro
-%macro end_section_linkedit 0
-_section_linkedit_size equ $ - _section_linkedit
-    align _alignment, db 0
-_section_linkedit_raw_size equ $ - _section_linkedit
-%endmacro
-
-%macro macho_bindings 0
-_macho_bindings:
-%endmacro
-%macro end_macho_bindings 0
-_macho_bindings_size equ $ - _macho_bindings
 %endmacro
