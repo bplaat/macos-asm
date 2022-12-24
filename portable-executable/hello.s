@@ -144,10 +144,10 @@ align 4, db 0
 _arm64_macos_start:
     arm64_adr x0, arm64_macos_print
     arm64_adr x1, print
-    dd 0xF9000020 ; str x0, [x1]
+    arm64_str x0, x1
     arm64_adr x0, arm64_macos_exit
     arm64_adr x1, exit
-    dd 0xF9000020 ; str x0, [x1]
+    arm64_str x0, x1
     arm64_b _arm64_start
 
 arm64_macos_print:
@@ -171,10 +171,10 @@ arm64_macos_exit:
 _arm64_linux_start:
     arm64_adr x0, arm64_linux_print
     arm64_adr x1, print
-    dd 0xF9000020 ; str x0, [x1]
+    arm64_str x0, x1
     arm64_adr x0, arm64_linux_exit
     arm64_adr x1, exit
-    dd 0xF9000020 ; str x0, [x1]
+    arm64_str x0, x1
     arm64_b _arm64_start
 
 arm64_linux_print:
@@ -201,7 +201,7 @@ _arm64_start:
 
     arm64_mov_imm x0, 0
     arm64_adr x8, exit
-    dd 0xF9400108 ; ldr x8, [x8]
+    arm64_ldr x8, x8
     arm64_blr x8
 
 arm64_strlen:
@@ -217,12 +217,12 @@ arm64_println:
     dd 0xF81F0FFE ; str x30, [sp, -16]!
 
     arm64_adr x8, print
-    dd 0xF9400108 ; ldr x8, [x8]
+    arm64_ldr x8, x8
     arm64_blr x8
 
     arm64_adr x0, newline
     arm64_adr x8, print
-    dd 0xF9400108 ; ldr x8, [x8]
+    arm64_ldr x8, x8
     arm64_blr x8
 
     dd 0xF84107FE ; ldr x30, [sp], 16

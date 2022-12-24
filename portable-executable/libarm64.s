@@ -31,8 +31,11 @@
 %define x27 27
 %define x28 28
 %define x29 29
+%define fp 29
 %define x30 30
+%define lr 30
 %define x31 31
+%define sp 31
 
 %macro arm64_mov 2
     dd 0xAA0003E0 | ((%2 & 31) << 16) | (%1 & 31))
@@ -40,6 +43,16 @@
 %macro arm64_mov_imm 2
     dd 0xD2800000 | ((%2 & 0xffff) << 5) | (%1 & 31))
 %endmacro
+%macro arm64_ldr 2
+    dd 0xF9400000 | ((%2 & 31) << 5) | (%1 & 31))
+%endmacro
+%macro arm64_str 2
+    dd 0xF9000000 | ((%2 & 31) << 5) | (%1 & 31))
+%endmacro
+%macro arm64_adr 2
+    dd 0x10000000 | ((((%2 - $) >> 2) << 5) | (%1 & 31))
+%endmacro
+
 %macro arm64_add 3
     dd 0x8B000000 | ((%3 & 31) << 16) | (%2 & 31) << 5) | (%1 & 31))
 %endmacro
@@ -52,9 +65,7 @@
 %macro arm64_sub_imm 3
     dd 0xD1000000 | (((%3 & 0x1fff) << 10) | (%2 & 31) << 5) | (%1 & 31))
 %endmacro
-%macro arm64_adr 2
-    dd 0x10000000 | ((((%2 - $) >> 2) << 5) | (%1 & 31))
-%endmacro
+
 %macro arm64_cbz 2
     dd 0xB4000000 | (((((%2 - $) >> 2) & 0x7ffff) << 5) | (%1 & 31))
 %endmacro
