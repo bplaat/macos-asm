@@ -2,6 +2,17 @@
 
 NSApplication *application;
 NSWindow *window;
+#define LABEL_SIZE 48
+NSText *label;
+
+@interface WindowDelegate : NSObject <NSWindowDelegate>
+@end
+
+@implementation WindowDelegate
+- (void)windowDidResize:(NSNotification *)notification {
+    [label setFrame:NSMakeRect(0, (NSHeight(window.frame) - LABEL_SIZE) / 2.f, NSWidth(window.frame), LABEL_SIZE)];
+}
+@end
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 @end
@@ -28,11 +39,25 @@ NSWindow *window;
         backing:NSBackingStoreBuffered
         defer:NO];
     window.title = @"BassieTest";
+    window.titlebarAppearsTransparent = YES;
     CGFloat windowX = (NSWidth(window.screen.frame) - NSWidth(window.frame)) / 2;
     CGFloat windowY = (NSHeight(window.screen.frame) - NSHeight(window.frame)) / 2;
     [window setFrame:NSMakeRect(windowX, windowY, NSWidth(window.frame), NSHeight(window.frame)) display:YES];
     window.minSize = NSMakeSize(320, 240);
-    window.backgroundColor = [NSColor colorWithRed:0 green:0.5 blue:0.5 alpha:1];
+    window.backgroundColor = [NSColor colorWithRed:(0x05 / 255.f) green:(0x44 / 255.f) blue:(0x5e / 255.f) alpha:1];
+    WindowDelegate *delegate = [[WindowDelegate alloc] init];
+    [window setDelegate:delegate];
+
+    // Create label
+    label = [[NSText alloc] initWithFrame:NSMakeRect(0, (NSHeight(window.frame) - LABEL_SIZE) / 2.f, NSWidth(window.frame), LABEL_SIZE)];
+    label.string = @"Hello macOS!";
+    label.font = [NSFont systemFontOfSize:LABEL_SIZE];
+    label.alignment = NSTextAlignmentCenter;
+    label.editable = NO;
+    label.selectable = NO;
+    label.drawsBackground = NO;
+    [window.contentView addSubview:label];
+
     [window makeKeyAndOrderFront:nil];
 }
 
