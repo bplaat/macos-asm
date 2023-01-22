@@ -94,8 +94,7 @@ void applicationDidFinishLaunching(id self, SEL cmd) {
     ((id (*)(id, SEL, NSSize))objc_msgSend)(window, sel("setMinSize:"), (NSSize){320, 240});
     msg_id(window, sel("setBackgroundColor:"), ((id (*)(Class, SEL, CGFloat, CGFloat, CGFloat, CGFloat))objc_msgSend)(
         cls("NSColor"), sel("colorWithRed:green:blue:alpha:"), 0x05 / 255.f, 0x44 / 255.f, 0x5e / 255.f, 1));
-    id delegate = msg(msg_cls(WindowDelegate, sel("alloc")), sel("init"));
-    msg_id(window, sel("setDelegate:"), delegate);
+    msg_id(window, sel("setDelegate:"), msg(msg_cls(WindowDelegate, sel("alloc")), sel("init")));
 
     // Create label
     label = ((id (*)(id, SEL, NSRect))objc_msgSend)(msg_cls(cls("NSText"), sel("alloc")), sel("initWithFrame:"),
@@ -131,8 +130,7 @@ int main(void) {
 
     // Start application
     application = msg_cls(cls("NSApplication"), sel("sharedApplication"));
-    id delegate = msg(msg_cls(AppDelegate, sel("alloc")), sel("init"));
-    msg_id(application, sel("setDelegate:"), delegate);
+    msg_id(application, sel("setDelegate:"), msg(msg_cls(AppDelegate, sel("alloc")), sel("init")));
     msg(application, sel("run"));
     return EXIT_SUCCESS;
 }
