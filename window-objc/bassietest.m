@@ -20,13 +20,13 @@ NSText *label;
 @implementation AppDelegate
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Create menu
-    NSMenu *menubar = [[NSMenu alloc] init];
+    NSMenu *menubar = [NSMenu new];
     application.mainMenu = menubar;
 
-    NSMenuItem *menuBarItem = [[NSMenuItem alloc] init];
+    NSMenuItem *menuBarItem = [NSMenuItem new];
     [menubar addItem:menuBarItem];
 
-    NSMenu *appMenu = [[NSMenu alloc] init];
+    NSMenu *appMenu = [NSMenu new];
     menuBarItem.submenu = appMenu;
 
     NSMenuItem* quitMenuItem = [[NSMenuItem alloc] initWithTitle:@"Quit BassieTest"
@@ -45,7 +45,7 @@ NSText *label;
     [window setFrame:NSMakeRect(windowX, windowY, NSWidth(window.frame), NSHeight(window.frame)) display:YES];
     window.minSize = NSMakeSize(320, 240);
     window.backgroundColor = [NSColor colorWithRed:(0x05 / 255.f) green:(0x44 / 255.f) blue:(0x5e / 255.f) alpha:1];
-    window.delegate = [[WindowDelegate alloc] init];
+    window.delegate = [WindowDelegate new];
 
     // Create label
     label = [[NSText alloc] initWithFrame:NSMakeRect(0, (NSHeight(window.frame) - LABEL_SIZE) / 2.f, NSWidth(window.frame), LABEL_SIZE)];
@@ -69,7 +69,7 @@ NSText *label;
 
 int main(void) {
     application = [NSApplication sharedApplication];
-    application.delegate = [[AppDelegate alloc] init];
+    application.delegate = [AppDelegate new];
     [application run];
     return EXIT_SUCCESS;
 }

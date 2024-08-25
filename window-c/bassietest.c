@@ -61,13 +61,13 @@ void windowDidResize(id self, SEL cmd) {
 
 void applicationDidFinishLaunching(id self, SEL cmd) {
     // Create menu
-    id menubar = msg(msg_cls(cls("NSMenu"), sel("alloc")), sel("init"));
+    id menubar = msg_cls(cls("NSMenu"), sel("new"));
     msg_id(application, sel("setMainMenu:"), menubar);
 
-    id menuBarItem = msg(msg_cls(cls("NSMenuItem"), sel("alloc")), sel("init"));
+    id menuBarItem = msg_cls(cls("NSMenuItem"), sel("new"));
     msg_id(menubar, sel("addItem:"), menuBarItem);
 
-    id appMenu = msg(msg_cls(cls("NSMenu"), sel("alloc")), sel("init"));
+    id appMenu = msg_cls(cls("NSMenu"), sel("new"));
     msg_id(menuBarItem, sel("setSubmenu:"), appMenu);
 
     id quitMenuItem = ((id (*)(id, SEL, id, SEL, id))objc_msgSend)(msg_cls(cls("NSMenuItem"), sel("alloc")),
@@ -94,7 +94,7 @@ void applicationDidFinishLaunching(id self, SEL cmd) {
     ((id (*)(id, SEL, NSSize))objc_msgSend)(window, sel("setMinSize:"), (NSSize){320, 240});
     msg_id(window, sel("setBackgroundColor:"), ((id (*)(Class, SEL, CGFloat, CGFloat, CGFloat, CGFloat))objc_msgSend)(
         cls("NSColor"), sel("colorWithRed:green:blue:alpha:"), 0x05 / 255.f, 0x44 / 255.f, 0x5e / 255.f, 1));
-    msg_id(window, sel("setDelegate:"), msg(msg_cls(WindowDelegate, sel("alloc")), sel("init")));
+    msg_id(window, sel("setDelegate:"), msg_cls(WindowDelegate, sel("new")));
 
     // Create label
     label = ((id (*)(id, SEL, NSRect))objc_msgSend)(msg_cls(cls("NSText"), sel("alloc")), sel("initWithFrame:"),
@@ -130,7 +130,7 @@ int main(void) {
 
     // Start application
     application = msg_cls(cls("NSApplication"), sel("sharedApplication"));
-    msg_id(application, sel("setDelegate:"), msg(msg_cls(AppDelegate, sel("alloc")), sel("init")));
+    msg_id(application, sel("setDelegate:"), msg_cls(AppDelegate, sel("new")));
     msg(application, sel("run"));
     return EXIT_SUCCESS;
 }

@@ -230,21 +230,13 @@ _start:
     mov rbp, rsp
     sub rsp, 16
 
-    ; alert = objc_msgSend(objc_msgSend(objc_getClass("NSAlert") sel_getUid("alloc")), sel_getUid("init"));
-    lea rdi, [rel init]
+    ; alert = objc_msgSend(objc_getClass("NSAlert"), sel_getUid("new"));
+    lea rdi, [rel new]
     call sel_getUid
     push rax
 
-        lea rdi, [rel alloc]
-        call sel_getUid
-        push rax
-
-        lea rdi, [rel NSAlert]
-        call objc_getClass
-
-        pop rsi
-        mov rdi, rax
-        call objc_msgSend
+    lea rdi, [rel NSAlert]
+    call objc_getClass
 
     pop rsi
     mov rdi, rax
@@ -302,8 +294,7 @@ _objc_msgSend dq 0
 _sel_getUid dq 0
 
 NSAlert db 'NSAlert', 0
-alloc db 'alloc', 0
-init db 'init', 0
+new db 'new', 0
 NSString db 'NSString', 0
 stringWithUTF8String db 'stringWithUTF8String:', 0
 setMessageText db 'setMessageText:', 0
