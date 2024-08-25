@@ -63,8 +63,6 @@ NSText *label;
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
     return YES;
 }
-
-- (void)applicationWillTerminate:(NSNotification *)aNotification {}
 @end
 
 int main(void) {

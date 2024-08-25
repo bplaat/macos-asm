@@ -114,8 +114,6 @@ BOOL applicationShouldTerminateAfterLastWindowClosed(id self, SEL cmd) {
     return YES;
 }
 
-void applicationWillTerminate(id self, SEL cmd) {}
-
 int main(void) {
     // Register classes
     WindowDelegate = objc_allocateClassPair(cls("NSObject"), "WindowDelegate", 0);
@@ -125,7 +123,6 @@ int main(void) {
     AppDelegate = objc_allocateClassPair(cls("NSObject"), "AppDelegate", 0);
     class_addMethod(AppDelegate, sel("applicationDidFinishLaunching:"), (IMP)applicationDidFinishLaunching, "v@:");
     class_addMethod(AppDelegate, sel("applicationShouldTerminateAfterLastWindowClosed:"), (IMP)applicationShouldTerminateAfterLastWindowClosed, "B@:");
-    class_addMethod(AppDelegate, sel("applicationWillTerminate:"), (IMP)applicationWillTerminate, "v@:");
     objc_registerClassPair(AppDelegate);
 
     // Start application
