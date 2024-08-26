@@ -1,23 +1,19 @@
 #import <Cocoa/Cocoa.h>
 
+@interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate>
+@end
+
 NSApplication *application;
 NSWindow *window;
+AppDelegate *app_delegate;
 #define LABEL_SIZE 48
 NSText *label;
 
-@interface WindowDelegate : NSObject <NSWindowDelegate>
-@end
-
-@implementation WindowDelegate
+@implementation AppDelegate
 - (void)windowDidResize:(NSNotification *)notification {
     label.frame = NSMakeRect(0, (NSHeight(window.frame) - LABEL_SIZE) / 2.f, NSWidth(window.frame), LABEL_SIZE);
 }
-@end
 
-@interface AppDelegate : NSObject <NSApplicationDelegate>
-@end
-
-@implementation AppDelegate
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Create menu
     NSMenu *menubar = [NSMenu new];
@@ -45,7 +41,7 @@ NSText *label;
     [window setFrame:NSMakeRect(windowX, windowY, NSWidth(window.frame), NSHeight(window.frame)) display:YES];
     window.minSize = NSMakeSize(320, 240);
     window.backgroundColor = [NSColor colorWithRed:(0x05 / 255.f) green:(0x44 / 255.f) blue:(0x5e / 255.f) alpha:1];
-    window.delegate = [WindowDelegate new];
+    window.delegate = app_delegate;
 
     // Create label
     label = [[NSText alloc] initWithFrame:NSMakeRect(0, (NSHeight(window.frame) - LABEL_SIZE) / 2.f, NSWidth(window.frame), LABEL_SIZE)];
@@ -67,7 +63,8 @@ NSText *label;
 
 int main(void) {
     application = [NSApplication sharedApplication];
-    application.delegate = [AppDelegate new];
+    app_delegate = [AppDelegate new];
+    application.delegate = app_delegate;
     [application run];
     return EXIT_SUCCESS;
 }

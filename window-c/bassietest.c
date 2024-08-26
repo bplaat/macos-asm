@@ -46,10 +46,8 @@ id NSString(char *string) {
     return ((id (*)(Class, SEL, char *))objc_msgSend)(cls("NSString"), sel("stringWithUTF8String:"), string);
 }
 
-Class AppDelegate;
-Class WindowDelegate;
-
 id application;
+id app_delegate;
 id window;
 #define LABEL_SIZE 48
 id label;
@@ -94,7 +92,7 @@ void applicationDidFinishLaunching(id self, SEL cmd) {
     ((id (*)(id, SEL, NSSize))objc_msgSend)(window, sel("setMinSize:"), (NSSize){320, 240});
     msg_id(window, sel("setBackgroundColor:"), ((id (*)(Class, SEL, CGFloat, CGFloat, CGFloat, CGFloat))objc_msgSend)(
         cls("NSColor"), sel("colorWithRed:green:blue:alpha:"), 0x05 / 255.f, 0x44 / 255.f, 0x5e / 255.f, 1));
-    msg_id(window, sel("setDelegate:"), msg_cls(WindowDelegate, sel("new")));
+    msg_id(window, sel("setDelegate:"), app_delegate);
 
     // Create label
     label = ((id (*)(id, SEL, NSRect))objc_msgSend)(msg_cls(cls("NSText"), sel("alloc")), sel("initWithFrame:"),
@@ -116,18 +114,16 @@ BOOL applicationShouldTerminateAfterLastWindowClosed(id self, SEL cmd) {
 
 int main(void) {
     // Register classes
-    WindowDelegate = objc_allocateClassPair(cls("NSObject"), "WindowDelegate", 0);
-    class_addMethod(WindowDelegate, sel("windowDidResize:"), (IMP)windowDidResize, "v@:");
-    objc_registerClassPair(WindowDelegate);
-
-    AppDelegate = objc_allocateClassPair(cls("NSObject"), "AppDelegate", 0);
+    Class AppDelegate = objc_allocateClassPair(cls("NSObject"), "AppDelegate", 0);
+    class_addMethod(AppDelegate, sel("windowDidResize:"), (IMP)windowDidResize, "v@:");
     class_addMethod(AppDelegate, sel("applicationDidFinishLaunching:"), (IMP)applicationDidFinishLaunching, "v@:");
     class_addMethod(AppDelegate, sel("applicationShouldTerminateAfterLastWindowClosed:"), (IMP)applicationShouldTerminateAfterLastWindowClosed, "B@:");
     objc_registerClassPair(AppDelegate);
 
     // Start application
     application = msg_cls(cls("NSApplication"), sel("sharedApplication"));
-    msg_id(application, sel("setDelegate:"), msg_cls(AppDelegate, sel("new")));
+    app_delegate = msg_cls(AppDelegate, sel("new"));
+    msg_id(application, sel("setDelegate:"), app_delegate);
     msg(application, sel("run"));
     return EXIT_SUCCESS;
 }

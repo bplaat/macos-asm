@@ -49,11 +49,6 @@ impl NSString {
         }
     }
 }
-impl Drop for NSString {
-    fn drop(&mut self) {
-        unsafe { msg_send![self.0, release] }
-    }
-}
 
 // NSURL
 pub struct NSURL(*mut Object);
