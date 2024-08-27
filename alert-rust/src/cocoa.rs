@@ -3,21 +3,19 @@ use crate::{class, msg_send};
 
 // NSString
 pub const NS_UTF8_STRING_ENCODING: i32 = 4;
-#[repr(C)]
-pub struct NSString(*mut Object);
+pub struct NSString(Object);
 impl NSString {
     pub fn from_str(str: impl AsRef<str>) -> Self {
         unsafe {
-            let ns_string: &mut Object = msg_send![class!(NSString), alloc];
-            let ns_string: &mut Object = msg_send![ns_string, initWithBytes:str.as_ref().as_ptr(), length:str.as_ref().len(), encoding:NS_UTF8_STRING_ENCODING];
+            let ns_string: Object = msg_send![class!(NSString), alloc];
+            let ns_string: Object = msg_send![ns_string, initWithBytes:str.as_ref().as_ptr(), length:str.as_ref().len(), encoding:NS_UTF8_STRING_ENCODING];
             msg_send![ns_string, autorelease]
         }
     }
 }
 
 // NSAlert
-#[repr(C)]
-pub struct NSAlert(*mut Object);
+pub struct NSAlert(Object);
 impl NSAlert {
     pub fn new() -> Self {
         unsafe { msg_send![class!(NSAlert), new] }
