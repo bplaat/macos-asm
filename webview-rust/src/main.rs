@@ -45,8 +45,8 @@ impl NSApplicationDelegate for App {
         self.webview.set_frame(content_view.bounds());
         let app_path = NSBundle::main_bundle().url_for_resource_with_extension("app", "html");
         let request = NSURLRequest::request_with_url(app_path);
-        self.webview.load_request(request.0);
-        content_view.add_subview(self.webview.0);
+        self.webview.load_request(request);
+        content_view.add_subview(self.webview.as_ns_view());
 
         self.window.make_key_and_order_front();
     }

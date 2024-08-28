@@ -52,7 +52,7 @@ impl NSString {
 pub struct NSURL(Object);
 
 // NSURLRequest
-pub struct NSURLRequest(pub Object);
+pub struct NSURLRequest(Object);
 impl NSURLRequest {
     pub fn request_with_url(url: NSURL) -> Self {
         unsafe { msg_send![class!(NSURLRequest), requestWithURL:url.0] }
@@ -185,7 +185,7 @@ impl NSView {
     pub fn bounds(&self) -> NSRect {
         unsafe { msg_send![self.0, bounds] }
     }
-    pub fn add_subview(&self, subview: Object) {
+    pub fn add_subview(&self, subview: NSView) {
         unsafe { msg_send![self.0, addSubview:subview] }
     }
 }
@@ -270,16 +270,19 @@ impl Default for NSWindow {
 }
 
 // WKWebView
-pub struct WKWebView(pub Object);
+pub struct WKWebView(Object);
 impl WKWebView {
     pub fn new() -> Self {
         unsafe { msg_send![class!(WKWebView), new] }
     }
+    pub fn as_ns_view(&self) -> NSView {
+        NSView(self.0)
+    }
     pub fn set_frame(&self, frame: NSRect) {
         unsafe { msg_send![self.0, setFrame:frame] }
     }
-    pub fn load_request(&self, request: Object) {
-        unsafe { msg_send![self.0, loadRequest:request] }
+    pub fn load_request(&self, request: NSURLRequest) {
+        unsafe { msg_send![self.0, loadRequest:request.0] }
     }
 }
 impl Default for WKWebView {
