@@ -1,10 +1,8 @@
-use std::ptr;
+use std::ffi::{c_char, c_void};
+use std::ptr::null;
 
-use objc::declare::ClassDecl;
-use objc::runtime::{Object, Sel, NO};
-use objc::{class, msg_send, sel, sel_impl};
-
-const DELEGATE_IVAR: &str = "_delegate";
+use crate::objc::{object_getInstanceVariable, object_setInstanceVariable, ClassDecl, Object, Sel};
+use crate::{class, msg_send, sel};
 
 // NSSize
 #[repr(C)]
@@ -39,22 +37,22 @@ impl NSRect {
 
 // NSString
 pub const NS_UTF8_STRING_ENCODING: i32 = 4;
-#[allow(dead_code)]
-pub struct NSString(*mut Object);
+pub struct NSString(Object);
 impl NSString {
     pub fn from_str(str: impl AsRef<str>) -> Self {
         unsafe {
-            let ns_string: &mut Object = msg_send![class!(NSString), alloc];
-            msg_send![ns_string, initWithBytes:str.as_ref().as_ptr() length:str.as_ref().len() encoding:NS_UTF8_STRING_ENCODING]
+            let ns_string: Object = msg_send![class!(NSString), alloc];
+            msg_send![ns_string, initWithBytes:str.as_ref().as_ptr(), length:str.as_ref().len(), encoding:NS_UTF8_STRING_ENCODING]
         }
     }
 }
 
 // NSURL
-pub struct NSURL(*mut Object);
+#[allow(clippy::upper_case_acronyms)]
+pub struct NSURL(Object);
 
 // NSURLRequest
-pub struct NSURLRequest(pub *mut Object);
+pub struct NSURLRequest(pub Object);
 impl NSURLRequest {
     pub fn request_with_url(url: NSURL) -> Self {
         unsafe { msg_send![class!(NSURLRequest), requestWithURL:url.0] }
@@ -62,7 +60,7 @@ impl NSURLRequest {
 }
 
 // NSBundle
-pub struct NSBundle(*mut Object);
+pub struct NSBundle(Object);
 impl NSBundle {
     pub fn main_bundle() -> Self {
         unsafe { msg_send![class!(NSBundle), mainBundle] }
@@ -73,13 +71,13 @@ impl NSBundle {
         ext: impl AsRef<str>,
     ) -> NSURL {
         unsafe {
-            msg_send![self.0, URLForResource:NSString::from_str(name).0 withExtension:NSString::from_str(ext).0]
+            msg_send![self.0, URLForResource:NSString::from_str(name).0, withExtension:NSString::from_str(ext).0]
         }
     }
 }
 
 // NSMenu
-pub struct NSMenu(*mut Object);
+pub struct NSMenu(Object);
 impl NSMenu {
     pub fn new() -> Self {
         unsafe { msg_send![class!(NSMenu), new] }
@@ -90,7 +88,7 @@ impl NSMenu {
 }
 
 // NSMenuItem
-pub struct NSMenuItem(*mut Object);
+pub struct NSMenuItem(Object);
 impl NSMenuItem {
     pub fn new() -> Self {
         unsafe { msg_send![class!(NSMenuItem), new] }
@@ -101,8 +99,8 @@ impl NSMenuItem {
         key: impl AsRef<str>,
     ) -> Self {
         unsafe {
-            let ns_menu_item: &mut Object = msg_send![class!(NSMenuItem), alloc];
-            msg_send![ns_menu_item, initWithTitle:NSString::from_str(title).0 action:action keyEquivalent:NSString::from_str(key).0]
+            let ns_menu_item: Object = msg_send![class!(NSMenuItem), alloc];
+            msg_send![ns_menu_item, initWithTitle:NSString::from_str(title).0, action:action, keyEquivalent:NSString::from_str(key).0]
         }
     }
     pub fn set_submenu(&self, submenu: NSMenu) {
@@ -111,72 +109,70 @@ impl NSMenuItem {
 }
 
 // NSApplicationDelegate
+pub const PTR_IVAR: &str = "ptr\0";
 pub trait NSApplicationDelegate {
     fn did_finish_launching(&self);
     fn should_terminate_after_last_window_closed(&self) -> bool;
 }
-extern "C" fn did_finish_launching<T: NSApplicationDelegate>(
-    this: &Object,
-    _: Sel,
-    _: *mut Object,
-) {
+extern "C" fn did_finish_launching<T: NSApplicationDelegate>(this: Object, _: Sel) {
     unsafe {
-        let delegate_ptr: usize = *this.get_ivar(DELEGATE_IVAR);
-        (*(delegate_ptr as *const T)).did_finish_launching();
+        let mut app = null();
+        object_getInstanceVariable(this, PTR_IVAR.as_ptr() as *const c_char, &mut app);
+        (*(app as *const T)).did_finish_launching();
     }
 }
 extern "C" fn should_terminate_after_last_window_closed<T: NSApplicationDelegate>(
-    this: &Object,
+    this: Object,
     _: Sel,
-    _: *mut Object,
 ) -> bool {
     unsafe {
-        let delegate_ptr: usize = *this.get_ivar(DELEGATE_IVAR);
-        (*(delegate_ptr as *const T)).should_terminate_after_last_window_closed()
+        let mut app = null();
+        object_getInstanceVariable(this, PTR_IVAR.as_ptr() as *const c_char, &mut app);
+        (*(app as *const T)).should_terminate_after_last_window_closed()
     }
 }
 
 // NSApplication
-pub struct NSApplication {
-    object: *mut Object,
-}
-
+pub struct NSApplication(Object);
 impl NSApplication {
     pub fn shared_application() -> Self {
         unsafe { msg_send![class!(NSApplication), sharedApplication] }
     }
     pub fn set_delegate<T: NSApplicationDelegate>(&self, delegate: T) {
         let mut decl = ClassDecl::new("AppDelegate", class!(NSObject)).unwrap();
-        decl.add_ivar::<usize>(DELEGATE_IVAR);
-        unsafe {
-            decl.add_method(
-                sel!(applicationDidFinishLaunching:),
-                did_finish_launching::<T> as extern "C" fn(&Object, Sel, *mut Object),
-            );
-            decl.add_method(
-                sel!(applicationShouldTerminateAfterLastWindowClosed:),
-                should_terminate_after_last_window_closed::<T>
-                    as extern "C" fn(&Object, Sel, *mut Object) -> bool,
-            );
-        }
+        decl.add_ivar::<*const c_void>(PTR_IVAR.as_ptr() as *const c_char, "^v");
+        decl.add_method(
+            sel!(applicationDidFinishLaunching:),
+            did_finish_launching::<T> as *const c_void,
+            "v@:",
+        );
+        decl.add_method(
+            sel!(applicationShouldTerminateAfterLastWindowClosed:),
+            should_terminate_after_last_window_closed::<T> as *const c_void,
+            "B@:",
+        );
         let delegate_class = decl.register();
+        let delegate = Box::leak(Box::new(delegate));
         unsafe {
-            let app_delegate: &mut Object = msg_send![delegate_class, new];
-            app_delegate
-                .set_ivar::<usize>(DELEGATE_IVAR, Box::into_raw(Box::new(delegate)) as usize);
-            msg_send![self.object, setDelegate:app_delegate]
+            let app_delegate: Object = msg_send![delegate_class, new];
+            object_setInstanceVariable(
+                app_delegate,
+                PTR_IVAR.as_ptr() as *const c_char,
+                delegate as *const T as *mut c_void,
+            );
+            msg_send![self.0, setDelegate:app_delegate]
         }
     }
     pub fn set_main_menu(&self, menu: NSMenu) {
-        unsafe { msg_send![self.object, setMainMenu:menu.0] }
+        unsafe { msg_send![self.0, setMainMenu:menu.0] }
     }
     pub fn run(&self) {
-        unsafe { msg_send![self.object, run] }
+        unsafe { msg_send![self.0, run] }
     }
 }
 
 // NSScreen
-pub struct NSScreen(*mut Object);
+pub struct NSScreen(Object);
 impl NSScreen {
     pub fn frame(&self) -> NSRect {
         unsafe { msg_send![self.0, frame] }
@@ -184,12 +180,12 @@ impl NSScreen {
 }
 
 // NSView
-pub struct NSView(*mut Object);
+pub struct NSView(Object);
 impl NSView {
     pub fn bounds(&self) -> NSRect {
         unsafe { msg_send![self.0, bounds] }
     }
-    pub fn add_subview(&self, subview: *mut Object) {
+    pub fn add_subview(&self, subview: Object) {
         unsafe { msg_send![self.0, addSubview:subview] }
     }
 }
@@ -198,28 +194,29 @@ impl NSView {
 pub trait NSWindowDelegate {
     fn did_resize(&self);
 }
-extern "C" fn did_resize<T: NSWindowDelegate>(this: &Object, _: Sel, _: *mut Object) {
+extern "C" fn did_resize<T: NSWindowDelegate>(this: Object, _: Sel) {
     unsafe {
-        let delegate_ptr: usize = *this.get_ivar(DELEGATE_IVAR);
-        (*(delegate_ptr as *const T)).did_resize();
+        let mut app = null();
+        object_getInstanceVariable(this, PTR_IVAR.as_ptr() as *const c_char, &mut app);
+        (*(app as *const T)).did_resize()
     }
 }
 
 // NSWindow
-pub const NS_WINDOW_STYLE_MASK_TITLED: i32 = 1 << 0;
-pub const NS_WINDOW_STYLE_MASK_CLOSABLE: i32 = 1 << 1;
-pub const NS_WINDOW_STYLE_MASK_MINIATURIZABLE: i32 = 1 << 2;
-pub const NS_WINDOW_STYLE_MASK_RESIZABLE: i32 = 1 << 3;
+pub const NS_WINDOW_STYLE_MASK_TITLED: i32 = 1;
+pub const NS_WINDOW_STYLE_MASK_CLOSABLE: i32 = 2;
+pub const NS_WINDOW_STYLE_MASK_MINIATURIZABLE: i32 = 4;
+pub const NS_WINDOW_STYLE_MASK_RESIZABLE: i32 = 8;
 pub const NS_BACKING_STORE_BUFFERED: i32 = 2;
-pub struct NSWindow(*mut Object);
+pub struct NSWindow(Object);
 impl NSWindow {
     pub fn new() -> Self {
         unsafe {
-            let ns_window: &mut Object = msg_send![class!(NSWindow), alloc];
-            msg_send![ns_window, initWithContentRect:NSRect::new(0.0, 0.0, 1024.0, 768.0)
-                styleMask:(NS_WINDOW_STYLE_MASK_TITLED | NS_WINDOW_STYLE_MASK_CLOSABLE | NS_WINDOW_STYLE_MASK_MINIATURIZABLE | NS_WINDOW_STYLE_MASK_RESIZABLE)
-                backing:NS_BACKING_STORE_BUFFERED
-                defer:NO]
+            let ns_window: Object = msg_send![class!(NSWindow), alloc];
+            msg_send![ns_window, initWithContentRect:NSRect::new(0.0, 0.0, 1024.0, 768.0),
+                styleMask:NS_WINDOW_STYLE_MASK_TITLED | NS_WINDOW_STYLE_MASK_CLOSABLE | NS_WINDOW_STYLE_MASK_MINIATURIZABLE | NS_WINDOW_STYLE_MASK_RESIZABLE,
+                backing:NS_BACKING_STORE_BUFFERED,
+                defer:false]
         }
     }
     pub fn set_title(&self, title: impl AsRef<str>) {
@@ -232,7 +229,7 @@ impl NSWindow {
         unsafe { msg_send![self.0, frame] }
     }
     pub fn set_frame(&self, frame: NSRect, display: bool) {
-        unsafe { msg_send![self.0, setFrame:frame display:display] }
+        unsafe { msg_send![self.0, setFrame:frame, display:display] }
     }
     pub fn screen(&self) -> NSScreen {
         unsafe { msg_send![self.0, screen] }
@@ -242,17 +239,20 @@ impl NSWindow {
     }
     pub fn set_delegate_from_ref<T: NSWindowDelegate>(&self, delegate: &T) {
         let mut decl = ClassDecl::new("WindowDelegate", class!(NSObject)).unwrap();
-        decl.add_ivar::<usize>(DELEGATE_IVAR);
-        unsafe {
-            decl.add_method(
-                sel!(windowDidResize:),
-                did_resize::<T> as extern "C" fn(&Object, Sel, *mut Object),
-            );
-        }
+        decl.add_ivar::<*const c_void>(PTR_IVAR.as_ptr() as *const c_char, "^v");
+        decl.add_method(
+            sel!(windowDidResize:),
+            did_resize::<T> as *const c_void,
+            "v@:",
+        );
         let delegate_class = decl.register();
         unsafe {
-            let window_delegate: &mut Object = msg_send![delegate_class, new];
-            window_delegate.set_ivar::<usize>(DELEGATE_IVAR, delegate as *const T as usize);
+            let window_delegate: Object = msg_send![delegate_class, new];
+            object_setInstanceVariable(
+                window_delegate,
+                PTR_IVAR.as_ptr() as *const c_char,
+                delegate as *const T as *mut c_void,
+            );
             msg_send![self.0, setDelegate:window_delegate]
         }
     }
@@ -260,7 +260,7 @@ impl NSWindow {
         unsafe { msg_send![self.0, setFrameAutosaveName:NSString::from_str(name).0] }
     }
     pub fn make_key_and_order_front(&self) {
-        unsafe { msg_send![self.0, makeKeyAndOrderFront:ptr::null::<*const Object>()] }
+        unsafe { msg_send![self.0, makeKeyAndOrderFront:null::<*const c_void>()] }
     }
 }
 impl Default for NSWindow {
@@ -270,7 +270,7 @@ impl Default for NSWindow {
 }
 
 // WKWebView
-pub struct WKWebView(pub *mut Object);
+pub struct WKWebView(pub Object);
 impl WKWebView {
     pub fn new() -> Self {
         unsafe { msg_send![class!(WKWebView), new] }
@@ -278,7 +278,7 @@ impl WKWebView {
     pub fn set_frame(&self, frame: NSRect) {
         unsafe { msg_send![self.0, setFrame:frame] }
     }
-    pub fn load_request(&self, request: *mut Object) {
+    pub fn load_request(&self, request: Object) {
         unsafe { msg_send![self.0, loadRequest:request] }
     }
 }

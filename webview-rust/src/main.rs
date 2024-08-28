@@ -1,13 +1,12 @@
 #![no_main]
 
-use objc::{sel, sel_impl};
-
 use crate::cocoa::{
     NSApplication, NSApplicationDelegate, NSBundle, NSMenu, NSMenuItem, NSRect, NSSize,
     NSURLRequest, NSWindow, NSWindowDelegate, WKWebView,
 };
 
 mod cocoa;
+mod objc;
 
 #[derive(Default)]
 struct App {
@@ -65,7 +64,7 @@ impl NSWindowDelegate for App {
 
 #[no_mangle]
 pub extern "C" fn main() {
-    let app = NSApplication::shared_application();
-    app.set_delegate(App::default());
-    app.run();
+    let application = NSApplication::shared_application();
+    application.set_delegate(App::default());
+    application.run();
 }
