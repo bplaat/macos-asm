@@ -4,7 +4,7 @@
 ; Supports:
 ; - windows x86_64
 ; - macos x86_64
-; - (TODO) linux x86_64
+; - FIXME: linux x86_64
 ;
 ; Build instructions:
 ; - windows: nasm -f bin alert.s -o alert.com && ./alert.com
@@ -35,7 +35,7 @@
     db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_objc_msgSend', 0
     db BIND_OPCODE_DO_BIND
 
-    db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_sel_getUid', 0
+    db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_sel_registerName', 0
     db BIND_OPCODE_DO_BIND
 
     db BIND_OPCODE_DONE
@@ -70,9 +70,9 @@ _macos_start:
     mov rbp, rsp
     sub rsp, 32
 
-    ; app = objc_msgSend(objc_getClass("NSApplication"), sel_getUid("sharedApplication"));
+    ; app = objc_msgSend(objc_getClass("NSApplication"), sel_registerName("sharedApplication"));
     lea rdi, [rel sharedApplication]
-    call sel_getUid
+    call sel_registerName
     push rax
     lea rdi, [rel NSApplication]
     call objc_getClass
@@ -81,25 +81,25 @@ _macos_start:
     call objc_msgSend
     mov qword [rbp - 8], rax
 
-    ; objc_msgSend(app, sel_getUid("setActivationPolicy:"), NSApplicationActivationPolicyRegular);
+    ; objc_msgSend(app, sel_registerName("setActivationPolicy:"), NSApplicationActivationPolicyRegular);
     lea rdi, [rel setActivationPolicy]
-    call sel_getUid
+    call sel_registerName
     mov rdx, NSApplicationActivationPolicyRegular
     mov rsi, rax
     mov rdi, qword [rbp - 8]
     call objc_msgSend
 
-    ; objc_msgSend(app, sel_getUid("activateIgnoringOtherApps:"), YES);
+    ; objc_msgSend(app, sel_registerName("activateIgnoringOtherApps:"), YES);
     lea rdi, [rel activateIgnoringOtherApps]
-    call sel_getUid
+    call sel_registerName
     mov rdx, YES
     mov rsi, rax
     mov rdi, qword [rbp - 8]
     call objc_msgSend
 
-    ; alert = objc_msgSend(objc_getClass("NSAlert"), sel_getUid("new"));
+    ; alert = objc_msgSend(objc_getClass("NSAlert"), sel_registerName("new"));
     lea rdi, [rel new]
-    call sel_getUid
+    call sel_registerName
     push rax
 
     lea rdi, [rel NSAlert]
@@ -110,9 +110,9 @@ _macos_start:
     call objc_msgSend
     mov qword [rbp - 16], rax
 
-    ; messageTitle = objc_msgSend(objc_getClass("NSString"), sel_getUid("stringWithUTF8String:"), "Hello Cocoa from x86_64 assembly");
+    ; messageTitle = objc_msgSend(objc_getClass("NSString"), sel_registerName("stringWithUTF8String:"), "Hello Cocoa from x86_64 assembly");
     lea rdi, [rel stringWithUTF8String]
-    call sel_getUid
+    call sel_registerName
     push rax
     lea rdi, [rel NSString]
     call objc_getClass
@@ -122,17 +122,17 @@ _macos_start:
     call objc_msgSend
     mov qword [rbp - 24], rax
 
-    ; objc_msgSend(alert, sel_getUid("setMessageText:"), messageTitle);
+    ; objc_msgSend(alert, sel_registerName("setMessageText:"), messageTitle);
     lea rdi, [rel setMessageText]
-    call sel_getUid
+    call sel_registerName
     mov rdx, qword [rbp - 24]
     mov rsi, rax
     mov rdi, qword [rbp - 16]
     call objc_msgSend
 
-    ; messageText = objc_msgSend(objc_getClass("NSString"), sel_getUid("stringWithUTF8String:"), "Hello Cocoa from x86_64 assembly");
+    ; messageText = objc_msgSend(objc_getClass("NSString"), sel_registerName("stringWithUTF8String:"), "Hello Cocoa from x86_64 assembly");
     lea rdi, [rel stringWithUTF8String]
-    call sel_getUid
+    call sel_registerName
     push rax
     lea rdi, [rel NSString]
     call objc_getClass
@@ -142,17 +142,17 @@ _macos_start:
     call objc_msgSend
     mov qword [rbp - 32], rax
 
-    ; objc_msgSend(alert, sel_getUid("setInformativeText:"), messageText);
+    ; objc_msgSend(alert, sel_registerName("setInformativeText:"), messageText);
     lea rdi, [rel setInformativeText]
-    call sel_getUid
+    call sel_registerName
     mov rdx, qword [rbp - 32]
     mov rsi, rax
     mov rdi, qword [rbp - 16]
     call objc_msgSend
 
-    ; objc_msgSend(alert, sel_getUid("runModal:"));
+    ; objc_msgSend(alert, sel_registerName("runModal:"));
     lea rdi, [rel runModal]
-    call sel_getUid
+    call sel_registerName
     mov rsi, rax
     mov rdi, qword [rbp - 16]
     call objc_msgSend
@@ -164,13 +164,13 @@ _macos_start:
 
 objc_getClass: jmp [rel _objc_getClass]
 objc_msgSend: jmp [rel _objc_msgSend]
-sel_getUid: jmp [rel _sel_getUid]
+sel_registerName: jmp [rel _sel_registerName]
 
 ; ########################################################################################
 
 ; Linux code
 _linux_start:
-    ; TODO
+    ; FIXME: Add X11 implementation maybe?
 
     xor edi, edi
     mov eax, 60 ; exit
@@ -184,7 +184,7 @@ section_data
 
 _objc_getClass dq 0
 _objc_msgSend dq 0
-_sel_getUid dq 0
+_sel_registerName dq 0
 
 NSApplication db 'NSApplication', 0
 sharedApplication db 'sharedApplication', 0

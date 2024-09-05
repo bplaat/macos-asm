@@ -6,7 +6,7 @@
 
 // Cocoa headers stub
 #define cls objc_getClass
-#define sel sel_getUid
+#define sel sel_registerName
 #define msg ((id (*)(id, SEL))objc_msgSend)
 #define msg_id ((id (*)(id, SEL, id))objc_msgSend)
 #define msg_bool ((id (*)(id, SEL, BOOL))objc_msgSend)

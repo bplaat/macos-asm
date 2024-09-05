@@ -15,8 +15,7 @@
 ; - windows: nasm -f bin hello.s -o hello.com && ./hello.com
 ; - unix: nasm -f bin hello.s -o hello.com && chmod +x hello.com && sh ./hello.com
 ;
-; TODO items:
-; - Do macOS codesign without codesign command on first run
+; FIXME: Do macOS codesign without self on first run (needed for arm64)
 
 %include 'libportable.s'
 %include 'libarm64.s'

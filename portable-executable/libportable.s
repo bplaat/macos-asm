@@ -36,6 +36,7 @@
 %define LC_LOAD_DYLINKER 0xe
 %define LC_DYLD_INFO_ONLY (0x22 | LC_REQ_DYLD)
 %define LC_MAIN (0x28 | LC_REQ_DYLD)
+%define LC_BUILD_VERSION 0x32
 
 %define VM_PROT_NONE 0x0
 %define VM_PROT_READ 0x1
@@ -45,6 +46,9 @@
 %define S_REGULAR 0x00000000
 %define S_ATTR_PURE_INSTRUCTIONS 0x80000000
 %define S_ATTR_SOME_INSTRUCTIONS 0x00000400
+
+%define PLATFORM_MACOS 1
+%define TOOL_LD 1
 
 %define BIND_TYPE_POINTER 1
 %define BIND_OPCODE_SET_DYLIB_ORDINAL_IMM 0x10
@@ -260,15 +264,15 @@ _macho_x86_64_header:
     dd MH_EXECUTE                         ; filetype
     %ifmacro macho_bindings
         %ifmacro macho_libraries
-            dd 9 + macho_libraries_count  ; ncmds
+            dd 10 + macho_libraries_count  ; ncmds
         %else
-            dd 9 + 1                      ; ncmds
+            dd 10 + 1                      ; ncmds
         %endif
     %else
         %ifmacro macho_libraries
-            dd 8 + macho_libraries_count  ; ncmds
+            dd 9 + macho_libraries_count  ; ncmds
         %else
-            dd 8 + 1                      ; ncmds
+            dd 9 + 1                      ; ncmds
         %endif
     %endif
     dd _macho_x86_64_commands_size        ; sizeofcmds
@@ -366,6 +370,17 @@ _macho_x86_64_commands:
         times 18 dd 0                ; ?
     _x86_64_cmd_dysymtab_size equ $ - _x86_64_cmd_dysymtab
 
+    _x86_64_build_version:
+        dd LC_BUILD_VERSION                                  ; command
+        dd _x86_64_build_version_end - _x86_64_build_version ; command size
+        dd PLATFORM_MACOS                                    ; platform
+        dw 0, 11                                             ; minos
+        dw 0, 14                                             ; sdk
+        dd 1                                                 ; ntools
+        dd TOOL_LD                                           ; tool type
+        dw 0, 1                                              ; tool version
+    _x86_64_build_version_end:
+
     _x86_64_cmd_load_dylinker:
         dd LC_LOAD_DYLINKER               ; command
         dd _x86_64_cmd_load_dylinker_size ; command size
@@ -411,15 +426,15 @@ _macho_arm64_header:
     dd MH_EXECUTE                         ; filetype
     %ifmacro macho_bindings
         %ifmacro macho_libraries
-            dd 9 + macho_libraries_count  ; ncmds
+            dd 10 + macho_libraries_count  ; ncmds
         %else
-            dd 9 + 1                      ; ncmds
+            dd 10 + 1                      ; ncmds
         %endif
     %else
         %ifmacro macho_libraries
-            dd 8 + macho_libraries_count  ; ncmds
+            dd 9 + macho_libraries_count  ; ncmds
         %else
-            dd 8 + 1                      ; ncmds
+            dd 9 + 1                      ; ncmds
         %endif
     %endif
     dd _macho_arm64_commands_size         ; sizeofcmds
@@ -516,6 +531,17 @@ _macho_arm64_commands:
         dd _arm64_cmd_dysymtab_size ; command size
         times 18 dd 0               ; ?
     _arm64_cmd_dysymtab_size equ $ - _arm64_cmd_dysymtab
+
+    _arm64_build_version:
+        dd LC_BUILD_VERSION                                ; command
+        dd _arm64_build_version_end - _arm64_build_version ; command size
+        dd PLATFORM_MACOS                                  ; platform
+        dw 0, 11                                           ; minos
+        dw 0, 14                                           ; sdk
+        dd 1                                               ; ntools (should be at least 1)
+        dd 3                                               ; tool type: ld
+        dw 0, 1                                            ; tool version
+    _arm64_build_version_end:
 
     _arm64_cmd_load_dylinker:
         dd LC_LOAD_DYLINKER              ; command

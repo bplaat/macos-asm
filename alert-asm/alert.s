@@ -22,6 +22,7 @@
     %define LC_LOAD_DYLIB 0xc
     %define LC_DYLD_INFO_ONLY (0x22 | LC_REQ_DYLD)
     %define LC_MAIN (0x28 | LC_REQ_DYLD)
+    %define LC_BUILD_VERSION 0x32
 
     %define VM_PROT_NONE 0x0
     %define VM_PROT_READ 0x1
@@ -31,6 +32,9 @@
     %define S_REGULAR 0x00000000
     %define S_ATTR_PURE_INSTRUCTIONS 0x80000000
     %define S_ATTR_SOME_INSTRUCTIONS 0x00000400
+
+    %define PLATFORM_MACOS 1
+    %define TOOL_LD 1
 
     %define BIND_TYPE_POINTER 1
     %define BIND_OPCODE_SET_DYLIB_ORDINAL_IMM 0x10
@@ -49,7 +53,7 @@ macho_header:
     dd CPU_TYPE_X86_64                    ; cpu type
     dd CPU_SUBTYPE_X86_64_ALL             ; cpu subtype
     dd MH_EXECUTE                         ; file type
-    dd 12                                 ; number of load commands
+    dd 13                                 ; number of load commands
     dd commands_end - commands            ; size of load commands
     dd MH_NOUNDEFS | MH_DYLDLINK | MH_PIE ; flags
     dd 0                                  ; reserved
@@ -71,57 +75,57 @@ commands:
     page_zero_end:
 
     text_section:
-        dd LC_SEGMENT_64                   ; command
-        dd text_section_end - text_section ; command size
+        dd LC_SEGMENT_64                          ; command
+        dd text_section_end - text_section        ; command size
         db "__TEXT", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq origin                          ; vm address
-        dq text_raw_end - origin           ; vm size
-        dq 0                               ; file offset
-        dq text_raw_end - origin           ; file size
-        dd VM_PROT_READ | VM_PROT_EXECUTE  ; maximum protection
-        dd VM_PROT_READ | VM_PROT_EXECUTE  ; initial protection
-        dd 1                               ; number of sections
-        dd 0x0                             ; flags
+        dq origin                                 ; vm address
+        dq text_raw_end - origin                  ; vm size
+        dq 0                                      ; file offset
+        dq text_raw_end - origin                  ; file size
+        dd VM_PROT_READ | VM_PROT_EXECUTE         ; maximum protection
+        dd VM_PROT_READ | VM_PROT_EXECUTE         ; initial protection
+        dd 1                                      ; number of sections
+        dd 0x0                                    ; flags
 
         db "__text", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; section name
         db "__TEXT", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq text_start             ; address
-        dq text_end - text_start  ; size
-        dd text_start - origin    ; offset
-        dd 2                      ; align
-        dd 0                      ; relocations offset
-        dd 0                      ; number of relocations
+        dq text_start                             ; address
+        dq text_end - text_start                  ; size
+        dd text_start - origin                    ; offset
+        dd 2                                      ; align
+        dd 0                                      ; relocations offset
+        dd 0                                      ; number of relocations
         dd S_REGULAR | S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS ; flags
-        dd 0                      ; reserved1
-        dd 0                      ; reserved2
-        dd 0                      ; reserved3
+        dd 0                                      ; reserved1
+        dd 0                                      ; reserved2
+        dd 0                                      ; reserved3
     text_section_end:
 
     data_section:
-        dd LC_SEGMENT_64                   ; command
-        dd data_section_end - data_section ; command size
+        dd LC_SEGMENT_64                          ; command
+        dd data_section_end - data_section        ; command size
         db "__DATA", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq data_start                      ; vm address
-        dq data_raw_end - data_start       ; vm size
-        dq data_start - origin             ; file offset
-        dq data_raw_end - data_start       ; file size
-        dd VM_PROT_READ | VM_PROT_WRITE    ; maximum protection
-        dd VM_PROT_READ | VM_PROT_WRITE    ; initial protection
-        dd 1                               ; number of sections
-        dd 0x0                             ; flags
+        dq data_start                             ; vm address
+        dq data_raw_end - data_start              ; vm size
+        dq data_start - origin                    ; file offset
+        dq data_raw_end - data_start              ; file size
+        dd VM_PROT_READ | VM_PROT_WRITE           ; maximum protection
+        dd VM_PROT_READ | VM_PROT_WRITE           ; initial protection
+        dd 1                                      ; number of sections
+        dd 0x0                                    ; flags
 
         db "__data", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; section name
         db "__DATA", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq data_start             ; address
-        dq data_end - data_start  ; size
-        dd data_start - origin    ; offset
-        dd 0                      ; align
-        dd 0                      ; relocations offset
-        dd 0                      ; number of relocations
-        dd S_REGULAR              ; flags
-        dd 0                      ; reserved1
-        dd 0                      ; reserved2
-        dd 0                      ; reserved3
+        dq data_start                             ; address
+        dq data_end - data_start                  ; size
+        dd data_start - origin                    ; offset
+        dd 0                                      ; align
+        dd 0                                      ; relocations offset
+        dd 0                                      ; number of relocations
+        dd S_REGULAR                              ; flags
+        dd 0                                      ; reserved1
+        dd 0                                      ; reserved2
+        dd 0                                      ; reserved3
     data_section_end:
 
     linkedit_section:
@@ -148,13 +152,24 @@ commands:
     symtab_end:
 
     dysymtab:
-        dd LC_DYSYMTAB ; command
+        dd LC_DYSYMTAB             ; command
         dd dysymtab_end - dysymtab ; command size
-        times 2 dd 0 ; ?
-        dd 0 ; external symbols index
-        dd 4 ; external symbols size
-        times 14 dd 0 ; ?
+        times 2 dd 0               ; ?
+        dd 0                       ; external symbols index
+        dd 4                       ; external symbols size
+        times 14 dd 0              ; ?
     dysymtab_end:
+
+    build_version:
+        dd LC_BUILD_VERSION                  ; command
+        dd build_version_end - build_version ; command size
+        dd PLATFORM_MACOS                    ; platform
+        dw 0, 11                             ; minos
+        dw 0, 14                             ; sdk
+        dd 1                                 ; ntools
+        dd TOOL_LD                           ; tool type
+        dw 0, 1                              ; tool version
+    build_version_end:
 
     load_dylinker:
         dd LC_LOAD_DYLINKER                  ; command
@@ -229,49 +244,47 @@ _start:
     push rbp
     mov rbp, rsp
     sub rsp, 16
+    %define alert qword [rbp - 8]
+    %define message qword [rbp - 16]
 
-    ; alert = objc_msgSend(objc_getClass("NSAlert"), sel_getUid("new"));
+    ; tmp = sel_registerName("new");
     lea rdi, [rel new]
-    call sel_getUid
+    call sel_registerName
     push rax
-
+    ; alert = objc_msgSend(objc_getClass("NSAlert"), tmp);
     lea rdi, [rel NSAlert]
     call objc_getClass
-
     pop rsi
     mov rdi, rax
     call objc_msgSend
-    mov qword [rbp - 8], rax
+    mov alert, rax
 
-    ; message = objc_msgSend(objc_getClass("NSString"), sel_getUid("stringWithUTF8String:"), "Hello Cocoa from x86_64 assembly");
+    ; tmp = sel_registerName("stringWithUTF8String:")
     lea rdi, [rel stringWithUTF8String]
-    call sel_getUid
+    call sel_registerName
     push rax
-
+    ; message = objc_msgSend(objc_getClass("NSString"), tmp, "Hello Cocoa from x86_64 assembly");
     lea rdi, [rel NSString]
     call objc_getClass
-
     lea rdx, [rel hello_string]
     pop rsi
     mov rdi, rax
     call objc_msgSend
-    mov qword [rbp - 16], rax
+    mov message, rax
 
-    ; objc_msgSend(alert, sel_getUid("setMessageText:"), message);
+    ; objc_msgSend(alert, sel_registerName("setMessageText:"), message);
     lea rdi, [rel setMessageText]
-    call sel_getUid
-
-    mov rdx, qword [rbp - 16]
+    call sel_registerName
+    mov rdx, message
     mov rsi, rax
-    mov rdi, qword [rbp - 8]
+    mov rdi, alert
     call objc_msgSend
 
-    ; objc_msgSend(alert, sel_getUid("runModal:"));
+    ; objc_msgSend(alert, sel_registerName("runModal:"));
     lea rdi, [rel runModal]
-    call sel_getUid
-
+    call sel_registerName
     mov rsi, rax
-    mov rdi, qword [rbp - 8]
+    mov rdi, alert
     call objc_msgSend
 
     ; return 0;
@@ -281,7 +294,7 @@ _start:
 
 objc_getClass: jmp [rel _objc_getClass]
 objc_msgSend: jmp [rel _objc_msgSend]
-sel_getUid: jmp [rel _sel_getUid]
+sel_registerName: jmp [rel _sel_registerName]
 
 text_end:
     align alignment, db 0
@@ -291,7 +304,7 @@ text_raw_end:
 data_start:
 _objc_getClass dq 0
 _objc_msgSend dq 0
-_sel_getUid dq 0
+_sel_registerName dq 0
 
 NSAlert db 'NSAlert', 0
 new db 'new', 0
@@ -320,48 +333,34 @@ bindings:
     db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_objc_msgSend', 0
     db BIND_OPCODE_DO_BIND
 
-    db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_sel_getUid', 0
+    db BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM, '_sel_registerName', 0
     db BIND_OPCODE_DO_BIND
 
     db BIND_OPCODE_DONE
-    align 8, db 0
 bindings_end:
+    align 8, db 0
 
 ; Symbols
+%macro symbol 1
+    dd L%1 - strings  ; string table offset
+    db N_SECT | N_EXT ; type flag
+    db 1              ; section number
+    dw 0x0000         ; extra flags
+    dq %1             ; address
+%endmacro
 symbols:
-    dd L_start - strings ; string table offset
-    db N_SECT | N_EXT    ; type flag
-    db 1                 ; section number
-    dw 0x0000            ; extra flags
-    dq _start            ; address
-
-    dd Lobjc_getClass - strings ; string table offset
-    db N_SECT | N_EXT    ; type flag
-    db 1                 ; section number
-    dw 0x0000            ; extra flags
-    dq objc_getClass     ; address
-
-    dd Lobjc_msgSend - strings ; string table offset
-    db N_SECT | N_EXT    ; type flag
-    db 1                 ; section number
-    dw 0x0000            ; extra flags
-    dq objc_msgSend      ; address
-
-    dd Lsel_getUid - strings ; string table offset
-    db N_SECT | N_EXT    ; type flag
-    db 1                 ; section number
-    dw 0x0000            ; extra flags
-    dq sel_getUid        ; address
+    symbol _start
+    symbol objc_getClass
+    symbol objc_msgSend
+    symbol sel_registerName
 symbols_end:
-
 strings:
-    db 0
     L_start db '_start', 0
     Lobjc_getClass db 'objc_getClass', 0
     Lobjc_msgSend db 'objc_msgSend', 0
-    Lsel_getUid db 'sel_getUid', 0
-    align 8, db 0
+    Lsel_registerName db 'sel_registerName', 0
 strings_end:
+    align 8, db 0
 
 linkedit_end:
     align alignment, db 0

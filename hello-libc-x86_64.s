@@ -251,37 +251,28 @@ bindings:
     db BIND_OPCODE_DO_BIND
 
     db BIND_OPCODE_DONE
-    align 8, db 0
 bindings_end:
+    align 8, db 0
 
 ; Symbols
+%macro symbol 1
+    dd L%1 - strings  ; string table offset
+    db N_SECT | N_EXT ; type flag
+    db 1              ; section number
+    dw 0x0000         ; extra flags
+    dq %1             ; address
+%endmacro
 symbols:
-    dd L_start - strings ; string table offset
-    db N_SECT | N_EXT    ; type flag
-    db 1                 ; section number
-    dw 0x0000            ; extra flags
-    dq _start            ; address
-
-    dd Lprintf - strings ; string table offset
-    db N_SECT | N_EXT    ; type flag
-    db 1                 ; section number
-    dw 0x0000            ; extra flags
-    dq printf            ; address
-
-    dd Ltime - strings   ; string table offset
-    db N_SECT | N_EXT    ; type flag
-    db 1                 ; section number
-    dw 0x0000            ; extra flags
-    dq time              ; address
+    symbol _start
+    symbol printf
+    symbol time
 symbols_end:
-
 strings:
-    db 0
     L_start db '_start', 0
     Lprintf db 'printf', 0
     Ltime db 'time', 0
-    align 8, db 0
 strings_end:
+    align 8, db 0
 
 linkedit_end:
     align alignment, db 0
