@@ -30,11 +30,8 @@
 %define x26 26
 %define x27 27
 %define x28 28
-%define x29 29
 %define fp 29
-%define x30 30
 %define lr 30
-%define x31 31
 %define sp 31
 
 %macro arm64_mov 2

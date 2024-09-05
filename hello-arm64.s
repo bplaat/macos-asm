@@ -1,6 +1,6 @@
-; A simple pure assembly macho-o ARM64 adhoc code signed 'static' executable for macOS
-; It is realy a dynamic linked executable but static linked ARM64 MACHO executables dont exists,
-; because when an executable is not following some strict rules it is killed before it will start
+; A simple pure assembly macho-o ARM64 adhoc code signed 'static' macOS executable
+; It is realy a dynamic linked executable but static linked ARM64 MACHO executables don't exists,
+; because when an executable is not following some strict rules it is killed before it will be started.
 ; nasm -f bin hello-arm64.s -o hello-arm64 && chmod +x hello-arm64 && codesign -s - hello-arm64 && ./hello-arm64
 
     origin equ 0x100000000
@@ -34,12 +34,48 @@
     %define S_ATTR_PURE_INSTRUCTIONS 0x80000000
     %define S_ATTR_SOME_INSTRUCTIONS 0x00000400
 
-    %define	N_EXT 0x01
-    %define	N_SECT 0xe
-
     %define sys_exit 1
     %define sys_write 4
     %define stdout 1
+
+; Hacky macro system to use some arm64 instruction in NASM because GAS sucks hard :)
+%define x0 0
+%define x1 1
+%define x2 2
+%define x16 16
+
+%macro arm64_mov 2
+    dd 0xAA0003E0 | ((%2 & 31) << 16) | (%1 & 31))
+%endmacro
+%macro arm64_mov_imm 2
+    dd 0xD2800000 | ((%2 & 0xffff) << 5) | (%1 & 31))
+%endmacro
+%macro arm64_adr 2
+    dd 0x10000000 | ((((%2 - $) >> 2) << 5) | (%1 & 31))
+%endmacro
+
+%macro arm64_add_imm 3
+    dd 0x91000000 | (((%3 & 0x1fff) << 10) | (%2 & 31) << 5) | (%1 & 31))
+%endmacro
+%macro arm64_sub 3
+    dd 0xCB000000 | ((%3 & 31) << 16) | (%2 & 31) << 5) | (%1 & 31))
+%endmacro
+
+%macro arm64_cbz 2
+    dd 0xB4000000 | (((((%2 - $) >> 2) & 0x7ffff) << 5) | (%1 & 31))
+%endmacro
+%macro arm64_b 1
+    dd 0x14000000 | (((%1 - $) >> 2) & 0x7ffffff)
+%endmacro
+%macro arm64_bl 1
+    dd 0x94000000 | (((%1 - $) >> 2) & 0x7ffffff)
+%endmacro
+%macro arm64_ret 0
+    dd 0xD65F03C0
+%endmacro
+%macro arm64_svc 1
+    dd 0xD4000001 | ((%1 & 0xffff) << 5)
+%endmacro
 
 ; Macho Header
 macho_header:
@@ -69,57 +105,57 @@ commands:
     page_zero_end:
 
     text_section:
-        dd LC_SEGMENT_64                   ; command
-        dd text_section_end - text_section ; command size
+        dd LC_SEGMENT_64                          ; command
+        dd text_section_end - text_section        ; command size
         db "__TEXT", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq origin                          ; vm address
-        dq text_raw_end - origin           ; vm size
-        dq 0                               ; file offset
-        dq text_raw_end - origin           ; file size
-        dd VM_PROT_READ | VM_PROT_EXECUTE  ; maximum protection
-        dd VM_PROT_READ | VM_PROT_EXECUTE  ; initial protection
-        dd 1                               ; number of sections
-        dd 0x0                             ; flags
+        dq origin                                 ; vm address
+        dq text_raw_end - origin                  ; vm size
+        dq 0                                      ; file offset
+        dq text_raw_end - origin                  ; file size
+        dd VM_PROT_READ | VM_PROT_EXECUTE         ; maximum protection
+        dd VM_PROT_READ | VM_PROT_EXECUTE         ; initial protection
+        dd 1                                      ; number of sections
+        dd 0x0                                    ; flags
 
         db "__text", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; section name
         db "__TEXT", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq text_start             ; address
-        dq text_end - text_start  ; size
-        dd text_start - origin    ; offset
-        dd 2                      ; align
-        dd 0                      ; relocations offset
-        dd 0                      ; number of relocations
+        dq text_start                             ; address
+        dq text_end - text_start                  ; size
+        dd text_start - origin                    ; offset
+        dd 2                                      ; align
+        dd 0                                      ; relocations offset
+        dd 0                                      ; number of relocations
         dd S_REGULAR | S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS ; flags
-        dd 0                      ; reserved1
-        dd 0                      ; reserved2
-        dd 0                      ; reserved3
+        dd 0                                      ; reserved1
+        dd 0                                      ; reserved2
+        dd 0                                      ; reserved3
     text_section_end:
 
     data_section:
-        dd LC_SEGMENT_64                   ; command
-        dd data_section_end - data_section ; command size
+        dd LC_SEGMENT_64                          ; command
+        dd data_section_end - data_section        ; command size
         db "__DATA", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq data_start                      ; vm address
-        dq data_raw_end - data_start       ; vm size
-        dq data_start - origin             ; file offset
-        dq data_raw_end - data_start       ; file size
-        dd VM_PROT_READ | VM_PROT_WRITE    ; maximum protection
-        dd VM_PROT_READ | VM_PROT_WRITE    ; initial protection
-        dd 1                               ; number of sections
-        dd 0x0                             ; flags
+        dq data_start                             ; vm address
+        dq data_raw_end - data_start              ; vm size
+        dq data_start - origin                    ; file offset
+        dq data_raw_end - data_start              ; file size
+        dd VM_PROT_READ | VM_PROT_WRITE           ; maximum protection
+        dd VM_PROT_READ | VM_PROT_WRITE           ; initial protection
+        dd 1                                      ; number of sections
+        dd 0x0                                    ; flags
 
         db "__data", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; section name
         db "__DATA", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq data_start             ; address
-        dq data_end - data_start  ; size
-        dd data_start - origin    ; offset
-        dd 0                      ; align
-        dd 0                      ; relocations offset
-        dd 0                      ; number of relocations
-        dd S_REGULAR              ; flags
-        dd 0                      ; reserved1
-        dd 0                      ; reserved2
-        dd 0                      ; reserved3
+        dq data_start                             ; address
+        dq data_end - data_start                  ; size
+        dd data_start - origin                    ; offset
+        dd 0                                      ; align
+        dd 0                                      ; relocations offset
+        dd 0                                      ; number of relocations
+        dd S_REGULAR                              ; flags
+        dd 0                                      ; reserved1
+        dd 0                                      ; reserved2
+        dd 0                                      ; reserved3
     data_section_end:
 
     linkedit_section:
@@ -139,19 +175,13 @@ commands:
     symtab:
         dd LC_SYMTAB             ; command
         dd symtab_end - symtab   ; command size
-        dd symbols               ; symbol table offset
-        dd 4                     ; number of symbols
-        dd strings               ; string table offset
-        dd strings_end - strings ; string table size
+        times 4 dd 0             ; ?
     symtab_end:
 
     dysymtab:
-        dd LC_DYSYMTAB ; command
+        dd LC_DYSYMTAB             ; command
         dd dysymtab_end - dysymtab ; command size
-        times 2 dd 0 ; ?
-        dd 0 ; external symbols index
-        dd 4 ; external symbols size
-        times 14 dd 0 ; ?
+        times 18 dd 0              ; ?
     dysymtab_end:
 
     load_dylinker:
@@ -187,48 +217,6 @@ commands_end:
 
 ; Text section
 text_start:
-
-; Hacky macro system to use some arm64 instruction in NASM because GAS sucks hard :)
-%define x0 0
-%define x1 1
-%define x2 2
-%define x16 16
-%macro arm64_mov 2
-    dd 0xAA0003E0 | ((%2 & 31) << 16) | (%1 & 31))
-%endmacro
-%macro arm64_mov_imm 2
-    dd 0xD2800000 | ((%2 & 0xffff) << 5) | (%1 & 31))
-%endmacro
-%macro arm64_add 3
-    dd 0x8B000000 | ((%3 & 31) << 16) | (%2 & 31) << 5) | (%1 & 31))
-%endmacro
-%macro arm64_add_imm 3
-    dd 0x91000000 | (((%3 & 0x1fff) << 10) | (%2 & 31) << 5) | (%1 & 31))
-%endmacro
-%macro arm64_sub 3
-    dd 0xCB000000 | ((%3 & 31) << 16) | (%2 & 31) << 5) | (%1 & 31))
-%endmacro
-%macro arm64_sub_imm 3
-    dd 0xD1000000 | (((%3 & 0x1fff) << 10) | (%2 & 31) << 5) | (%1 & 31))
-%endmacro
-%macro arm64_adr 2
-    dd 0x10000000 | ((((%2 - $) >> 2) << 5) | (%1 & 31))
-%endmacro
-%macro arm64_cbz 2
-    dd 0xB4000000 | (((((%2 - $) >> 2) & 0x7ffff) << 5) | (%1 & 31))
-%endmacro
-%macro arm64_b 1
-    dd 0x14000000 | (((%1 - $) >> 2) & 0x7ffffff)
-%endmacro
-%macro arm64_bl 1
-    dd 0x94000000 | (((%1 - $) >> 2) & 0x7ffffff)
-%endmacro
-%macro arm64_ret 0
-    dd 0xD65F03C0
-%endmacro
-%macro arm64_svc 1
-    dd 0xD4000001 | ((%1 & 0xffff) << 5)
-%endmacro
 
 _start:
     arm64_adr x0, hello_string
@@ -270,43 +258,6 @@ data_raw_end:
 
 ; Linkedit section
 linkedit_start:
-
-; Symbols
-symbols:
-    dd L_start - strings ; string table offset
-    db N_SECT | N_EXT    ; type flag
-    db 1                 ; section number
-    dw 0x0000            ; extra flags
-    dq _start            ; address
-
-    dd Lstrlen - strings ; string table offset
-    db N_SECT | N_EXT    ; type flag
-    db 1                 ; section number
-    dw 0x0000            ; extra flags
-    dq strlen            ; address
-
-    dd Lstrlen.repeat - strings ; string table offset
-    db N_SECT | N_EXT    ; type flag
-    db 1                 ; section number
-    dw 0x0000            ; extra flags
-    dq strlen.repeat     ; address
-
-    dd Lstrlen.done - strings ; string table offset
-    db N_SECT | N_EXT    ; type flag
-    db 1                 ; section number
-    dw 0x0000            ; extra flags
-    dq strlen.done       ; address
-symbols_end:
-
-strings:
-    db 0
-    L_start: db '_start', 0
-    Lstrlen: db 'strlen', 0
-    Lstrlen.repeat: db '.repeat', 0
-    Lstrlen.done: db '.done', 0
-    align 8, db 0
-strings_end:
-
 linkedit_end:
     align alignment, db 0
 linkedit_raw_end:

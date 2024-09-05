@@ -151,8 +151,7 @@ _arm64_macos_start:
     arm64_b _arm64_start
 
 arm64_macos_print:
-    dd 0xA9BE7BFD ; stp x29, x30, [sp, -32]!
-    arm64_mov x29, x31
+    dd 0xA9BE7BFD ; stp fp, lr, [sp, -32]!
     dd 0xF9000FE0 ; str x0, [sp, 24]
     arm64_bl arm64_strlen
     arm64_mov x2, x0
@@ -160,7 +159,7 @@ arm64_macos_print:
     arm64_mov_imm x0, stdout
     arm64_mov_imm x16, 4 ; write
     arm64_svc 0x80
-    dd 0xA8C27BFD ; ldp x29, x30, [sp], 32
+    dd 0xA8C27BFD ; ldp fp, lr, [sp], 32
     arm64_ret
 
 arm64_macos_exit:
@@ -178,8 +177,7 @@ _arm64_linux_start:
     arm64_b _arm64_start
 
 arm64_linux_print:
-    dd 0xA9BE7BFD ; stp x29, x30, [sp, -32]!
-    arm64_mov x29, x31
+    dd 0xA9BE7BFD ; stp fp, lr, [sp, -32]!
     dd 0xF9000FE0 ; str x0, [sp, 24]
     arm64_bl arm64_strlen
     arm64_mov x2, x0
@@ -187,7 +185,7 @@ arm64_linux_print:
     arm64_mov_imm x0, stdout
     arm64_mov_imm x8, 64 ; write
     arm64_svc 0x0
-    dd 0xA8C27BFD ; ldp x29, x30, [sp], 32
+    dd 0xA8C27BFD ; ldp fp, lr, [sp], 32
     arm64_ret
 
 arm64_linux_exit:
@@ -214,7 +212,7 @@ arm64_strlen:
     arm64_ret
 
 arm64_println:
-    dd 0xF81F0FFE ; str x30, [sp, -16]!
+    dd 0xF81F0FFE ; str lr, [sp, -16]!
 
     arm64_adr x8, print
     arm64_ldr x8, x8
@@ -225,7 +223,7 @@ arm64_println:
     arm64_ldr x8, x8
     arm64_blr x8
 
-    dd 0xF84107FE ; ldr x30, [sp], 16
+    dd 0xF84107FE ; ldr lr, [sp], 16
     arm64_ret
 
 end_section_text

@@ -1,5 +1,5 @@
-; A simple pure assembly macho-o x86_64 adhoc code signed dynamicly linked executable with symbols for macOS
-; nasm -f bin hello-x86_64.s -o hello-x86_64 && chmod +x hello-x86_64 && codesign -s - hello-x86_64 && ./hello-x86_64
+; A simple pure assembly MACH-O x86_64 adhoc code signed dynamicly linked macOS executable with symbols
+; nasm -f bin hello-libc-x86_64.s -o hello-libc-x86_64 && chmod +x hello-libc-x86_64 && codesign -s - hello-libc-x86_64 && ./hello-libc-x86_64
 
     origin equ 0x100000000
     alignment equ 0x1000
@@ -44,8 +44,6 @@
     %define	N_EXT 0x01
     %define	N_SECT 0xe
 
-    %define NULL 0
-
 ; Macho Header
 macho_header:
     dd MH_MAGIC_64                        ; magic
@@ -74,57 +72,57 @@ commands:
     page_zero_end:
 
     text_section:
-        dd LC_SEGMENT_64                   ; command
-        dd text_section_end - text_section ; command size
+        dd LC_SEGMENT_64                          ; command
+        dd text_section_end - text_section        ; command size
         db "__TEXT", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq origin                          ; vm address
-        dq text_raw_end - origin           ; vm size
-        dq 0                               ; file offset
-        dq text_raw_end - origin           ; file size
-        dd VM_PROT_READ | VM_PROT_EXECUTE  ; maximum protection
-        dd VM_PROT_READ | VM_PROT_EXECUTE  ; initial protection
-        dd 1                               ; number of sections
-        dd 0x0                             ; flags
+        dq origin                                 ; vm address
+        dq text_raw_end - origin                  ; vm size
+        dq 0                                      ; file offset
+        dq text_raw_end - origin                  ; file size
+        dd VM_PROT_READ | VM_PROT_EXECUTE         ; maximum protection
+        dd VM_PROT_READ | VM_PROT_EXECUTE         ; initial protection
+        dd 1                                      ; number of sections
+        dd 0x0                                    ; flags
 
         db "__text", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; section name
         db "__TEXT", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq text_start             ; address
-        dq text_end - text_start  ; size
-        dd text_start - origin    ; offset
-        dd 2                      ; align
-        dd 0                      ; relocations offset
-        dd 0                      ; number of relocations
+        dq text_start                             ; address
+        dq text_end - text_start                  ; size
+        dd text_start - origin                    ; offset
+        dd 2                                      ; align
+        dd 0                                      ; relocations offset
+        dd 0                                      ; number of relocations
         dd S_REGULAR | S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS ; flags
-        dd 0                      ; reserved1
-        dd 0                      ; reserved2
-        dd 0                      ; reserved3
+        dd 0                                      ; reserved1
+        dd 0                                      ; reserved2
+        dd 0                                      ; reserved3
     text_section_end:
 
     data_section:
-        dd LC_SEGMENT_64                   ; command
-        dd data_section_end - data_section ; command size
+        dd LC_SEGMENT_64                          ; command
+        dd data_section_end - data_section        ; command size
         db "__DATA", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq data_start                      ; vm address
-        dq data_raw_end - data_start       ; vm size
-        dq data_start - origin             ; file offset
-        dq data_raw_end - data_start       ; file size
-        dd VM_PROT_READ | VM_PROT_WRITE    ; maximum protection
-        dd VM_PROT_READ | VM_PROT_WRITE    ; initial protection
-        dd 1                               ; number of sections
-        dd 0x0                             ; flags
+        dq data_start                             ; vm address
+        dq data_raw_end - data_start              ; vm size
+        dq data_start - origin                    ; file offset
+        dq data_raw_end - data_start              ; file size
+        dd VM_PROT_READ | VM_PROT_WRITE           ; maximum protection
+        dd VM_PROT_READ | VM_PROT_WRITE           ; initial protection
+        dd 1                                      ; number of sections
+        dd 0x0                                    ; flags
 
         db "__data", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; section name
         db "__DATA", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq data_start             ; address
-        dq data_end - data_start  ; size
-        dd data_start - origin    ; offset
-        dd 0                      ; align
-        dd 0                      ; relocations offset
-        dd 0                      ; number of relocations
-        dd S_REGULAR              ; flags
-        dd 0                      ; reserved1
-        dd 0                      ; reserved2
-        dd 0                      ; reserved3
+        dq data_start                             ; address
+        dq data_end - data_start                  ; size
+        dd data_start - origin                    ; offset
+        dd 0                                      ; align
+        dd 0                                      ; relocations offset
+        dd 0                                      ; number of relocations
+        dd S_REGULAR                              ; flags
+        dd 0                                      ; reserved1
+        dd 0                                      ; reserved2
+        dd 0                                      ; reserved3
     data_section_end:
 
     linkedit_section:
@@ -151,12 +149,12 @@ commands:
     symtab_end:
 
     dysymtab:
-        dd LC_DYSYMTAB ; command
+        dd LC_DYSYMTAB             ; command
         dd dysymtab_end - dysymtab ; command size
-        times 2 dd 0 ; ?
-        dd 0 ; external symbols index
-        dd 3 ; external symbols size
-        times 14 dd 0 ; ?
+        times 2 dd 0               ; ?
+        dd 0                       ; external symbols index
+        dd 3                       ; external symbols size
+        times 14 dd 0              ; ?
     dysymtab_end:
 
     load_dylinker:
@@ -183,10 +181,10 @@ commands:
     dyld_info:
         dd LC_DYLD_INFO_ONLY             ; command
         dd dyld_info_end - dyld_info     ; command size
-        times 2 dd 0
+        times 2 dd 0                     ; ?
         dd bindings - origin             ; bindings offset
         dd bindings_end - bindings       ; bindings size
-        times 6 dd 0
+        times 6 dd 0                     ; ?
     dyld_info_end:
 
     main:
@@ -203,17 +201,20 @@ commands_end:
 text_start:
 
 _start:
+    push rbp
+    mov rbp, rsp
+
     lea rdi, [rel hello_string]
     call printf
 
-    mov rdi, NULL
+    xor rdi, rdi
     call time
     mov rsi, rax
-
     lea rdi, [rel time_string]
     call printf
 
-    mov rax, 0
+    xor eax, eax
+    leave
     ret
 
 printf: jmp [rel _printf]

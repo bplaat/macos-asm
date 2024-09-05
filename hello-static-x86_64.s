@@ -1,4 +1,4 @@
-; A simple pure assembly macho-o x86_64 static executable for macOS
+; A simple pure assembly MACHO-O x86_64 static macOS executable
 ; nasm -f bin hello-static-x86_64.s -o hello-static-x86_64 && chmod +x hello-static-x86_64 && ./hello-static-x86_64
 
     origin equ 0x100000000
@@ -45,83 +45,85 @@ macho_header:
 ; Macho load commands
 commands:
     page_zero:
-        dd LC_SEGMENT_64              ; command
-        dd page_zero_end - page_zero  ; command size
+        dd LC_SEGMENT_64                  ; command
+        dd page_zero_end - page_zero      ; command size
         db "__PAGEZERO", 0, 0, 0, 0, 0, 0 ; segment name
-        dq 0                          ; vm address
-        dq origin                     ; vm size
-        dq 0                          ; file offset
-        dq 0                          ; file size
-        dd VM_PROT_NONE               ; maximum protection
-        dd VM_PROT_NONE               ; inital protection
-        dd 0                          ; number of sections
-        dd 0x0                        ; flags
+        dq 0                              ; vm address
+        dq origin                         ; vm size
+        dq 0                              ; file offset
+        dq 0                              ; file size
+        dd VM_PROT_NONE                   ; maximum protection
+        dd VM_PROT_NONE                   ; inital protection
+        dd 0                              ; number of sections
+        dd 0x0                            ; flags
     page_zero_end:
 
     text_section:
-        dd LC_SEGMENT_64                   ; command
-        dd text_section_end - text_section ; command size
+        dd LC_SEGMENT_64                          ; command
+        dd text_section_end - text_section        ; command size
         db "__TEXT", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq origin                          ; vm address
-        dq text_raw_end - origin           ; vm size
-        dq 0                               ; file offset
-        dq text_raw_end - origin           ; file size
-        dd VM_PROT_READ | VM_PROT_EXECUTE  ; maximum protection
-        dd VM_PROT_READ | VM_PROT_EXECUTE  ; initial protection
-        dd 1                               ; number of sections
-        dd 0x0                             ; flags
+        dq origin                                 ; vm address
+        dq text_raw_end - origin                  ; vm size
+        dq 0                                      ; file offset
+        dq text_raw_end - origin                  ; file size
+        dd VM_PROT_READ | VM_PROT_EXECUTE         ; maximum protection
+        dd VM_PROT_READ | VM_PROT_EXECUTE         ; initial protection
+        dd 1                                      ; number of sections
+        dd 0x0                                    ; flags
 
         db "__text", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; section name
         db "__TEXT", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq text_start             ; address
-        dq text_end - text_start  ; size
-        dd text_start - origin    ; offset
-        dd 2                      ; align
-        dd 0                      ; relocations offset
-        dd 0                      ; number of relocations
+        dq text_start                             ; address
+        dq text_end - text_start                  ; size
+        dd text_start - origin                    ; offset
+        dd 2                                      ; align
+        dd 0                                      ; relocations offset
+        dd 0                                      ; number of relocations
         dd S_REGULAR | S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS ; flags
-        dd 0                      ; reserved1
-        dd 0                      ; reserved2
-        dd 0                      ; reserved3
+        dd 0                                      ; reserved1
+        dd 0                                      ; reserved2
+        dd 0                                      ; reserved3
     text_section_end:
 
     data_section:
-        dd LC_SEGMENT_64                   ; command
-        dd data_section_end - data_section ; command size
+        dd LC_SEGMENT_64                          ; command
+        dd data_section_end - data_section        ; command size
         db "__DATA", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq data_start                      ; vm address
-        dq data_raw_end - data_start       ; vm size
-        dq data_start - origin             ; file offset
-        dq data_raw_end - data_start       ; file size
-        dd VM_PROT_READ | VM_PROT_WRITE    ; maximum protection
-        dd VM_PROT_READ | VM_PROT_WRITE    ; initial protection
-        dd 1                               ; number of sections
-        dd 0x0                             ; flags
+        dq data_start                             ; vm address
+        dq data_raw_end - data_start              ; vm size
+        dq data_start - origin                    ; file offset
+        dq data_raw_end - data_start              ; file size
+        dd VM_PROT_READ | VM_PROT_WRITE           ; maximum protection
+        dd VM_PROT_READ | VM_PROT_WRITE           ; initial protection
+        dd 1                                      ; number of sections
+        dd 0x0                                    ; flags
 
         db "__data", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; section name
         db "__DATA", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ; segment name
-        dq data_start             ; address
-        dq data_end - data_start  ; size
-        dd data_start - origin    ; offset
-        dd 0                      ; align
-        dd 0                      ; relocations offset
-        dd 0                      ; number of relocations
-        dd S_REGULAR              ; flags
-        dd 0                      ; reserved1
-        dd 0                      ; reserved2
-        dd 0                      ; reserved3
+        dq data_start                             ; address
+        dq data_end - data_start                  ; size
+        dd data_start - origin                    ; offset
+        dd 0                                      ; align
+        dd 0                                      ; relocations offset
+        dd 0                                      ; number of relocations
+        dd S_REGULAR                              ; flags
+        dd 0                                      ; reserved1
+        dd 0                                      ; reserved2
+        dd 0                                      ; reserved3
     data_section_end:
 
     unix_thread_start:
-        dd LC_UNIXTHREAD      ; command
+        dd LC_UNIXTHREAD                             ; command
         dd unix_thread_start_end - unix_thread_start ; command size
-        dd x86_THREAD_STATE64 ; flavour
-        dd 42                 ; count
-        dq 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 ; regs
-        dq 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
-        dq _start, 0x0, 0x0, 0x0, 0x0 ; rip, ...
+        dd x86_THREAD_STATE64                        ; flavour
+        dd 42                                        ; count
+        dq 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0    ; regs
+        dq 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0    ; ...
+        dq _start, 0x0, 0x0, 0x0, 0x0                ; rip, ...
     unix_thread_start_end:
 commands_end:
+
+    align 256, db 0
 
 ; Text section
 text_start:
@@ -129,7 +131,6 @@ text_start:
 _start:
     lea rdi, [rel hello]
     call strlen
-
     mov edx, eax
     lea rsi, [rel hello]
     mov edi, stdout
