@@ -1,5 +1,5 @@
-; A simple pure assembly MACH-O x86_64 adhoc code signed dynamicly linked macOS executable with symbols
-; nasm -f bin hello-libc-x86_64.s -o hello-libc-x86_64 && chmod +x hello-libc-x86_64 && codesign -s - hello-libc-x86_64 && ./hello-libc-x86_64
+; A simple pure assembly MACH-O x86_64 dynamicly linked macOS executable with symbols
+; nasm -f bin hello-libc-x86_64.s -o hello-libc-x86_64 && chmod +x hello-libc-x86_64 && ./hello-libc-x86_64
 
     origin equ 0x100000000
     alignment equ 0x1000
