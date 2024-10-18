@@ -8,7 +8,7 @@ impl NSString {
     pub fn from_str(str: impl AsRef<str>) -> Self {
         unsafe {
             let ns_string: Object = msg_send![class!(NSString), alloc];
-            let ns_string: Object = msg_send![ns_string, initWithBytes:str.as_ref().as_ptr(), length:str.as_ref().len(), encoding:NS_UTF8_STRING_ENCODING];
+            let ns_string: Object = msg_send![ns_string, initWithBytes:str.as_ref().as_ptr() length:str.as_ref().len() encoding:NS_UTF8_STRING_ENCODING];
             msg_send![ns_string, autorelease]
         }
     }

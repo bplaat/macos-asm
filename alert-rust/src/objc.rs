@@ -21,6 +21,7 @@ macro_rules! class {
         }
     }};
 }
+
 #[macro_export]
 macro_rules! sel {
     ($name:ident) => {{
@@ -38,27 +39,40 @@ macro_rules! sel {
         }
     });
 }
+
+pub trait MessageArgs {
+    unsafe fn invoke<R>(obj: Object, sel: Sel, args: Self) -> R;
+}
+macro_rules! message_args_impl {
+    ($($a:ident : $t:ident),*) => (
+        impl<$($t),*> MessageArgs for ($($t,)*) {
+            #[inline(always)]
+            unsafe fn invoke<R>(obj: Object, sel: Sel, ($($a,)*): Self) -> R {
+                let imp: unsafe extern fn (Object, Sel, $($t,)*) -> R =
+                    std::mem::transmute(objc_msgSend as *const c_void);
+                imp(obj, sel, $($a,)*)
+            }
+        }
+    );
+}
+message_args_impl!();
+message_args_impl!(a: A);
+message_args_impl!(a: A, b: B);
+message_args_impl!(a: A, b: B, c: C);
+message_args_impl!(a: A, b: B, c: C, d: D);
+message_args_impl!(a: A, b: B, c: C, d: D, e: E);
+message_args_impl!(a: A, b: B, c: C, d: D, e: E, f: F);
+#[inline(always)]
+pub unsafe fn _message_send<A: MessageArgs, R>(obj: Object, sel: Sel, args: A) -> R {
+    MessageArgs::invoke(obj, sel, args)
+}
+
 #[macro_export]
 macro_rules! msg_send {
     ($receiver:expr, $sel:ident) => {{
-        let msg_send : extern "C" fn (receiver: Object, sel: $crate::objc::Sel) -> _ =
-        std::mem::transmute($crate::objc::objc_msgSend as *const std::ffi::c_void);
-        msg_send($receiver, $crate::sel!($sel))
+        $crate::objc::_message_send($receiver, $crate::sel!($sel), ())
     }};
-    // FIXME: This is dump but I don't know how to expand _'s in func type decl
-    ($receiver:expr, $sel1:ident : $arg1:expr) => ({
-        let msg_send : extern "C" fn (receiver: Object, sel: $crate::objc::Sel, _) -> _ =
-        std::mem::transmute($crate::objc::objc_msgSend as *const std::ffi::c_void);
-        msg_send($receiver, $crate::sel!($sel1:), $arg1)
-    });
-    ($receiver:expr, $sel1:ident : $arg1:expr, $sel2:ident : $arg2:expr) => ({
-        let msg_send : extern "C" fn (receiver: Object, sel: $crate::objc::Sel, _, _) -> _ =
-        std::mem::transmute($crate::objc::objc_msgSend as *const std::ffi::c_void);
-        msg_send($receiver, $crate::sel!($sel1:$sel2:), $arg1, $arg2)
-    });
-    ($receiver:expr, $sel1:ident : $arg1:expr, $sel2:ident : $arg2:expr, $sel3:ident : $arg3:expr) => ({
-        let msg_send : extern "C" fn (receiver: Object, sel: $crate::objc::Sel, _, _, _) -> _ =
-        std::mem::transmute($crate::objc::objc_msgSend as *const std::ffi::c_void);
-        msg_send($receiver, $crate::sel!($sel1:$sel2:$sel3:), $arg1, $arg2, $arg3)
+    ($receiver:expr, $($sel:ident : $arg:expr)+) => ({
+        $crate::objc::_message_send($receiver, $crate::sel!($($sel:)+), ($($arg,)+))
     });
 }

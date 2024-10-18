@@ -42,7 +42,8 @@ impl NSString {
     pub fn from_str(str: impl AsRef<str>) -> Self {
         unsafe {
             let ns_string: Object = msg_send![class!(NSString), alloc];
-            msg_send![ns_string, initWithBytes:str.as_ref().as_ptr(), length:str.as_ref().len(), encoding:NS_UTF8_STRING_ENCODING]
+            let ns_string: Object = msg_send![ns_string, initWithBytes:str.as_ref().as_ptr() length:str.as_ref().len() encoding:NS_UTF8_STRING_ENCODING];
+            msg_send![ns_string, autorelease]
         }
     }
 }
@@ -71,7 +72,7 @@ impl NSBundle {
         ext: impl AsRef<str>,
     ) -> NSURL {
         unsafe {
-            msg_send![self.0, URLForResource:NSString::from_str(name).0, withExtension:NSString::from_str(ext).0]
+            msg_send![self.0, URLForResource:NSString::from_str(name).0 withExtension:NSString::from_str(ext).0]
         }
     }
 }
@@ -100,7 +101,7 @@ impl NSMenuItem {
     ) -> Self {
         unsafe {
             let ns_menu_item: Object = msg_send![class!(NSMenuItem), alloc];
-            msg_send![ns_menu_item, initWithTitle:NSString::from_str(title).0, action:action, keyEquivalent:NSString::from_str(key).0]
+            msg_send![ns_menu_item, initWithTitle:NSString::from_str(title).0 action:action keyEquivalent:NSString::from_str(key).0]
         }
     }
     pub fn set_submenu(&self, submenu: NSMenu) {
@@ -213,9 +214,9 @@ impl NSWindow {
     pub fn new() -> Self {
         unsafe {
             let ns_window: Object = msg_send![class!(NSWindow), alloc];
-            msg_send![ns_window, initWithContentRect:NSRect::new(0.0, 0.0, 1024.0, 768.0),
-                styleMask:NS_WINDOW_STYLE_MASK_TITLED | NS_WINDOW_STYLE_MASK_CLOSABLE | NS_WINDOW_STYLE_MASK_MINIATURIZABLE | NS_WINDOW_STYLE_MASK_RESIZABLE,
-                backing:NS_BACKING_STORE_BUFFERED,
+            msg_send![ns_window, initWithContentRect:NSRect::new(0.0, 0.0, 1024.0, 768.0)
+                styleMask:NS_WINDOW_STYLE_MASK_TITLED | NS_WINDOW_STYLE_MASK_CLOSABLE | NS_WINDOW_STYLE_MASK_MINIATURIZABLE | NS_WINDOW_STYLE_MASK_RESIZABLE
+                backing:NS_BACKING_STORE_BUFFERED
                 defer:false]
         }
     }
@@ -229,7 +230,7 @@ impl NSWindow {
         unsafe { msg_send![self.0, frame] }
     }
     pub fn set_frame(&self, frame: NSRect, display: bool) {
-        unsafe { msg_send![self.0, setFrame:frame, display:display] }
+        unsafe { msg_send![self.0, setFrame:frame display:display] }
     }
     pub fn screen(&self) -> NSScreen {
         unsafe { msg_send![self.0, screen] }
