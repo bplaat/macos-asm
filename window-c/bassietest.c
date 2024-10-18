@@ -69,6 +69,7 @@ typedef struct App {
 } App;
 
 void windowDidResize(id self, SEL cmd) {
+    (void)cmd;
     App *app;
     object_getInstanceVariable(self, app_ivar, (void **)&app);
     NSRect windowFrame = msg_ret_rect(app->window, sel("frame"));
@@ -76,6 +77,7 @@ void windowDidResize(id self, SEL cmd) {
 }
 
 void applicationDidFinishLaunching(id self, SEL cmd) {
+    (void)cmd;
     App *app;
     object_getInstanceVariable(self, app_ivar, (void **)&app);
 
@@ -130,6 +132,8 @@ void applicationDidFinishLaunching(id self, SEL cmd) {
 }
 
 BOOL applicationShouldTerminateAfterLastWindowClosed(id self, SEL cmd) {
+    (void)self;
+    (void)cmd;
     return YES;
 }
 
