@@ -41,12 +41,13 @@ impl NSApplicationDelegate for App {
         self.window.set_delegate_from_ref(self);
 
         // Create webview
-        let content_view = self.window.content_view();
-        self.webview.set_frame(content_view.bounds());
+        self.webview.set_frame(self.window.content_view().bounds());
         let app_path = NSBundle::main_bundle().url_for_resource_with_extension("app", "html");
-        let request = NSURLRequest::request_with_url(app_path);
-        self.webview.load_request(request);
-        content_view.add_subview(self.webview.as_ns_view());
+        self.webview
+            .load_request(NSURLRequest::request_with_url(app_path));
+        self.window
+            .content_view()
+            .add_subview(self.webview.as_ns_view());
 
         self.window.make_key_and_order_front();
     }

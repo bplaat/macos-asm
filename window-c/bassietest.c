@@ -115,6 +115,7 @@ void applicationDidFinishLaunching(id self, SEL cmd) {
     msg_size(app->window, sel("setMinSize:"), (NSSize){320, 240});
     msg_id(app->window, sel("setBackgroundColor:"), msg_cls_float_float_float_float(
         cls("NSColor"), sel("colorWithRed:green:blue:alpha:"), 0x05 / 255.f, 0x44 / 255.f, 0x5e / 255.f, 1));
+    msg_id(app->window, sel("setFrameAutosaveName:"), NSString("window"));
     msg_id(app->window, sel("setDelegate:"), app->appDelegate);
 
     // Create label

@@ -46,6 +46,7 @@ typedef struct {
     [_app->window setFrame:NSMakeRect(windowX, windowY, NSWidth(_app->window.frame), NSHeight(_app->window.frame)) display:YES];
     _app->window.minSize = NSMakeSize(320, 240);
     _app->window.backgroundColor = [NSColor colorWithRed:(0x05 / 255.f) green:(0x44 / 255.f) blue:(0x5e / 255.f) alpha:1];
+    _app->window.frameAutosaveName = @"window";
     _app->window.delegate = _app->appDelegate;
 
     // Create label
