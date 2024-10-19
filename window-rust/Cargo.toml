@@ -1,0 +1,11 @@
+[package]
+name = "bassietest"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[profile.release]
+opt-level = "z"
+panic = "abort"
+lto = "fat"
