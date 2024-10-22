@@ -1,4 +1,4 @@
-use std::ffi::{c_char, c_void};
+use std::ffi::{c_void, CStr};
 use std::ptr::null;
 
 use crate::objc::{object_getInstanceVariable, object_setInstanceVariable, ClassDecl, Object, Sel};
@@ -92,7 +92,7 @@ impl NSMenuItem {
 }
 
 // NSApplicationDelegate
-pub const PTR_IVAR: &str = "ptr\0";
+pub const PTR_IVAR: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"ptr\0") };
 pub trait NSApplicationDelegate {
     fn did_finish_launching(&self);
     fn should_terminate_after_last_window_closed(&self) -> bool;
@@ -104,7 +104,7 @@ extern "C" fn did_finish_launching<T: NSApplicationDelegate>(
 ) {
     unsafe {
         let mut app = null();
-        object_getInstanceVariable(this, PTR_IVAR.as_ptr() as *const c_char, &mut app);
+        object_getInstanceVariable(this, PTR_IVAR.as_ptr(), &mut app);
         (*(app as *const T)).did_finish_launching();
     }
 }
@@ -115,7 +115,7 @@ extern "C" fn should_terminate_after_last_window_closed<T: NSApplicationDelegate
 ) -> bool {
     unsafe {
         let mut app = null();
-        object_getInstanceVariable(this, PTR_IVAR.as_ptr() as *const c_char, &mut app);
+        object_getInstanceVariable(this, PTR_IVAR.as_ptr(), &mut app);
         (*(app as *const T)).should_terminate_after_last_window_closed()
     }
 }
@@ -128,7 +128,7 @@ impl NSApplication {
     }
     pub fn set_delegate<T: NSApplicationDelegate>(&self, delegate: &T) {
         let mut decl = ClassDecl::new("AppDelegate", class!(NSObject)).unwrap();
-        decl.add_ivar::<*const c_void>(PTR_IVAR.as_ptr() as *const c_char, "^v");
+        decl.add_ivar::<*const c_void>(PTR_IVAR.as_ptr(), "^v");
         decl.add_method(
             sel!(applicationDidFinishLaunching:),
             did_finish_launching::<T> as *const c_void,
@@ -144,7 +144,7 @@ impl NSApplication {
             let app_delegate: Object = msg_send![delegate_class, new];
             object_setInstanceVariable(
                 app_delegate,
-                PTR_IVAR.as_ptr() as *const c_char,
+                PTR_IVAR.as_ptr(),
                 delegate as *const T as *mut c_void,
             );
             msg_send![self.0, setDelegate:app_delegate]
@@ -193,7 +193,7 @@ pub trait NSWindowDelegate {
 extern "C" fn did_resize<T: NSWindowDelegate>(this: Object, _: Sel, _notification: Object) {
     unsafe {
         let mut app = null();
-        object_getInstanceVariable(this, PTR_IVAR.as_ptr() as *const c_char, &mut app);
+        object_getInstanceVariable(this, PTR_IVAR.as_ptr(), &mut app);
         (*(app as *const T)).did_resize()
     }
 }
@@ -245,7 +245,7 @@ impl NSWindow {
     }
     pub fn set_delegate<T: NSWindowDelegate>(&self, delegate: &T) {
         let mut decl = ClassDecl::new("WindowDelegate", class!(NSObject)).unwrap();
-        decl.add_ivar::<*const c_void>(PTR_IVAR.as_ptr() as *const c_char, "^v");
+        decl.add_ivar::<*const c_void>(PTR_IVAR.as_ptr(), "^v");
         decl.add_method(
             sel!(windowDidResize:),
             did_resize::<T> as *const c_void,
@@ -256,7 +256,7 @@ impl NSWindow {
             let window_delegate: Object = msg_send![delegate_class, new];
             object_setInstanceVariable(
                 window_delegate,
-                PTR_IVAR.as_ptr() as *const c_char,
+                PTR_IVAR.as_ptr(),
                 delegate as *const T as *mut c_void,
             );
             msg_send![self.0, setDelegate:window_delegate]
