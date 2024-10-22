@@ -375,7 +375,7 @@ _macho_x86_64_commands:
         dd _x86_64_build_version_end - _x86_64_build_version ; command size
         dd PLATFORM_MACOS                                    ; platform
         dw 0, 11                                             ; minos
-        dw 0, 14                                             ; sdk
+        dw 0, 11                                             ; sdk
         dd 1                                                 ; ntools
         dd TOOL_LD                                           ; tool type
         dw 0, 1                                              ; tool version
@@ -537,9 +537,9 @@ _macho_arm64_commands:
         dd _arm64_build_version_end - _arm64_build_version ; command size
         dd PLATFORM_MACOS                                  ; platform
         dw 0, 11                                           ; minos
-        dw 0, 14                                           ; sdk
+        dw 0, 11                                           ; sdk
         dd 1                                               ; ntools (should be at least 1)
-        dd 3                                               ; tool type: ld
+        dd TOOL_LD                                         ; tool type: ld
         dw 0, 1                                            ; tool version
     _arm64_build_version_end:
 
