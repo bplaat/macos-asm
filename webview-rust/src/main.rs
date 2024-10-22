@@ -1,9 +1,18 @@
 #![no_main]
 
+use serde::{Deserialize, Serialize};
+
 use crate::cocoa::*;
 
 mod cocoa;
 mod objc;
+
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "type")]
+enum IpcMessage {
+    #[serde(rename = "hello")]
+    Hello { name: String },
+}
 
 #[derive(Default)]
 struct App {
@@ -39,6 +48,11 @@ impl NSApplicationDelegate for App {
 
         // Create webview
         self.webview.set_frame(self.window.content_view().bounds());
+        self.webview.set_navigation_delegate(self);
+        self.webview
+            .configuration()
+            .user_content_controller()
+            .add_script_message_handler("ipc", self);
         let app_path = NSBundle::main_bundle().url_for_resource_with_extension("app", "html");
         self.webview
             .load_request(NSURLRequest::request_with_url(app_path));
@@ -57,6 +71,29 @@ impl NSApplicationDelegate for App {
 impl NSWindowDelegate for App {
     fn did_resize(&self) {
         self.webview.set_frame(self.window.content_view().bounds());
+    }
+}
+
+impl WKNavigationDelegate for App {
+    fn did_finish_navigation(&self, _navigation: WKNavigation) {
+        let message = IpcMessage::Hello {
+            name: "WebView".to_string(),
+        };
+        self.webview.evaluate_javascript(format!(
+            "window.dispatchEvent(new MessageEvent('message', {{ data: '{}' }}));",
+            serde_json::to_string(&message).unwrap()
+        ));
+    }
+}
+
+impl WKScriptMessageHandler for App {
+    fn did_receive_message(&self, message: WKScriptMessage) {
+        let message = serde_json::from_str(&message.body()).unwrap();
+        match message {
+            IpcMessage::Hello { name } => {
+                println!("Hello, {}!", name);
+            }
+        }
     }
 }
 

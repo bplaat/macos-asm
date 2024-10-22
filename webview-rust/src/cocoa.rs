@@ -47,6 +47,15 @@ impl NSString {
             msg_send![ns_string, autorelease]
         }
     }
+
+    pub fn to_string(&self) -> String {
+        unsafe {
+            let bytes: *const c_char = msg_send![self.0, UTF8String];
+            let len: usize = msg_send![self.0, lengthOfBytesUsingEncoding:NS_UTF8_STRING_ENCODING];
+            let slice = std::slice::from_raw_parts(bytes as *const u8, len as usize);
+            String::from_utf8_lossy(slice).to_string()
+        }
+    }
 }
 
 // NSURL
@@ -275,6 +284,92 @@ impl Default for NSWindow {
     }
 }
 
+// WKNavigationDelegate
+pub trait WKNavigationDelegate {
+    fn did_finish_navigation(&self, navigation: WKNavigation);
+}
+extern "C" fn did_finish_navigation<T: WKNavigationDelegate>(
+    this: Object,
+    _: Sel,
+    _webview: Object,
+    navigation: Object,
+) {
+    unsafe {
+        let mut app = null();
+        object_getInstanceVariable(this, PTR_IVAR.as_ptr() as *const c_char, &mut app);
+        (*(app as *const T)).did_finish_navigation(WKNavigation(navigation));
+    }
+}
+
+// WKNavigation
+#[allow(dead_code)]
+pub struct WKNavigation(Object);
+
+// WKScriptMessageHandler
+pub trait WKScriptMessageHandler {
+    fn did_receive_message(&self, message: WKScriptMessage);
+}
+extern "C" fn did_receive_message<T: WKScriptMessageHandler>(
+    this: Object,
+    _: Sel,
+    _user_content_controller: Object,
+    message: Object,
+) {
+    unsafe {
+        let mut app = null();
+        object_getInstanceVariable(this, PTR_IVAR.as_ptr() as *const c_char, &mut app);
+        (*(app as *const T)).did_receive_message(WKScriptMessage(message));
+    }
+}
+
+// WKScriptMessage
+pub struct WKScriptMessage(Object);
+impl WKScriptMessage {
+    pub fn body(&self) -> String {
+        unsafe {
+            let ns_string = NSString(msg_send![self.0, body]);
+            let string = ns_string.to_string();
+            string
+        }
+    }
+}
+
+// WKWebViewConfiguration
+pub struct WKWebViewConfiguration(Object);
+impl WKWebViewConfiguration {
+    pub fn user_content_controller(&self) -> WKUserContentController {
+        WKUserContentController(unsafe { msg_send![self.0, userContentController] })
+    }
+}
+
+// WKUserContentController
+pub struct WKUserContentController(Object);
+impl WKUserContentController {
+    pub fn add_script_message_handler<T: WKScriptMessageHandler>(
+        &self,
+        name: impl AsRef<str>,
+        handler: &T,
+    ) {
+        let mut decl = ClassDecl::new("ScriptMessageHandler", class!(NSObject)).unwrap();
+        decl.add_ivar::<*const c_void>(PTR_IVAR.as_ptr() as *const c_char, "^v");
+        decl.add_method(
+            sel!(userContentController:didReceiveScriptMessage:),
+            did_receive_message::<T> as *const c_void,
+            "v@:@",
+        );
+        let handler_class = decl.register();
+        unsafe {
+            let script_message_handler: Object = msg_send![handler_class, new];
+            object_setInstanceVariable(
+                script_message_handler,
+                PTR_IVAR.as_ptr() as *const c_char,
+                handler as *const _ as *mut c_void,
+            );
+            msg_send![self.0, addScriptMessageHandler:script_message_handler name:NSString::from_str(name).0]
+        }
+    }
+}
+
 // WKWebView
 pub struct WKWebView(Object);
 impl WKWebView {
@@ -284,11 +379,38 @@ impl WKWebView {
     pub fn as_ns_view(&self) -> NSView {
         NSView(self.0)
     }
+    pub fn configuration(&self) -> WKWebViewConfiguration {
+        WKWebViewConfiguration(unsafe { msg_send![self.0, configuration] })
+    }
     pub fn set_frame(&self, frame: NSRect) {
         unsafe { msg_send![self.0, setFrame:frame] }
     }
+    pub fn set_navigation_delegate<T: WKNavigationDelegate>(&self, delegate: &T) {
+        let mut decl = ClassDecl::new("NavigationDelegate", class!(NSObject)).unwrap();
+        decl.add_ivar::<*const c_void>(PTR_IVAR.as_ptr() as *const c_char, "^v");
+        decl.add_method(
+            sel!(webView:didFinishNavigation:),
+            did_finish_navigation::<T> as *const c_void,
+            "v@:@",
+        );
+        let delegate_class = decl.register();
+        unsafe {
+            let navigation_delegate: Object = msg_send![delegate_class, new];
+            object_setInstanceVariable(
+                navigation_delegate,
+                PTR_IVAR.as_ptr() as *const c_char,
+                delegate as *const _ as *mut c_void,
+            );
+            msg_send![self.0, setNavigationDelegate:navigation_delegate]
+        }
+    }
     pub fn load_request(&self, request: NSURLRequest) {
         unsafe { msg_send![self.0, loadRequest:request.0] }
+    }
+    pub fn evaluate_javascript(&self, js: impl AsRef<str>) {
+        unsafe {
+            msg_send![self.0, evaluateJavaScript:NSString::from_str(js).0 completionHandler:null::<*const c_void>()]
+        }
     }
 }
 impl Default for WKWebView {
