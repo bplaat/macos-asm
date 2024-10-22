@@ -1,9 +1,6 @@
 #![no_main]
 
-use crate::cocoa::{
-    NSApplication, NSApplicationDelegate, NSColor, NSFont, NSMenu, NSMenuItem, NSRect, NSSize,
-    NSText, NSWindow, NSWindowDelegate, NS_TEXT_ALIGNMENT_CENTER,
-};
+use crate::cocoa::*;
 
 mod cocoa;
 mod objc;
@@ -43,7 +40,7 @@ impl NSApplicationDelegate for App {
         self.window
             .set_background_color(NSColor::from_rgba(0x05, 0x44, 0x5e, 0xff));
         self.window.set_frame_autosave_name("window");
-        self.window.set_delegate_from_ref(self);
+        self.window.set_delegate(self);
 
         // Create label
         self.label.set_string("Hello macOS!");
@@ -83,7 +80,8 @@ impl NSWindowDelegate for App {
 
 #[no_mangle]
 pub extern "C" fn main() {
+    let app = App::default();
     let application = NSApplication::shared_application();
-    application.set_delegate(App::default());
+    application.set_delegate(&app);
     application.run();
 }

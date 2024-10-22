@@ -1,9 +1,6 @@
 #![no_main]
 
-use crate::cocoa::{
-    NSApplication, NSApplicationDelegate, NSBundle, NSMenu, NSMenuItem, NSRect, NSSize,
-    NSURLRequest, NSWindow, NSWindowDelegate, WKWebView,
-};
+use crate::cocoa::*;
 
 mod cocoa;
 mod objc;
@@ -38,7 +35,7 @@ impl NSApplicationDelegate for App {
             true,
         );
         self.window.set_frame_autosave_name("window");
-        self.window.set_delegate_from_ref(self);
+        self.window.set_delegate(self);
 
         // Create webview
         self.webview.set_frame(self.window.content_view().bounds());
@@ -65,7 +62,8 @@ impl NSWindowDelegate for App {
 
 #[no_mangle]
 pub extern "C" fn main() {
+    let app = App::default();
     let application = NSApplication::shared_application();
-    application.set_delegate(App::default());
+    application.set_delegate(&app);
     application.run();
 }

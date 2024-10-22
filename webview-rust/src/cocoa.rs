@@ -40,9 +40,10 @@ pub const NS_UTF8_STRING_ENCODING: i32 = 4;
 pub struct NSString(Object);
 impl NSString {
     pub fn from_str(str: impl AsRef<str>) -> Self {
+        let str = str.as_ref();
         unsafe {
             let ns_string: Object = msg_send![class!(NSString), alloc];
-            let ns_string: Object = msg_send![ns_string, initWithBytes:str.as_ref().as_ptr() length:str.as_ref().len() encoding:NS_UTF8_STRING_ENCODING];
+            let ns_string: Object = msg_send![ns_string, initWithBytes:str.as_ptr() length:str.len() encoding:NS_UTF8_STRING_ENCODING];
             msg_send![ns_string, autorelease]
         }
     }
@@ -115,7 +116,11 @@ pub trait NSApplicationDelegate {
     fn did_finish_launching(&self);
     fn should_terminate_after_last_window_closed(&self) -> bool;
 }
-extern "C" fn did_finish_launching<T: NSApplicationDelegate>(this: Object, _: Sel) {
+extern "C" fn did_finish_launching<T: NSApplicationDelegate>(
+    this: Object,
+    _: Sel,
+    _notification: Object,
+) {
     unsafe {
         let mut app = null();
         object_getInstanceVariable(this, PTR_IVAR.as_ptr() as *const c_char, &mut app);
@@ -125,6 +130,7 @@ extern "C" fn did_finish_launching<T: NSApplicationDelegate>(this: Object, _: Se
 extern "C" fn should_terminate_after_last_window_closed<T: NSApplicationDelegate>(
     this: Object,
     _: Sel,
+    _sender: Object,
 ) -> bool {
     unsafe {
         let mut app = null();
@@ -139,7 +145,7 @@ impl NSApplication {
     pub fn shared_application() -> Self {
         unsafe { msg_send![class!(NSApplication), sharedApplication] }
     }
-    pub fn set_delegate<T: NSApplicationDelegate>(&self, delegate: T) {
+    pub fn set_delegate<T: NSApplicationDelegate>(&self, delegate: &T) {
         let mut decl = ClassDecl::new("AppDelegate", class!(NSObject)).unwrap();
         decl.add_ivar::<*const c_void>(PTR_IVAR.as_ptr() as *const c_char, "^v");
         decl.add_method(
@@ -153,7 +159,6 @@ impl NSApplication {
             "B@:",
         );
         let delegate_class = decl.register();
-        let delegate = Box::leak(Box::new(delegate));
         unsafe {
             let app_delegate: Object = msg_send![delegate_class, new];
             object_setInstanceVariable(
@@ -195,7 +200,7 @@ impl NSView {
 pub trait NSWindowDelegate {
     fn did_resize(&self);
 }
-extern "C" fn did_resize<T: NSWindowDelegate>(this: Object, _: Sel) {
+extern "C" fn did_resize<T: NSWindowDelegate>(this: Object, _: Sel, _notification: Object) {
     unsafe {
         let mut app = null();
         object_getInstanceVariable(this, PTR_IVAR.as_ptr() as *const c_char, &mut app);
@@ -238,7 +243,7 @@ impl NSWindow {
     pub fn content_view(&self) -> NSView {
         unsafe { msg_send![self.0, contentView] }
     }
-    pub fn set_delegate_from_ref<T: NSWindowDelegate>(&self, delegate: &T) {
+    pub fn set_delegate<T: NSWindowDelegate>(&self, delegate: &T) {
         let mut decl = ClassDecl::new("WindowDelegate", class!(NSObject)).unwrap();
         decl.add_ivar::<*const c_void>(PTR_IVAR.as_ptr() as *const c_char, "^v");
         decl.add_method(
