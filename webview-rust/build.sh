@@ -17,4 +17,4 @@ else
 fi
 cp target/Info.plist BassieTest.app/Contents
 cp -r Resources BassieTest.app/Contents
-open BassieTest.app
+./BassieTest.app/Contents/MacOS/BassieTest

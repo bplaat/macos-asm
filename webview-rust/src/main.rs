@@ -80,7 +80,7 @@ impl WKNavigationDelegate for App {
             name: "WebView".to_string(),
         };
         self.webview.evaluate_javascript(format!(
-            "window.dispatchEvent(new MessageEvent('message', {{ data: '{}' }}));",
+            "window.ipc.dispatchEvent(new MessageEvent('message', {{ data: {} }}));",
             serde_json::to_string(&message).unwrap()
         ));
     }

@@ -41,15 +41,19 @@
     <h1>Hello <span id="name"></span>!</h1>
     <p><button id="button">Click me!</button></p>
     <script>
+        window.ipc = new EventTarget();
+        window.ipc.postMessage = (message) => window.webkit.messageHandlers.ipc.postMessage(JSON.stringify(message));
+
         window.addEventListener('contextmenu', event => event.preventDefault());
-        window.addEventListener('message', event => {
-            const { type, name } = JSON.parse(event.data);
+        window.ipc.addEventListener('message', event => {
+            const { type } = event.data;
             if (type === 'hello') {
+                const { name } = event.data;
                 document.getElementById('name').textContent = name;
             }
         });
         document.getElementById('button').addEventListener('click', () => {
-            window.webkit.messageHandlers.ipc.postMessage(JSON.stringify({ type: 'hello', name: 'Rust' }));
+            window.ipc.postMessage({ type: 'hello', name: 'Rust' });
         });
     </script>
 </body>
