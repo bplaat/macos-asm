@@ -71,12 +71,12 @@ macro_rules! sel {
     });
 }
 
-pub trait MessageArgs {
+pub trait MessageSend {
     unsafe fn invoke<R>(obj: Object, sel: Sel, args: Self) -> R;
 }
-macro_rules! message_args_impl {
+macro_rules! message_send_impl {
     ($($a:ident : $t:ident),*) => (
-        impl<$($t),*> MessageArgs for ($($t,)*) {
+        impl<$($t),*> MessageSend for ($($t,)*) {
             #[inline(always)]
             unsafe fn invoke<R>(obj: Object, sel: Sel, ($($a,)*): Self) -> R {
                 let imp: unsafe extern fn (Object, Sel, $($t,)*) -> R =
@@ -86,26 +86,22 @@ macro_rules! message_args_impl {
         }
     );
 }
-message_args_impl!();
-message_args_impl!(a: A);
-message_args_impl!(a: A, b: B);
-message_args_impl!(a: A, b: B, c: C);
-message_args_impl!(a: A, b: B, c: C, d: D);
-message_args_impl!(a: A, b: B, c: C, d: D, e: E);
-message_args_impl!(a: A, b: B, c: C, d: D, e: E, f: F);
-#[inline(always)]
-pub unsafe fn _message_send<A: MessageArgs, R>(obj: Object, sel: Sel, args: A) -> R {
-    MessageArgs::invoke(obj, sel, args)
-}
+message_send_impl!();
+message_send_impl!(a: A);
+message_send_impl!(a: A, b: B);
+message_send_impl!(a: A, b: B, c: C);
+message_send_impl!(a: A, b: B, c: C, d: D);
+message_send_impl!(a: A, b: B, c: C, d: D, e: E);
+message_send_impl!(a: A, b: B, c: C, d: D, e: E, f: F);
 
 #[macro_export]
 macro_rules! msg_send {
-    ($receiver:expr, $sel:ident) => {{
-        $crate::objc::_message_send($receiver, $crate::sel!($sel), ())
-    }};
-    ($receiver:expr, $($sel:ident : $arg:expr)+) => ({
-        $crate::objc::_message_send($receiver, $crate::sel!($($sel:)+), ($($arg,)+))
-    });
+    ($receiver:expr, $sel:ident) => (
+        $crate::objc::MessageSend::invoke($receiver, $crate::sel!($sel), ())
+    );
+    ($receiver:expr, $($sel:ident : $arg:expr)+) => (
+        $crate::objc::MessageSend::invoke($receiver, $crate::sel!($($sel:)+), ($($arg,)+))
+    );
 }
 
 #[repr(C)]
