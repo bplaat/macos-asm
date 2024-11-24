@@ -11,7 +11,7 @@ if [[ $1 = "device" ]]; then
     codesign --sign "$identity" BassieTest.app --entitlements Entitlements.plist
     ios-deploy --bundle BassieTest.app
 else
-    swiftc -target x86_64-apple-ios14-simulator \
+    swiftc -target arm64-apple-ios14-simulator \
         -sdk $(xcrun --sdk iphonesimulator --show-sdk-path) \
         -parse-as-library src/main.swift -o BassieTest.app/BassieTest
 
