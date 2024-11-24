@@ -3,9 +3,8 @@ use std::fs::File;
 use std::io::Write;
 
 fn main() {
-    // Link with Cocoa & WebKit framework
+    // Link with Cocoa framework
     println!("cargo:rustc-link-lib=framework=Cocoa");
-    println!("cargo:rustc-link-lib=framework=WebKit");
 
     // Generate Info.plist with cargo version
     let version = env::var("CARGO_PKG_VERSION").unwrap();
