@@ -107,6 +107,7 @@ void applicationDidFinishLaunching(id self, SEL cmd) {
     );
     msg_id(app->window, sel("setTitle:"), NSString("BassieTest"));
     msg_bool(app->window, sel("setTitlebarAppearsTransparent:"), true);
+    msg_id(app->window, sel("setAppearance:"),  msg_cls_str(cls("NSAppearance"), sel("appearanceNamed:"), NSString("NSAppearanceNameDarkAqua")));
     id screen = msg(app->window, sel("screen"));
     NSRect screenFrame = msg_ret_rect(screen, sel("frame"));
     NSRect windowFrame = msg_ret_rect(app->window, sel("frame"));

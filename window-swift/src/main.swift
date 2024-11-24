@@ -25,6 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                           defer: false)
         window.title = "BassieTest"
         window.titlebarAppearsTransparent = true
+        window.appearance = NSAppearance(named: .darkAqua)
         let windowX = (window.screen!.frame.width - window.frame.width) / 2
         let windowY = (window.screen!.frame.height - window.frame.height) / 2
         window.setFrame(NSMakeRect(windowX, windowY, window.frame.width, window.frame.height), display: true)

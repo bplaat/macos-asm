@@ -186,6 +186,15 @@ impl NSView {
     }
 }
 
+// NSAppearance
+pub struct NSAppearance(Object);
+
+impl NSAppearance {
+    pub fn named(name: impl AsRef<str>) -> Self {
+        unsafe { msg_send![class!(NSAppearance), appearanceNamed:NSString::from_str(name).0] }
+    }
+}
+
 // NSWindowDelegate
 pub trait NSWindowDelegate {
     fn did_resize(&self);
@@ -224,6 +233,9 @@ impl NSWindow {
     }
     pub fn set_titlebar_appears_transparent(&self, transparent: bool) {
         unsafe { msg_send![self.0, setTitlebarAppearsTransparent:transparent] }
+    }
+    pub fn set_appearance(&self, appearance: NSAppearance) {
+        unsafe { msg_send![self.0, setAppearance:appearance.0] }
     }
     pub fn set_min_size(&self, min_size: NSSize) {
         unsafe { msg_send![self.0, setMinSize:min_size] }

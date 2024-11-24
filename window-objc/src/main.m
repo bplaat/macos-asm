@@ -38,6 +38,7 @@ typedef struct {
         defer:NO];
     _app->window.title = @"BassieTest";
     _app->window.titlebarAppearsTransparent = YES;
+    _app->window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
     CGFloat windowX = (NSWidth(_app->window.screen.frame) - NSWidth(_app->window.frame)) / 2;
     CGFloat windowY = (NSHeight(_app->window.screen.frame) - NSHeight(_app->window.frame)) / 2;
     [_app->window setFrame:NSMakeRect(windowX, windowY, NSWidth(_app->window.frame), NSHeight(_app->window.frame)) display:YES];

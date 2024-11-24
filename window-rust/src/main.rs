@@ -28,6 +28,8 @@ impl NSApplicationDelegate for App {
         // Create window
         self.window.set_title("BassieTest");
         self.window.set_titlebar_appears_transparent(true);
+        self.window
+            .set_appearance(NSAppearance::named("NSAppearanceNameDarkAqua"));
         self.window.set_min_size(NSSize::new(320.0, 240.0));
         let screen_frame = self.window.screen().frame();
         let window_frame = self.window.frame();
