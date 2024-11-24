@@ -15,9 +15,6 @@ typedef struct {
 @end
 
 @implementation AppDelegate
-- (void)windowDidResize:(NSNotification *)notification {
-    _app->label.frame = NSMakeRect(0, (NSHeight(_app->window.frame) - LABEL_SIZE) / 2.f, NSWidth(_app->window.frame), LABEL_SIZE);
-}
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Create menu
@@ -65,6 +62,11 @@ typedef struct {
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
     return YES;
 }
+
+- (void)windowDidResize:(NSNotification *)notification {
+    _app->label.frame = NSMakeRect(0, (NSHeight(_app->window.frame) - LABEL_SIZE) / 2.f, NSWidth(_app->window.frame), LABEL_SIZE);
+}
+
 @end
 
 int main(void) {

@@ -77,14 +77,6 @@ typedef struct App {
     id label;
 } App;
 
-void windowDidResize(id self, SEL cmd) {
-    (void)cmd;
-    App *app;
-    object_getInstanceVariable(self, app_ivar, (void **)&app);
-    NSRect windowFrame = msg_ret_rect(app->window, sel("frame"));
-    msg_rect(app->label, sel("setFrame:"), (NSRect){0, (windowFrame.height - LABEL_SIZE) / 2.f, windowFrame.width, LABEL_SIZE});
-}
-
 void applicationDidFinishLaunching(id self, SEL cmd) {
     (void)cmd;
     App *app;
@@ -146,6 +138,14 @@ bool applicationShouldTerminateAfterLastWindowClosed(id self, SEL cmd) {
     (void)self;
     (void)cmd;
     return true;
+}
+
+void windowDidResize(id self, SEL cmd) {
+    (void)cmd;
+    App *app;
+    object_getInstanceVariable(self, app_ivar, (void **)&app);
+    NSRect windowFrame = msg_ret_rect(app->window, sel("frame"));
+    msg_rect(app->label, sel("setFrame:"), (NSRect){0, (windowFrame.height - LABEL_SIZE) / 2.f, windowFrame.width, LABEL_SIZE});
 }
 
 int main(void) {
