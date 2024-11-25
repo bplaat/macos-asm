@@ -9,36 +9,38 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.label = [[UILabel alloc] init];
-    self.label.text = @"Hello iOS!";
-    self.label.font = [UIFont systemFontOfSize:48];
-    self.label.textAlignment = NSTextAlignmentCenter;
-    [self.view addSubview:self.label];
+    _label = [[UILabel alloc] init];
+    _label.text = @"Hello iOS!";
+    _label.font = [UIFont systemFontOfSize:48];
+    _label.textAlignment = NSTextAlignmentCenter;
+    [self.view addSubview:_label];
 }
 
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
-    self.label.frame = self.view.bounds;
+    _label.frame = self.view.bounds;
 }
 
 @end
 
 // AppDelegate
-@interface AppDelegate : UIResponder <UIApplicationDelegate>
+@interface AppDelegate : NSObject <UIApplicationDelegate>
     @property (strong, nonatomic) UIWindow *window;
 @end
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-    self.window.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
+    _window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    _window.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
 
     ViewController *viewController = [[ViewController alloc] init];
     viewController.view.backgroundColor = [UIColor colorWithRed:0x05 / 255.0 green:0x44 / 255.0 blue:0x5e / 255.0 alpha:1];
-    self.window.rootViewController = viewController;
+    _window.rootViewController = viewController;
 
-    [self.window makeKeyAndVisible];
+    [_window makeKeyAndVisible];
+
+    NSLog(@"Hello iOS!");
     return YES;
 }
 

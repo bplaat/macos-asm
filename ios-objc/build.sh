@@ -9,4 +9,4 @@ clang $CFLAGS --target=arm64-apple-ios14-simulator src/main.m \
 
 xcrun simctl uninstall booted nl.plaatsoft.BassieTest
 xcrun simctl install booted BassieTest.app
-xcrun simctl launch booted nl.plaatsoft.BassieTest
+xcrun simctl launch --console booted nl.plaatsoft.BassieTest
