@@ -9,7 +9,8 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    _label = [[UILabel alloc] init];
+    self.view.backgroundColor = [UIColor colorWithRed:0x05 / 255.0 green:0x44 / 255.0 blue:0x5e / 255.0 alpha:1];
+    _label = [UILabel new];
     _label.text = @"Hello iOS!";
     _label.font = [UIFont systemFontOfSize:48];
     _label.textAlignment = NSTextAlignmentCenter;
@@ -33,11 +34,7 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     _window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     _window.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
-
-    ViewController *viewController = [[ViewController alloc] init];
-    viewController.view.backgroundColor = [UIColor colorWithRed:0x05 / 255.0 green:0x44 / 255.0 blue:0x5e / 255.0 alpha:1];
-    _window.rootViewController = viewController;
-
+    _window.rootViewController = [ViewController new];
     [_window makeKeyAndVisible];
 
     NSLog(@"Hello iOS!");
