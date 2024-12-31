@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+objc = { git = "https://github.com/bplaat/crates.git" }
 
 [profile.release]
 opt-level = "z"

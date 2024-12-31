@@ -1,8 +1,7 @@
 use std::ffi::{c_void, CStr};
 use std::ptr::null;
 
-use crate::objc::{object_getInstanceVariable, object_setInstanceVariable, ClassDecl, Object, Sel};
-use crate::{class, msg_send, sel};
+use objc::*;
 
 // NSSize
 #[repr(C)]
@@ -92,6 +91,7 @@ impl NSMenuItem {
 }
 
 // NSApplicationDelegate
+pub const PTR_STR: &str = "ptr";
 pub const PTR_IVAR: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"ptr\0") };
 pub trait NSApplicationDelegate {
     fn did_finish_launching(&self);
@@ -128,7 +128,7 @@ impl NSApplication {
     }
     pub fn set_delegate<T: NSApplicationDelegate>(&self, delegate: &T) {
         let mut decl = ClassDecl::new("AppDelegate", class!(NSObject)).unwrap();
-        decl.add_ivar::<*const c_void>(PTR_IVAR.as_ptr(), "^v");
+        decl.add_ivar::<*const c_void>(PTR_STR, "^v");
         decl.add_method(
             sel!(applicationDidFinishLaunching:),
             did_finish_launching::<T> as *const c_void,
@@ -257,7 +257,7 @@ impl NSWindow {
     }
     pub fn set_delegate<T: NSWindowDelegate>(&self, delegate: &T) {
         let mut decl = ClassDecl::new("WindowDelegate", class!(NSObject)).unwrap();
-        decl.add_ivar::<*const c_void>(PTR_IVAR.as_ptr(), "^v");
+        decl.add_ivar::<*const c_void>(PTR_STR, "^v");
         decl.add_method(
             sel!(windowDidResize:),
             did_resize::<T> as *const c_void,

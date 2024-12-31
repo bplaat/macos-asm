@@ -1,11 +1,11 @@
 #![no_main]
 
+use objc::sel;
 use serde::{Deserialize, Serialize};
 
 use crate::cocoa::*;
 
 mod cocoa;
-mod objc;
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]

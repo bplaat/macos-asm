@@ -3,7 +3,6 @@
 use crate::cocoa::NSAlert;
 
 mod cocoa;
-mod objc;
 
 #[no_mangle]
 pub extern "C" fn main() {

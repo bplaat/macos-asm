@@ -1,9 +1,10 @@
 #![no_main]
 
+use objc::sel;
+
 use crate::cocoa::*;
 
 mod cocoa;
-mod objc;
 
 const LABEL_SIZE: f64 = 48.0;
 

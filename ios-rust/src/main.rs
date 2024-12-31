@@ -4,13 +4,14 @@ use std::ffi::c_void;
 use std::ffi::CStr;
 use std::ptr::null;
 
-use crate::objc::*;
+use objc::*;
+
 use crate::uikit::*;
 
-mod objc;
 mod uikit;
 
 pub const VIEW_IVAR: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"_view\0") };
+pub const LABEL_STR: &str = "label";
 pub const LABEL_IVAR: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"_label\0") };
 
 extern "C" fn view_did_load(this: Object, _: Sel) {
@@ -76,7 +77,7 @@ extern "C" fn application(_: Object, _: Sel, _: Object, _: Object) -> bool {
 pub extern "C" fn main() {
     // ViewController
     let mut class = ClassDecl::new("ViewController", class!(UIViewController)).unwrap();
-    class.add_ivar::<*const c_void>(LABEL_IVAR.as_ptr(), "^v");
+    class.add_ivar::<*const c_void>(LABEL_STR, "^v");
     class.add_method(sel!(viewDidLoad), view_did_load as *const c_void, "v@:");
     class.add_method(
         sel!(viewWillLayoutSubviews),

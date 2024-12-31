@@ -1,5 +1,4 @@
-use crate::objc::Object;
-use crate::{class, msg_send};
+use objc::{class, msg_send, Object};
 
 // NSString
 pub const NS_UTF8_STRING_ENCODING: i32 = 4;

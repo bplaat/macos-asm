@@ -3,8 +3,7 @@ use std::ffi::CString;
 use std::os::raw::c_char;
 use std::ptr::null;
 
-use crate::objc::Object;
-use crate::{class, msg_send};
+use objc::*;
 
 // CGRect
 #[repr(C)]
