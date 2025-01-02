@@ -10,9 +10,9 @@ use crate::uikit::*;
 
 mod uikit;
 
-pub const VIEW_IVAR: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"_view\0") };
+pub const VIEW_IVAR: &CStr = c"_view";
 pub const LABEL_STR: &str = "label";
-pub const LABEL_IVAR: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"_label\0") };
+pub const LABEL_IVAR: &CStr = c"_label";
 
 extern "C" fn view_did_load(this: Object, _: Sel) {
     unsafe {

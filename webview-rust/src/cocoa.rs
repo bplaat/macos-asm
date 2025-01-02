@@ -119,8 +119,8 @@ impl NSMenuItem {
 }
 
 // NSApplicationDelegate
-pub const PTR_STR: &str = "ptr";
-pub const PTR_IVAR: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"ptr\0") };
+pub const PTR_STR: &str = "_ptr";
+pub const PTR_IVAR: &CStr = c"_ptr";
 pub trait NSApplicationDelegate {
     fn did_finish_launching(&self);
     fn should_terminate_after_last_window_closed(&self) -> bool;
