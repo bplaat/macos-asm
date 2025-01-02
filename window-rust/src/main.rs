@@ -15,6 +15,8 @@ struct App {
 }
 impl NSApplicationDelegate for App {
     fn did_finish_launching(&self) {
+        let application = NSApplication::shared_application();
+
         // Create menu
         let menubar = NSMenu::new();
         let app_menu_item = NSMenuItem::new();
@@ -24,7 +26,7 @@ impl NSApplicationDelegate for App {
         app_menu.add_item(quit_menu_item);
         app_menu_item.set_submenu(app_menu);
         menubar.add_item(app_menu_item);
-        NSApplication::shared_application().set_main_menu(menubar);
+        application.set_main_menu(menubar);
 
         // Create window
         self.window.set_title("BassieTest");
@@ -62,6 +64,9 @@ impl NSApplicationDelegate for App {
             .content_view()
             .add_subview(self.label.as_ns_view());
 
+        // Show window
+        application.set_activation_policy(NS_APPLICATION_ACTIVATION_POLICY_REGULAR);
+        application.activate_ignoring_other_apps(true);
         self.window.make_key_and_order_front();
     }
 

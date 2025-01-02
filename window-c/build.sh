@@ -12,4 +12,4 @@ else
     clang $CFLAGS src/main.c -framework Cocoa -o BassieTest.app/Contents/MacOS/BassieTest
 fi
 cp Info.plist BassieTest.app/Contents
-open BassieTest.app
+./BassieTest.app/Contents/MacOS/BassieTest

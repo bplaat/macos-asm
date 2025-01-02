@@ -44,6 +44,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         label.drawsBackground = false
         window.contentView!.addSubview(label)
 
+        // Show window
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
     }
 

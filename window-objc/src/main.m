@@ -9,7 +9,7 @@
 
 @implementation AppDelegate
 
-- (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
+- (void)applicationDidFinishLaunching:(NSNotification *)notification {
     // Create menu
     NSMenu *menubar = [NSMenu new];
     NSApp.mainMenu = menubar;
@@ -50,6 +50,9 @@
     _label.drawsBackground = NO;
     [_window.contentView addSubview:_label];
 
+    // Show window
+    NSApp.activationPolicy = NSApplicationActivationPolicyRegular;
+    [NSApp activateIgnoringOtherApps:YES];
     [_window makeKeyAndOrderFront:nil];
 }
 

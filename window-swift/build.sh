@@ -11,4 +11,4 @@ else
     swiftc src/main.swift -o BassieTest.app/Contents/MacOS/BassieTest
 fi
 cp Info.plist BassieTest.app/Contents
-open BassieTest.app
+./BassieTest.app/Contents/MacOS/BassieTest

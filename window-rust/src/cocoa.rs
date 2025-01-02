@@ -121,6 +121,7 @@ extern "C" fn should_terminate_after_last_window_closed<T: NSApplicationDelegate
 }
 
 // NSApplication
+pub const NS_APPLICATION_ACTIVATION_POLICY_REGULAR: i32 = 0;
 pub struct NSApplication(Object);
 impl NSApplication {
     pub fn shared_application() -> Self {
@@ -152,6 +153,12 @@ impl NSApplication {
     }
     pub fn set_main_menu(&self, menu: NSMenu) {
         unsafe { msg_send![self.0, setMainMenu:menu.0] }
+    }
+    pub fn set_activation_policy(&self, policy: i32) {
+        unsafe { msg_send![self.0, setActivationPolicy:policy] }
+    }
+    pub fn activate_ignoring_other_apps(&self, activate: bool) {
+        unsafe { msg_send![self.0, activateIgnoringOtherApps:activate] }
     }
     pub fn run(&self) {
         unsafe { msg_send![self.0, run] }

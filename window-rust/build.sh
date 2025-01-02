@@ -16,4 +16,4 @@ else
     cp target/debug/bassietest BassieTest.app/Contents/MacOS/BassieTest
 fi
 cp target/Info.plist BassieTest.app/Contents
-open BassieTest.app
+./BassieTest.app/Contents/MacOS/BassieTest

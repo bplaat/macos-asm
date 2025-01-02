@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
 // Objective-C runtime headers
@@ -8,14 +9,14 @@ typedef id Class;
 typedef id SEL;
 typedef id IMP;
 extern Class objc_getClass(const char *name);
-extern SEL sel_registerName(const char *name);
-extern void *objc_msgSend(id self, SEL sel, ...);
-extern void object_getInstanceVariable(id obj, const char *name, void **outValue);
-extern void object_setInstanceVariable(id obj, const char *name, void *value);
 extern Class objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes);
 extern void class_addIvar(Class cls, const char *name, size_t size, uint8_t alignment, const char *types);
 extern void class_addMethod(Class cls, SEL name, IMP imp, const char *types);
 extern void objc_registerClassPair(Class cls);
+extern SEL sel_registerName(const char *name);
+extern void object_getInstanceVariable(id obj, const char *name, void **outValue);
+extern void object_setInstanceVariable(id obj, const char *name, void *value);
+extern void *objc_msgSend(id self, SEL sel, ...);
 
 // Cocoa headers stub
 #define cls objc_getClass
@@ -48,6 +49,10 @@ typedef struct NSRect {
     double height;
 } NSRect;
 
+typedef enum NSApplicationActivationPolicy {
+    NSApplicationActivationPolicyRegular = 0
+} NSApplicationActivationPolicy;
+
 typedef enum NSWindowStyleMask {
     NSWindowStyleMaskTitled = 1,
     NSWindowStyleMaskClosable = 2,
@@ -74,8 +79,9 @@ extern id NSApp;
 char *window_ivar = "window";
 char *label_ivar = "label";
 
-void applicationDidFinishLaunching(id self, SEL cmd) {
+void applicationDidFinishLaunching(id self, SEL cmd, id notification) {
     (void)cmd;
+    (void)notification;
 
     // Create menu
     id menubar = msg_cls(cls("NSMenu"), sel("new"));
@@ -129,17 +135,22 @@ void applicationDidFinishLaunching(id self, SEL cmd) {
     msg_bool(label, sel("setDrawsBackground:"), false);
     msg_id(msg(window, sel("contentView")), sel("addSubview:"), label);
 
+    // Show window
+    msg_int(NSApp, sel("setActivationPolicy:"), NSApplicationActivationPolicyRegular);
+    msg_bool(NSApp, sel("activateIgnoringOtherApps:"), true);
     msg_id(window, sel("makeKeyAndOrderFront:"), NULL);
 }
 
-bool applicationShouldTerminateAfterLastWindowClosed(id self, SEL cmd) {
+bool applicationShouldTerminateAfterLastWindowClosed(id self, SEL cmd, id sender) {
     (void)self;
     (void)cmd;
+    (void)sender;
     return true;
 }
 
-void windowDidResize(id self, SEL cmd) {
+void windowDidResize(id self, SEL cmd, id notification) {
     (void)cmd;
+    (void)notification;
     id window;
     object_getInstanceVariable(self, window_ivar, (void **)&window);
     id label;
