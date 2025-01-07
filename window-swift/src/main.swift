@@ -1,9 +1,24 @@
 import Cocoa
 
-class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
-    var window: NSWindow!
-    var label: NSText!
+// MARK: CanvasView
+class CanvasView : NSView {
+    override func draw(_ dirtyRect: NSRect) {
+        let text = "Hello macOS!"
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 48),
+            .foregroundColor: NSColor.white
+        ]
+        let size = text.size(withAttributes: attributes)
+        let rect = NSRect(x: (self.frame.width - size.width) / 2,
+            y: (self.frame.height - size.height) / 2,
+            width: size.width,
+            height: size.height)
+        text.draw(in: rect, withAttributes: attributes)
+    }
+}
 
+// MARK: AppDelegate
+class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Create menu
         let menubar = NSMenu()
@@ -19,10 +34,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         appMenu.addItem(quitMenuItem)
 
         // Create window
-        window = NSWindow(contentRect: NSMakeRect(0, 0, 1024, 768),
-                          styleMask: [.titled, .closable, .miniaturizable, .resizable],
-                          backing: .buffered,
-                          defer: false)
+        let window = NSWindow(contentRect: NSMakeRect(0, 0, 1024, 768),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false)
         window.title = "BassieTest"
         window.titlebarAppearsTransparent = true
         window.appearance = NSAppearance(named: .darkAqua)
@@ -32,17 +47,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.minSize = NSMakeSize(320, 240)
         window.backgroundColor = NSColor(red: 0x05 / 255.0, green: 0x44 / 255.0, blue: 0x5e / 255.0, alpha: 1)
         window.setFrameUsingName("window")
-        window.delegate = self
 
-        // Create label
-        label = NSText(frame: NSMakeRect(0, (window.frame.height - 48) / 2, window.frame.width, 48))
-        label.string = "Hello macOS!"
-        label.font = NSFont.systemFont(ofSize: 48)
-        label.alignment = .center
-        label.isEditable = false
-        label.isSelectable = false
-        label.drawsBackground = false
-        window.contentView!.addSubview(label)
+        // Create canvas
+        window.contentView! = CanvasView()
 
         // Show window
         NSApp.setActivationPolicy(.regular)
@@ -52,10 +59,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
-    }
-
-    func windowDidResize(_ notification: Notification) {
-        label.frame = NSMakeRect(0, (window.frame.height - 48) / 2, window.frame.width, 48)
     }
 }
 

@@ -3,22 +3,19 @@
 #include <stdio.h>
 #include <math.h>
 
-// Objective-C runtime headers
+// MARK: Objective-C runtime headers
 typedef void *id;
 typedef id Class;
 typedef id SEL;
 typedef id IMP;
+
 extern Class objc_getClass(const char *name);
 extern Class objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes);
-extern void class_addIvar(Class cls, const char *name, size_t size, uint8_t alignment, const char *types);
 extern void class_addMethod(Class cls, SEL name, IMP imp, const char *types);
 extern void objc_registerClassPair(Class cls);
 extern SEL sel_registerName(const char *name);
-extern void object_getInstanceVariable(id obj, const char *name, void **outValue);
-extern void object_setInstanceVariable(id obj, const char *name, void *value);
 extern void *objc_msgSend(id self, SEL sel, ...);
 
-// Cocoa headers stub
 #define cls objc_getClass
 #define sel sel_registerName
 #define msg ((id (*)(id, SEL))objc_msgSend)
@@ -26,6 +23,7 @@ extern void *objc_msgSend(id self, SEL sel, ...);
 #define msg_bool ((id (*)(id, SEL, bool))objc_msgSend)
 #define msg_int ((id (*)(id, SEL, int))objc_msgSend)
 #define msg_rect ((id (*)(id, SEL, NSRect))objc_msgSend)
+#define msg_rect_id ((id (*)(id, SEL, NSRect, id))objc_msgSend)
 #define msg_size ((id (*)(id, SEL, NSSize))objc_msgSend)
 #define msg_rect_bool ((id (*)(id, SEL, NSRect, bool))objc_msgSend)
 #define msg_id_sel_id ((id (*)(id, SEL, id, SEL, id))objc_msgSend)
@@ -35,8 +33,11 @@ extern void *objc_msgSend(id self, SEL sel, ...);
 #define msg_cls_str ((id (*)(Class, SEL, char *))objc_msgSend)
 #define msg_cls_double ((id (*)(Class, SEL, double))objc_msgSend)
 #define msg_cls_double_double_double_double ((id (*)(Class, SEL, double, double, double, double))objc_msgSend)
+#define msg_cls_id_id_int ((id (*)(Class, SEL, id, id, int))objc_msgSend)
 #define msg_ret_rect ((NSRect (*)(id, SEL))objc_msgSend)
+#define msg_id_ret_size ((NSSize (*)(id, SEL, id))objc_msgSend)
 
+// MARK: Cocoa headers
 typedef struct NSSize {
     double width;
     double height;
@@ -49,37 +50,49 @@ typedef struct NSRect {
     double height;
 } NSRect;
 
-typedef enum NSApplicationActivationPolicy {
-    NSApplicationActivationPolicyRegular = 0
-} NSApplicationActivationPolicy;
+#define NSApplicationActivationPolicyRegular 0
 
-typedef enum NSWindowStyleMask {
-    NSWindowStyleMaskTitled = 1,
-    NSWindowStyleMaskClosable = 2,
-    NSWindowStyleMaskMiniaturizable = 4,
-    NSWindowStyleMaskResizable = 8
-} NSWindowStyleMask;
+#define NSWindowStyleMaskTitled 1
+#define NSWindowStyleMaskClosable 2
+#define NSWindowStyleMaskMiniaturizable 4
+#define NSWindowStyleMaskResizable 8
 
-typedef enum NSBackingStoreType {
-    NSBackingStoreBuffered = 2
-} NSBackingStoreType;
+#define NSBackingStoreBuffered 2
 
-typedef enum NSTextAlignment {
-    NSTextAlignmentCenter = 1
-} NSTextAlignment;
+#define NSTextAlignmentCenter 1
 
 id NSString(char *string) {
     return msg_cls_str(cls("NSString"), sel("stringWithUTF8String:"), string);
 }
 
 extern id NSApp;
+extern id NSAppearanceNameDarkAqua;
+extern id NSFontAttributeName;
+extern id NSForegroundColorAttributeName;
 
-// Application code
-#define LABEL_SIZE 48
-char *window_ivar = "window";
-char *label_ivar = "label";
+// MARK: CanvasView
+void canvas_view_draw_rect(id self, SEL cmd, NSRect dirtyRect) {
+    (void)cmd;
+    (void)dirtyRect;
 
-void applicationDidFinishLaunching(id self, SEL cmd, id notification) {
+    id text = NSString("Hello macOS!");
+
+    id values[] = {
+        msg_cls_double(cls("NSFont"), sel("systemFontOfSize:"), 48),
+        msg(cls("NSColor"), sel("whiteColor"))
+    };
+    id keys[] = { NSFontAttributeName, NSForegroundColorAttributeName };
+    id attributes = msg_cls_id_id_int(cls("NSDictionary"), sel("dictionaryWithObjects:forKeys:count:"), values, keys, sizeof(values) / sizeof(id));
+
+    NSSize size = msg_id_ret_size(text, sel("sizeWithAttributes:"), attributes);
+    NSRect frame = msg_ret_rect(self, sel("frame"));
+    NSRect rect = { (frame.width - size.width) / 2, (frame.height - size.height) / 2, size.width, size.height };
+    msg_rect_id(text, sel("drawInRect:withAttributes:"), rect, attributes);
+}
+
+// MARK: AppDelegate
+void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
+    (void)self;
     (void)cmd;
     (void)notification;
 
@@ -87,15 +100,15 @@ void applicationDidFinishLaunching(id self, SEL cmd, id notification) {
     id menubar = msg_cls(cls("NSMenu"), sel("new"));
     msg_cls_id(NSApp, sel("setMainMenu:"), menubar);
 
-    id menuBarItem = msg_cls(cls("NSMenuItem"), sel("new"));
-    msg_id(menubar, sel("addItem:"), menuBarItem);
+    id menu_bar_item = msg_cls(cls("NSMenuItem"), sel("new"));
+    msg_id(menubar, sel("addItem:"), menu_bar_item);
 
-    id appMenu = msg_cls(cls("NSMenu"), sel("new"));
-    msg_id(menuBarItem, sel("setSubmenu:"), appMenu);
+    id app_menu = msg_cls(cls("NSMenu"), sel("new"));
+    msg_id(menu_bar_item, sel("setSubmenu:"), app_menu);
 
-    id quitMenuItem = msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")),
+    id quit_menu_item = msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")),
         sel("initWithTitle:action:keyEquivalent:"), NSString("Quit BassieTest"), sel("terminate:"), NSString("q"));
-    msg_id(appMenu, sel("addItem:"), quitMenuItem);
+    msg_id(app_menu, sel("addItem:"), quit_menu_item);
 
     // Create window
     id window = msg_rect_int_int_int(
@@ -106,34 +119,22 @@ void applicationDidFinishLaunching(id self, SEL cmd, id notification) {
         NSBackingStoreBuffered,
         false
     );
-    object_setInstanceVariable(self, window_ivar, window);
     msg_id(window, sel("setTitle:"), NSString("BassieTest"));
     msg_bool(window, sel("setTitlebarAppearsTransparent:"), true);
-    msg_id(window, sel("setAppearance:"),  msg_cls_str(cls("NSAppearance"), sel("appearanceNamed:"), NSString("NSAppearanceNameDarkAqua")));
+    msg_id(window, sel("setAppearance:"),  msg_cls_str(cls("NSAppearance"), sel("appearanceNamed:"), NSAppearanceNameDarkAqua));
     id screen = msg(window, sel("screen"));
-    NSRect screenFrame = msg_ret_rect(screen, sel("frame"));
-    NSRect windowFrame = msg_ret_rect(window, sel("frame"));
-    double windowX = (screenFrame.width - windowFrame.width) / 2;
-    double windowY = (screenFrame.height - windowFrame.height) / 2;
-    msg_rect_bool(window, sel("setFrame:display:"), (NSRect){windowX, windowY, windowFrame.width, windowFrame.height}, true);
+    NSRect screen_frame = msg_ret_rect(screen, sel("frame"));
+    NSRect window_frame = msg_ret_rect(window, sel("frame"));
+    double window_x = (screen_frame.width - window_frame.width) / 2;
+    double window_y = (screen_frame.height - window_frame.height) / 2;
+    msg_rect_bool(window, sel("setFrame:display:"), (NSRect){window_x, window_y, window_frame.width, window_frame.height}, true);
     msg_size(window, sel("setMinSize:"), (NSSize){320, 240});
     msg_id(window, sel("setBackgroundColor:"), msg_cls_double_double_double_double(
         cls("NSColor"), sel("colorWithRed:green:blue:alpha:"), 0x05 / 255.f, 0x44 / 255.f, 0x5e / 255.f, 1));
     msg_id(window, sel("setFrameAutosaveName:"), NSString("window"));
-    msg_id(window, sel("setDelegate:"), self);
 
-    // Create label
-    windowFrame = msg_ret_rect(window, sel("frame"));
-    id label = msg_rect(msg_cls(cls("NSText"), sel("alloc")), sel("initWithFrame:"),
-        (NSRect){0, (windowFrame.height - LABEL_SIZE) / 2.f, windowFrame.width, LABEL_SIZE});
-    object_setInstanceVariable(self, label_ivar, label);
-    msg_id(label, sel("setString:"), NSString("Hello macOS!"));
-    msg_id(label, sel("setFont:"), msg_cls_double(cls("NSFont"), sel("systemFontOfSize:"), LABEL_SIZE));
-    msg_int(label, sel("setAlignment:"), NSTextAlignmentCenter);
-    msg_bool(label, sel("setEditable:"), false);
-    msg_bool(label, sel("setSelectable:"), false);
-    msg_bool(label, sel("setDrawsBackground:"), false);
-    msg_id(msg(window, sel("contentView")), sel("addSubview:"), label);
+    // Create canvas
+    msg_id(window, sel("setContentView:"), msg_cls(cls("CanvasView"), sel("new")));
 
     // Show window
     msg_int(NSApp, sel("setActivationPolicy:"), NSApplicationActivationPolicyRegular);
@@ -141,32 +142,23 @@ void applicationDidFinishLaunching(id self, SEL cmd, id notification) {
     msg_id(window, sel("makeKeyAndOrderFront:"), NULL);
 }
 
-bool applicationShouldTerminateAfterLastWindowClosed(id self, SEL cmd, id sender) {
+bool app_should_terminate_after_last_window_closed(id self, SEL cmd, id sender) {
     (void)self;
     (void)cmd;
     (void)sender;
     return true;
 }
 
-void windowDidResize(id self, SEL cmd, id notification) {
-    (void)cmd;
-    (void)notification;
-    id window;
-    object_getInstanceVariable(self, window_ivar, (void **)&window);
-    id label;
-    object_getInstanceVariable(self, label_ivar, (void **)&label);
-    NSRect windowFrame = msg_ret_rect(window, sel("frame"));
-    msg_rect(label, sel("setFrame:"), (NSRect){0, (windowFrame.height - LABEL_SIZE) / 2.f, windowFrame.width, LABEL_SIZE});
-}
 
 int main(void) {
     // Register classes
+    Class CanvasView = objc_allocateClassPair(cls("NSView"), "CanvasView", 0);
+    class_addMethod(CanvasView, sel("drawRect:"), (IMP)canvas_view_draw_rect, "v@:{NSRect={CGPoint=dd}{CGSize=dd}}");
+    objc_registerClassPair(CanvasView);
+
     Class AppDelegate = objc_allocateClassPair(cls("NSObject"), "AppDelegate", 0);
-    class_addIvar(AppDelegate, window_ivar, sizeof(void *), log2(sizeof(void *)), "^v");
-    class_addIvar(AppDelegate, label_ivar, sizeof(void *), log2(sizeof(void *)), "^v");
-    class_addMethod(AppDelegate, sel("applicationDidFinishLaunching:"), (IMP)applicationDidFinishLaunching, "v@:");
-    class_addMethod(AppDelegate, sel("applicationShouldTerminateAfterLastWindowClosed:"), (IMP)applicationShouldTerminateAfterLastWindowClosed, "B@:");
-    class_addMethod(AppDelegate, sel("windowDidResize:"), (IMP)windowDidResize, "v@:");
+    class_addMethod(AppDelegate, sel("applicationDidFinishLaunching:"), (IMP)app_delegate_did_finish_loading, "v@:@");
+    class_addMethod(AppDelegate, sel("applicationShouldTerminateAfterLastWindowClosed:"), (IMP)app_should_terminate_after_last_window_closed, "B@:@");
     objc_registerClassPair(AppDelegate);
 
     // Start application

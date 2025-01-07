@@ -1,10 +1,29 @@
 #import <Cocoa/Cocoa.h>
 
-#define LABEL_SIZE 48
+// MARK: CanvasView
+@interface CanvasView : NSView
+@end
 
-@interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate>
-    @property (strong, nonatomic) NSWindow *window;
-    @property (strong, nonatomic) NSText *label;
+@implementation CanvasView
+
+- (void)drawRect:(NSRect)dirtyRect {
+    NSString *text = @"Hello macOS!";
+    NSDictionary *attributes = @{
+        NSFontAttributeName: [NSFont systemFontOfSize:48],
+        NSForegroundColorAttributeName: [NSColor whiteColor]
+    };
+    NSSize size = [text sizeWithAttributes:attributes];
+    NSRect rect = NSMakeRect((self.frame.size.width - size.width) / 2,
+        (self.frame.size.height - size.height) / 2,
+        size.width,
+        size.height);
+    [text drawInRect:rect withAttributes:attributes];
+}
+
+@end
+
+// MARK: AppDelegate
+@interface AppDelegate : NSObject <NSApplicationDelegate>
 @end
 
 @implementation AppDelegate
@@ -25,43 +44,31 @@
     [appMenu addItem:quitMenuItem];
 
     // Create window
-    _window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 1024, 768)
+    NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 1024, 768)
         styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
         backing:NSBackingStoreBuffered
         defer:NO];
-    _window.title = @"BassieTest";
-    _window.titlebarAppearsTransparent = YES;
-    _window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
-    CGFloat windowX = (NSWidth(_window.screen.frame) - NSWidth(_window.frame)) / 2;
-    CGFloat windowY = (NSHeight(_window.screen.frame) - NSHeight(_window.frame)) / 2;
-    [_window setFrame:NSMakeRect(windowX, windowY, NSWidth(_window.frame), NSHeight(_window.frame)) display:YES];
-    _window.minSize = NSMakeSize(320, 240);
-    _window.backgroundColor = [NSColor colorWithRed:(0x05 / 255.f) green:(0x44 / 255.f) blue:(0x5e / 255.f) alpha:1];
-    _window.frameAutosaveName = @"window";
-    _window.delegate = self;
+    window.title = @"BassieTest";
+    window.titlebarAppearsTransparent = YES;
+    window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+    CGFloat windowX = (NSWidth(window.screen.frame) - NSWidth(window.frame)) / 2;
+    CGFloat windowY = (NSHeight(window.screen.frame) - NSHeight(window.frame)) / 2;
+    [window setFrame:NSMakeRect(windowX, windowY, NSWidth(window.frame), NSHeight(window.frame)) display:YES];
+    window.minSize = NSMakeSize(320, 240);
+    window.backgroundColor = [NSColor colorWithRed:(0x05 / 255.f) green:(0x44 / 255.f) blue:(0x5e / 255.f) alpha:1];
+    window.frameAutosaveName = @"window";
 
-    // Create label
-    _label = [[NSText alloc] initWithFrame:NSMakeRect(0, (NSHeight(_window.frame) - LABEL_SIZE) / 2.f, NSWidth(_window.frame), LABEL_SIZE)];
-    _label.string = @"Hello macOS!";
-    _label.font = [NSFont systemFontOfSize:LABEL_SIZE];
-    _label.alignment = NSTextAlignmentCenter;
-    _label.editable = NO;
-    _label.selectable = NO;
-    _label.drawsBackground = NO;
-    [_window.contentView addSubview:_label];
+    // Create canvas
+    window.contentView = [CanvasView new];
 
     // Show window
     NSApp.activationPolicy = NSApplicationActivationPolicyRegular;
     [NSApp activateIgnoringOtherApps:YES];
-    [_window makeKeyAndOrderFront:nil];
+    [window makeKeyAndOrderFront:nil];
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
     return YES;
-}
-
-- (void)windowDidResize:(NSNotification *)notification {
-    _label.frame = NSMakeRect(0, (NSHeight(_window.frame) - LABEL_SIZE) / 2.f, NSWidth(_window.frame), LABEL_SIZE);
 }
 
 @end
