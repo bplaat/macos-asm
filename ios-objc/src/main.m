@@ -1,6 +1,6 @@
 #import <UIKit/UIKit.h>
 
-// ViewController
+// MARK: ViewController
 @interface ViewController : UIViewController
     @property (strong, nonatomic) UILabel *label;
 @end
@@ -24,7 +24,7 @@
 
 @end
 
-// AppDelegate
+// MARK: AppDelegate
 @interface AppDelegate : NSObject <UIApplicationDelegate>
     @property (strong, nonatomic) UIWindow *window;
 @end
@@ -43,7 +43,7 @@
 
 @end
 
-// Main
+// MARK: Main
 int main(int argc, char **argv) {
     return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
 }

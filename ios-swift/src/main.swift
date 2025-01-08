@@ -1,20 +1,6 @@
 import UIKit
 
-@main
-class AppDelegate: NSObject, UIApplicationDelegate {
-    var window: UIWindow?
-
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        window = UIWindow(frame: UIScreen.main.bounds)
-        window!.overrideUserInterfaceStyle = .dark
-        window!.rootViewController = ViewController()
-        window!.makeKeyAndVisible()
-
-        NSLog("Hello iOS!")
-        return true
-    }
-}
-
+// MARK: ViewController
 class ViewController: UIViewController {
     let label = UILabel()
 
@@ -30,5 +16,21 @@ class ViewController: UIViewController {
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
         label.frame = view.bounds
+    }
+}
+
+// MARK: AppDelegate
+@main
+class AppDelegate: NSObject, UIApplicationDelegate {
+    var window: UIWindow?
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        window = UIWindow(frame: UIScreen.main.bounds)
+        window!.overrideUserInterfaceStyle = .dark
+        window!.rootViewController = ViewController()
+        window!.makeKeyAndVisible()
+
+        NSLog("Hello iOS!")
+        return true
     }
 }

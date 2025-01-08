@@ -1,20 +1,44 @@
 #![no_main]
 
-use std::ffi::c_void;
-use std::ffi::CStr;
-use std::ptr::null;
+use std::env;
+use std::ffi::{c_char, c_void, CString};
+use std::ptr::{null, null_mut};
 
 use objc::*;
 
-use crate::uikit::*;
+// MARK: UIKit headers
+#[repr(C)]
+struct NSRect {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+}
 
-mod uikit;
+const NS_UTF8_STRING_ENCODING: i32 = 4;
+fn ns_string(str: impl AsRef<str>) -> Object {
+    unsafe {
+        let ns_string: Object = msg_send![msg_send![class!(NSString), alloc], initWithBytes:str.as_ref().as_ptr() length:str.as_ref().len() encoding:NS_UTF8_STRING_ENCODING];
+        msg_send![ns_string, autorelease]
+    }
+}
 
-pub const VIEW_IVAR: &CStr = c"_view";
-pub const LABEL_STR: &str = "label";
-pub const LABEL_IVAR: &CStr = c"_label";
+const UI_USER_INTERFACE_STYLE_DARK: i32 = 2;
 
-extern "C" fn view_did_load(this: Object, _: Sel) {
+const NSTEXT_ALIGNMENT_CENTER: i32 = 1;
+
+extern "C" {
+    fn NSLog(format: Object);
+    fn UIApplicationMain(
+        argc: i32,
+        argv: *const *mut c_char,
+        principalClassName: Object,
+        delegateClassName: Object,
+    );
+}
+
+// MARK: ViewController
+extern "C" fn view_controller_view_did_load(this: Object, _: Sel) {
     unsafe {
         objc_msgSendSuper(
             &Super {
@@ -23,25 +47,24 @@ extern "C" fn view_did_load(this: Object, _: Sel) {
             },
             sel!(viewDidLoad),
         );
-    }
 
-    let mut view = UIView(null());
-    unsafe {
-        object_getInstanceVariable(this, VIEW_IVAR.as_ptr(), &mut view.0);
-    };
-    view.set_background_color(UIColor::from_rgba(0x05, 0x44, 0x5e, 0xff));
+        let view: Object = msg_send![this, view];
 
-    let label = UILabel::new();
-    unsafe {
-        object_setInstanceVariable(this, LABEL_IVAR.as_ptr(), label.0);
+        let background_color: Object = msg_send![class!(UIColor), colorWithRed:(0x05 as f64) / 255.0 green:(0x44 as f64) / 255.0 blue:(0x5e as f64) / 255.0 alpha:1.0];
+        let _: () = msg_send![view, setBackgroundColor:background_color];
+
+        let label: Object = msg_send![class!(UILabel), new];
+        object_setInstanceVariable(this, c"_label".as_ptr(), label);
+
+        let _: () = msg_send![label, setText:ns_string("Hello iOS!")];
+        let font: Object = msg_send![class!(UIFont), systemFontOfSize:48.0];
+        let _: () = msg_send![label, setFont:font];
+        let _: () = msg_send![label, setTextAlignment:NSTEXT_ALIGNMENT_CENTER];
+        let _: () = msg_send![view, addSubview:label];
     }
-    label.set_text("Hello iOS!");
-    label.set_font(UIFont::system_font_of_size(48.0));
-    label.set_text_alignment(NSTextAlignment::Center);
-    view.add_subview(label.as_view());
 }
 
-extern "C" fn view_will_layout_subviews(this: Object, _: Sel) {
+extern "C" fn view_controller_view_will_layout_subviews(this: Object, _: Sel) {
     unsafe {
         objc_msgSendSuper(
             &Super {
@@ -50,50 +73,67 @@ extern "C" fn view_will_layout_subviews(this: Object, _: Sel) {
             },
             sel!(viewWillLayoutSubviews),
         );
-    }
 
-    let mut view = UIView(null());
-    let mut label = UILabel(null());
-    unsafe {
-        object_getInstanceVariable(this, VIEW_IVAR.as_ptr(), &mut view.0);
-        object_getInstanceVariable(this, LABEL_IVAR.as_ptr(), &mut label.0);
-    };
-    label.as_view().set_frame(view.bounds());
+        let mut label: Object = null_mut();
+        object_getInstanceVariable(this, c"_label".as_ptr(), &mut label);
+        let bounds: NSRect = msg_send![msg_send![this, view], bounds];
+        let _: () = msg_send![label, setFrame:bounds];
+    }
 }
 
-extern "C" fn application(_: Object, _: Sel, _: Object, _: Object) -> bool {
-    let window = UIWindow::new();
-    window.set_override_user_interface_style(UIUserInterfaceStyle::Dark);
-    window.set_root_view_controller(UIViewController(unsafe {
-        msg_send![class!(ViewController), new]
-    }));
-    window.make_key_and_visible();
+// MARK: AppDelegate
+extern "C" fn app_delegate_application_did_finish_launching_with_options(
+    _: Object,
+    _: Sel,
+    _: Object,
+    _: Object,
+) -> bool {
+    unsafe {
+        let main_screen_bounds: NSRect = msg_send![msg_send![class!(UIScreen), mainScreen], bounds];
+        let window: Object =
+            msg_send![msg_send![class!(UIWindow), alloc], initWithFrame:main_screen_bounds];
+        let _: () = msg_send![window, setOverrideUserInterfaceStyle:UI_USER_INTERFACE_STYLE_DARK];
+        let view_controller: Object = msg_send![class!(ViewController), new];
+        let _: () = msg_send![window, setRootViewController:view_controller];
+        let _: () = msg_send![window, makeKeyAndVisible];
 
-    unsafe { NSLog(NSString::from_str("Hello iOS!").0) };
+        NSLog(ns_string("Hello iOS!"));
+    }
     true
 }
 
+// MARK: Main
 #[no_mangle]
 pub extern "C" fn main() {
-    // ViewController
-    let mut class = ClassDecl::new("ViewController", class!(UIViewController)).unwrap();
-    class.add_ivar::<*const c_void>(LABEL_STR, "^v");
-    class.add_method(sel!(viewDidLoad), view_did_load as *const c_void, "v@:");
-    class.add_method(
+    // Register classes
+    let mut decl = ClassDecl::new("ViewController", class!(UIViewController)).unwrap();
+    decl.add_ivar::<Object>("_label", "^v");
+    decl.add_method(
+        sel!(viewDidLoad),
+        view_controller_view_did_load as *const c_void,
+        "v@:",
+    );
+    decl.add_method(
         sel!(viewWillLayoutSubviews),
-        view_will_layout_subviews as *const c_void,
+        view_controller_view_will_layout_subviews as *const c_void,
         "v@:",
     );
-    class.register();
+    decl.register();
 
-    // AppDelegate
-    let mut class = ClassDecl::new("AppDelegate", class!(NSObject)).unwrap();
-    class.add_method(
+    let mut decl = ClassDecl::new("AppDelegate", class!(NSObject)).unwrap();
+    decl.add_method(
         sel!(application:didFinishLaunchingWithOptions:),
-        application as *const c_void,
+        app_delegate_application_did_finish_launching_with_options as *const c_void,
         "v@:",
     );
-    class.register();
+    decl.register();
 
-    ui_application_main("AppDelegate");
+    // Start application
+    let argc = env::args().count() as i32;
+    let argv = env::args()
+        .map(|arg| CString::new(arg).unwrap().into_raw())
+        .collect::<Vec<*mut c_char>>();
+    unsafe {
+        UIApplicationMain(argc, argv.as_ptr(), null(), ns_string("AppDelegate"));
+    }
 }
