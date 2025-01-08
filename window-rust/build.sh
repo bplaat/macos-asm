@@ -11,9 +11,7 @@ if [[ $1 = "release" ]]; then
     done
     lipo target/x86_64-apple-darwin/release/bassietest target/aarch64-apple-darwin/release/bassietest \
         -create -output BassieTest.app/Contents/MacOS/BassieTest
+    cp target/Info.plist BassieTest.app/Contents
 else
-    cargo build
-    cp target/debug/bassietest BassieTest.app/Contents/MacOS/BassieTest
+    cargo run --target x86_64-apple-darwin
 fi
-cp target/Info.plist BassieTest.app/Contents
-./BassieTest.app/Contents/MacOS/BassieTest
