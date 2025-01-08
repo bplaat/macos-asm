@@ -139,7 +139,7 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
     msg_rect_bool(window, sel("setFrame:display:"), (NSRect){window_x, window_y, window_frame.width, window_frame.height}, true);
     msg_size(window, sel("setMinSize:"), (NSSize){320, 240});
     msg_id(window, sel("setBackgroundColor:"), msg_cls_double_double_double_double(
-        cls("NSColor"), sel("colorWithRed:green:blue:alpha:"), 0x05 / 255.f, 0x44 / 255.f, 0x5e / 255.f, 1));
+        cls("NSColor"), sel("colorWithRed:green:blue:alpha:"), 0x05 / 255.0, 0x44 / 255.0, 0x5e / 255.0, 1));
     msg_id(window, sel("setFrameAutosaveName:"), NSString("window"));
 
     // Create canvas

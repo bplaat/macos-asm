@@ -28,7 +28,7 @@ const UI_USER_INTERFACE_STYLE_DARK: i32 = 2;
 const NSTEXT_ALIGNMENT_CENTER: i32 = 1;
 
 extern "C" {
-    fn NSLog(format: Object);
+    fn NSLog(format: Object, ...);
     fn UIApplicationMain(
         argc: i32,
         argv: *const *mut c_char,
@@ -124,7 +124,7 @@ pub extern "C" fn main() {
     decl.add_method(
         sel!(application:didFinishLaunchingWithOptions:),
         app_delegate_application_did_finish_launching_with_options as *const c_void,
-        "v@:",
+        "B@:@",
     );
     decl.register();
 

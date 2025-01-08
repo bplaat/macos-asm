@@ -55,7 +55,7 @@
     CGFloat windowY = (NSHeight(window.screen.frame) - NSHeight(window.frame)) / 2;
     [window setFrame:NSMakeRect(windowX, windowY, NSWidth(window.frame), NSHeight(window.frame)) display:YES];
     window.minSize = NSMakeSize(320, 240);
-    window.backgroundColor = [NSColor colorWithRed:(0x05 / 255.f) green:(0x44 / 255.f) blue:(0x5e / 255.f) alpha:1];
+    window.backgroundColor = [NSColor colorWithRed:(0x05 / 255.0) green:(0x44 / 255.0) blue:(0x5e / 255.0) alpha:1];
     window.frameAutosaveName = @"window";
 
     // Create canvas
