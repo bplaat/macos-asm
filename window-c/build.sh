@@ -1,5 +1,5 @@
 #!/bin/sh
-CFLAGS="--std=c11 -Wall -Wextra -Wpedantic -Werror"
+CFLAGS="-Wall -Wextra -Werror"
 set -e
 mkdir -p BassieTest.app/Contents/MacOS
 if [[ $1 = "release" ]]; then

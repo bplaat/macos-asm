@@ -15,6 +15,9 @@ extern void class_addMethod(Class cls, SEL name, IMP imp, const char *types);
 extern void objc_registerClassPair(Class cls);
 extern SEL sel_registerName(const char *name);
 extern void *objc_msgSend(id self, SEL sel, ...);
+#ifndef __arm64__
+extern void objc_msgSend_stret(void *ret, id self, SEL sel, ...);
+#endif
 
 #define cls objc_getClass
 #define sel sel_registerName
@@ -34,8 +37,17 @@ extern void *objc_msgSend(id self, SEL sel, ...);
 #define msg_cls_double ((id (*)(Class, SEL, double))objc_msgSend)
 #define msg_cls_double_double_double_double ((id (*)(Class, SEL, double, double, double, double))objc_msgSend)
 #define msg_cls_id_id_int ((id (*)(Class, SEL, id, id, int))objc_msgSend)
-#define msg_ret_rect ((NSRect (*)(id, SEL))objc_msgSend)
 #define msg_id_ret_size ((NSSize (*)(id, SEL, id))objc_msgSend)
+
+#ifdef __arm64__
+#define msg_ret_rect ((NSRect (*)(id, SEL))objc_msgSend)
+#else
+#define msg_ret_rect(a, b) ({ \
+    NSRect tmp; \
+    ((void (*)(NSRect *, id, SEL))objc_msgSend_stret)(&tmp, a, b); \
+    tmp; \
+})
+#endif
 
 // MARK: Cocoa headers
 typedef struct NSSize {
@@ -58,8 +70,6 @@ typedef struct NSRect {
 #define NSWindowStyleMaskResizable 8
 
 #define NSBackingStoreBuffered 2
-
-#define NSTextAlignmentCenter 1
 
 id NSString(char *string) {
     return msg_cls_str(cls("NSString"), sel("stringWithUTF8String:"), string);
@@ -122,8 +132,7 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
     msg_id(window, sel("setTitle:"), NSString("BassieTest"));
     msg_bool(window, sel("setTitlebarAppearsTransparent:"), true);
     msg_id(window, sel("setAppearance:"),  msg_cls_str(cls("NSAppearance"), sel("appearanceNamed:"), NSAppearanceNameDarkAqua));
-    id screen = msg(window, sel("screen"));
-    NSRect screen_frame = msg_ret_rect(screen, sel("frame"));
+    NSRect screen_frame = msg_ret_rect(msg(window, sel("screen")), sel("frame"));
     NSRect window_frame = msg_ret_rect(window, sel("frame"));
     double window_x = (screen_frame.width - window_frame.width) / 2;
     double window_y = (screen_frame.height - window_frame.height) / 2;
@@ -149,7 +158,7 @@ bool app_should_terminate_after_last_window_closed(id self, SEL cmd, id sender) 
     return true;
 }
 
-
+// MARK: Main
 int main(void) {
     // Register classes
     Class CanvasView = objc_allocateClassPair(cls("NSView"), "CanvasView", 0);
