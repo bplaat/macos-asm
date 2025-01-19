@@ -1,0 +1,35 @@
+/* Menu about */
+"About XStreaks" = "Over XStreaks";
+
+/* Settings cancel button */
+"Cancel" = "Annuleren";
+
+/* Menu streak single ('%ld' is a placeholder where the number is put) */
+"Current streak: %ld day" = "Huidige streak: %ld dag";
+
+/* Menu streak plural ('%ld' is a placeholder where the number is put) */
+"Current streak: %ld days" = "Huidige streak: %ld dagen";
+
+/* Settings description */
+"Enter your X profile username:" = "Voer je X profiel gebruikersnaam in:";
+
+/* Menu streak loading */
+"Loading streak..." = "Streak aan het laden...";
+
+/* Menu no streak */
+"No streak, start posting!" = "Geen streak, ga posten!";
+
+/* Menu no username */
+"No username set..." = "Geen gebruikersnaam gezet...";
+
+/* Settings OK button */
+"OK" = "OK";
+
+/* Menu quit */
+"Quit XStreaks" = "Sluit XStreaks";
+
+/* Settings */
+"Settings" = "Instellingen";
+
+/* Settings username placeholder */
+"Username" = "Gebruikersnaam";
