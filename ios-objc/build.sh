@@ -1,12 +1,13 @@
 #!/bin/sh
+name=BassieTest
 CFLAGS="-x objective-c -Wall -Wextra -Werror"
 set -e
-mkdir -p BassieTest.app
-cp Info.plist BassieTest.app
+mkdir -p $name.app
+cp Info.plist $name.app
 clang $CFLAGS --target=arm64-apple-ios14-simulator src/main.m \
     -isysroot $(xcrun --sdk iphonesimulator --show-sdk-path) \
-    -framework Foundation -framework UIKit -o BassieTest.app/BassieTest
+    -framework Foundation -framework UIKit -o $name.app/$name
 
-xcrun simctl uninstall booted nl.plaatsoft.BassieTest
-xcrun simctl install booted BassieTest.app
-xcrun simctl launch --console booted nl.plaatsoft.BassieTest
+xcrun simctl uninstall booted nl.plaatsoft.$name
+xcrun simctl install booted $name.app
+xcrun simctl launch --console booted nl.plaatsoft.$name

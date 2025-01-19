@@ -1,9 +1,10 @@
 #!/bin/sh
+name=BassieTest
 set -e
-mkdir -p BassieTest.app
+mkdir -p $name.app
 cargo build --target aarch64-apple-ios-sim
-cp target/Info.plist target/aarch64-apple-ios-sim/debug/BassieTest BassieTest.app
+cp target/Info.plist target/aarch64-apple-ios-sim/debug/$name $name.app
 
-xcrun simctl uninstall booted nl.plaatsoft.BassieTest
-xcrun simctl install booted BassieTest.app
-xcrun simctl launch --console booted nl.plaatsoft.BassieTest
+xcrun simctl uninstall booted nl.plaatsoft.$name
+xcrun simctl install booted $name.app
+xcrun simctl launch --console booted nl.plaatsoft.$name
