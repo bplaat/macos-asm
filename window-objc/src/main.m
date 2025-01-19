@@ -39,6 +39,12 @@
     NSMenu *appMenu = [NSMenu new];
     menuBarItem.submenu = appMenu;
 
+    NSMenuItem *aboutMenuItem = [[NSMenuItem alloc] initWithTitle:@"About BassieTest"
+        action:@selector(openAbout:) keyEquivalent:@""];
+    [appMenu addItem:aboutMenuItem];
+
+    [appMenu addItem:[NSMenuItem separatorItem]];
+
     NSMenuItem *quitMenuItem = [[NSMenuItem alloc] initWithTitle:@"Quit BassieTest"
         action:@selector(terminate:) keyEquivalent:@"q"];
     [appMenu addItem:quitMenuItem];
@@ -69,6 +75,10 @@
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
     return YES;
+}
+
+- (void)openAbout:(id)sender {
+    [NSApp orderFrontStandardAboutPanel:nil];
 }
 
 @end

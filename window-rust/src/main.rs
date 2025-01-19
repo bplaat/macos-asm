@@ -96,6 +96,15 @@ extern "C" fn did_finish_launching(_this: Object, _: Sel, _: Object) {
         let app_menu: Object = msg_send![class!(NSMenu), new];
         let _: () = msg_send![menu_bar_item, setSubmenu:app_menu];
 
+        let about_menu_item: Object = msg_send![msg_send![class!(NSMenuItem), alloc],
+            initWithTitle:ns_string("About BassieTest")
+            action:sel!(openAbout:)
+            keyEquivalent:ns_string("")];
+        let _: () = msg_send![app_menu, addItem:about_menu_item];
+
+        let separator_item: Object = msg_send![class!(NSMenuItem), separatorItem];
+        let _: () = msg_send![app_menu, addItem:separator_item];
+
         let quit_menu_item: Object = msg_send![msg_send![class!(NSMenuItem), alloc],
             initWithTitle:ns_string("Quit BassieTest")
             action:sel!(terminate:)
@@ -138,6 +147,12 @@ extern "C" fn should_terminate_after_last_window_closed(_: Object, _: Sel, _: Ob
     true
 }
 
+extern "C" fn open_about(_this: Object, _: Sel, _: Object) {
+    unsafe {
+        let _: () = msg_send![NSApp, orderFrontStandardAboutPanel:null::<c_void>()];
+    }
+}
+
 // MARK: Main
 #[no_mangle]
 pub extern "C" fn main() {
@@ -161,6 +176,7 @@ pub extern "C" fn main() {
         should_terminate_after_last_window_closed as *const c_void,
         "B@:@",
     );
+    decl.add_method(sel!(openAbout:), open_about as *const c_void, "v@:@");
     decl.register();
 
     // Start application

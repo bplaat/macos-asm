@@ -116,6 +116,12 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
     id app_menu = msg_cls(cls("NSMenu"), sel("new"));
     msg_id(menu_bar_item, sel("setSubmenu:"), app_menu);
 
+    id about_menu_item = msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")),
+        sel("initWithTitle:action:keyEquivalent:"), NSString("About BassieTest"), sel("openAbout:"), NSString(""));
+    msg_id(app_menu, sel("addItem:"), about_menu_item);
+
+    msg_id(app_menu, sel("addItem:"), msg_cls(cls("NSMenuItem"), sel("separatorItem")));
+
     id quit_menu_item = msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")),
         sel("initWithTitle:action:keyEquivalent:"), NSString("Quit BassieTest"), sel("terminate:"), NSString("q"));
     msg_id(app_menu, sel("addItem:"), quit_menu_item);
@@ -158,6 +164,13 @@ bool app_should_terminate_after_last_window_closed(id self, SEL cmd, id sender) 
     return true;
 }
 
+void open_about(id self, SEL cmd, id sender) {
+    (void)self;
+    (void)cmd;
+    (void)sender;
+    msg_cls_id(NSApp, sel("orderFrontStandardAboutPanel:"), NULL);
+}
+
 // MARK: Main
 int main(void) {
     // Register classes
@@ -168,6 +181,7 @@ int main(void) {
     Class AppDelegate = objc_allocateClassPair(cls("NSObject"), "AppDelegate", 0);
     class_addMethod(AppDelegate, sel("applicationDidFinishLaunching:"), (IMP)app_delegate_did_finish_loading, "v@:@");
     class_addMethod(AppDelegate, sel("applicationShouldTerminateAfterLastWindowClosed:"), (IMP)app_should_terminate_after_last_window_closed, "B@:@");
+    class_addMethod(AppDelegate, sel("openAbout:"), (IMP)open_about, "v@:@");
     objc_registerClassPair(AppDelegate);
 
     // Start application

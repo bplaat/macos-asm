@@ -30,6 +30,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let appMenu = NSMenu()
         menuBarItem.submenu = appMenu
 
+        let aboutMenuItem = NSMenuItem(title: "About BassieTest", action: #selector(AppDelegate.openAbout(_:)), keyEquivalent: "a")
+        appMenu.addItem(aboutMenuItem)
+
+        appMenu.addItem(NSMenuItem.separator())
+
         let quitMenuItem = NSMenuItem(title: "Quit BassieTest", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appMenu.addItem(quitMenuItem)
 
@@ -59,6 +64,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
+    }
+
+    @objc
+    func openAbout(_ sender: Any?) {
+        NSApp.orderFrontStandardAboutPanel(nil)
     }
 }
 
