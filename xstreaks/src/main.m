@@ -67,7 +67,11 @@
 
 - (void)updateStreakLabel:(NSInteger)streakDays {
     NSMenuItem *firstMenuItem = [self.statusItem.menu itemAtIndex:0];
-    if (streakDays > 0) {
+    if (streakDays == -1) {
+        self.statusItem.button.image = self.statusOffIcon;
+        [firstMenuItem setTitle:NSLocalizedString(@"Loading streak...", @"Menu streak loading")];
+        [firstMenuItem setAction:nil];
+    } else if (streakDays > 0) {
         self.statusItem.button.image = self.statusOnIcon;
         if (streakDays == 1) {
             [firstMenuItem setTitle:[NSString stringWithFormat:NSLocalizedString(@"Current streak: %ld day", @"Menu streak single ('%ld' is a placeholder where the number is put)"), streakDays]];
@@ -152,7 +156,7 @@
                 [defaults setInteger:self.userId forKey:@"userId"];
                 [defaults synchronize];
 
-                [self updateStreakLabel:0];
+                [self updateStreakLabel:-1];
                 [self updateStreak:true];
             });
         }
