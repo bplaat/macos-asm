@@ -24,7 +24,7 @@
     self.userId = [defaults integerForKey:@"userId"];
 
     // Schedule updateStreak to run every half hour
-    [NSTimer scheduledTimerWithTimeInterval:30 * 60 target:self selector:@selector(updateStreak) userInfo:nil repeats:YES];
+    [NSTimer scheduledTimerWithTimeInterval:30 * 60 target:self selector:@selector(updateStreakTimer:) userInfo:nil repeats:YES];
 
     // Load icons
     self.statusOffIcon = [NSImage imageNamed:@"status_off_icon"];
@@ -61,7 +61,7 @@
                 return;
             }
         }
-        [self updateStreak];
+        [self updateStreak:false];
     }
 }
 
@@ -74,7 +74,7 @@
         } else {
             [firstMenuItem setTitle:[NSString stringWithFormat:NSLocalizedString(@"Current streak: %ld days", @"Menu streak plural ('%ld' is a placeholder where the number is put)"), streakDays]];
         }
-        [firstMenuItem setAction:@selector(updateStreak)];
+        [firstMenuItem setAction:@selector(streakMenuItemClicked)];
     } else {
         self.statusItem.button.image = self.statusOffIcon;
         [firstMenuItem setTitle:NSLocalizedString(@"No streak, start posting!", @"Menu no streak")];
@@ -133,7 +133,8 @@
 
         if ([json[@"status"] integerValue] == 429) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                [self openToManyRequests];
+                NSLog(@"[WARN] Too many requests");
+                [self openToManyRequestsAlert];
             });
             return;
         }
@@ -152,14 +153,22 @@
                 [defaults synchronize];
 
                 [self updateStreakLabel:0];
-                [self updateStreak];
+                [self updateStreak:true];
             });
         }
     }];
     [dataTask resume];
 }
 
-- (void)updateStreak {
+- (void)streakMenuItemClicked {
+    [self updateStreak:true];
+}
+
+- (void)updateStreakTimer:(NSTimer *)timer {
+    [self updateStreak:false];
+}
+
+- (void)updateStreak:(bool)userInitiated {
     if (self.userId == 0) {
         return;
     }
@@ -186,7 +195,10 @@
 
         if ([json[@"status"] integerValue] == 429) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                [self openToManyRequests];
+                NSLog(@"[WARN] Too many requests");
+                if (userInitiated) {
+                    [self openToManyRequestsAlert];
+                }
             });
             return;
         }
@@ -228,8 +240,7 @@
     [dataTask resume];
 }
 
--(void)openToManyRequests {
-    NSLog(@"[WARN] Too Many Requests");
+-(void)openToManyRequestsAlert {
     NSAlert *alert = [NSAlert new];
     [alert setMessageText:NSLocalizedString(@"Too Many Requests", @"Too Many Requests")];
     [alert setInformativeText:NSLocalizedString(@"You have made too many requests. Please try again later.", @"Too Many Requests description")];
