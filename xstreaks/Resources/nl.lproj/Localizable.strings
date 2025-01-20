@@ -1,0 +1,41 @@
+/* Menu about */
+"About XStreaks" = "Over XStreaks";
+
+/* Cancel */
+"Cancel" = "Annuleren";
+
+/* Menu streak single ('%ld' is a placeholder where the number is put) */
+"Current streak: %ld day" = "Huidige streak: %ld dag";
+
+/* Menu streak plural ('%ld' is a placeholder where the number is put) */
+"Current streak: %ld days" = "Huidige streak: %ld dagen";
+
+/* Settings description */
+"Enter your X profile username:" = "Voer je X profiel gebruikersnaam in:";
+
+/* Menu streak loading */
+"Loading streak..." = "Streak aan het laden...";
+
+/* Menu no streak */
+"No streak, start posting!" = "Geen streak, ga posten!";
+
+/* Menu no username */
+"No username set..." = "Geen gebruikersnaam gezet...";
+
+/* OK */
+"OK" = "OK";
+
+/* Menu quit */
+"Quit XStreaks" = "Sluit XStreaks";
+
+/* Settings */
+"Settings" = "Instellingen";
+
+/* Too Many Requests */
+"Too Many Requests" = "Te Veel Verzoeken";
+
+/* Settings username placeholder */
+"Username" = "Username";
+
+/* Too Many Requests description */
+"You have made too many requests. Please try again later." = "Je hebt te veel verzoeken gemaakt. Probeer het later opnieuw.";
