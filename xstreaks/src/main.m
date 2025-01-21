@@ -52,7 +52,7 @@
     if (self.userId != 0) {
         NSString *streakUpdateTime = [defaults stringForKey:@"streakUpdateTime"];
         if (streakUpdateTime) {
-            NSDateFormatter *isoDateFormatter = [NSDateFormatter new];
+            NSDateFormatter *isoDateFormatter = [[NSDateFormatter new] autorelease];
             [isoDateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"];
             if ([[NSDate date] timeIntervalSinceDate:[isoDateFormatter dateFromString:streakUpdateTime]] < 60 * 60) {
                 NSInteger streakDays = [defaults integerForKey:@"streakDays"];
@@ -136,8 +136,8 @@
         }
 
         if ([json[@"status"] integerValue] == 429) {
+            NSLog(@"[WARN] Too many requests");
             dispatch_async(dispatch_get_main_queue(), ^{
-                NSLog(@"[WARN] Too many requests");
                 [self openToManyRequestsAlert];
             });
             return;
@@ -198,18 +198,18 @@
         }
 
         if ([json[@"status"] integerValue] == 429) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                NSLog(@"[WARN] Too many requests");
-                if (userInitiated) {
+            NSLog(@"[WARN] Too many requests");
+            if (userInitiated) {
+                dispatch_async(dispatch_get_main_queue(), ^{
                     [self openToManyRequestsAlert];
-                }
-            });
+                });
+            }
             return;
         }
 
         NSArray *posts = json[@"data"];
         if (posts) {
-            NSDateFormatter *isoDateFormatter = [NSDateFormatter new];
+            NSDateFormatter *isoDateFormatter = [[NSDateFormatter new] autorelease];
             [isoDateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"];
 
             // Count streak days
