@@ -16,10 +16,12 @@ struct NSRect {
 }
 
 const NS_UTF8_STRING_ENCODING: i32 = 4;
-fn ns_string(str: impl AsRef<str>) -> Object {
+fn ns_string(str: impl AsRef<str>) -> *mut Object {
     unsafe {
-        let ns_string: Object = msg_send![msg_send![class!(NSString), alloc], initWithBytes:str.as_ref().as_ptr() length:str.as_ref().len() encoding:NS_UTF8_STRING_ENCODING];
-        msg_send![ns_string, autorelease]
+        msg_send![
+            msg_send![msg_send![class!(NSString), alloc], initWithBytes:str.as_ref().as_ptr() length:str.as_ref().len() encoding:NS_UTF8_STRING_ENCODING],
+            autorelease
+        ]
     }
 }
 
@@ -28,17 +30,17 @@ const UI_USER_INTERFACE_STYLE_DARK: i32 = 2;
 const NSTEXT_ALIGNMENT_CENTER: i32 = 1;
 
 extern "C" {
-    fn NSLog(format: Object, ...);
+    fn NSLog(format: *mut Object, ...);
     fn UIApplicationMain(
         argc: i32,
         argv: *const *mut c_char,
-        principalClassName: Object,
-        delegateClassName: Object,
+        principalClassName: *const Object,
+        delegateClassName: *mut Object,
     );
 }
 
 // MARK: ViewController
-extern "C" fn view_controller_view_did_load(this: Object, _: Sel) {
+extern "C" fn view_controller_view_did_load(this: *mut Object, _: *const Sel) {
     unsafe {
         objc_msgSendSuper(
             &Super {
@@ -48,23 +50,23 @@ extern "C" fn view_controller_view_did_load(this: Object, _: Sel) {
             sel!(viewDidLoad),
         );
 
-        let view: Object = msg_send![this, view];
+        let view: *mut Object = msg_send![this, view];
 
-        let background_color: Object = msg_send![class!(UIColor), colorWithRed:(0x05 as f64) / 255.0 green:(0x44 as f64) / 255.0 blue:(0x5e as f64) / 255.0 alpha:1.0];
+        let background_color: *mut Object = msg_send![class!(UIColor), colorWithRed:(0x05 as f64) / 255.0 green:(0x44 as f64) / 255.0 blue:(0x5e as f64) / 255.0 alpha:1.0];
         let _: () = msg_send![view, setBackgroundColor:background_color];
 
-        let label: Object = msg_send![class!(UILabel), new];
+        let label: *mut Object = msg_send![class!(UILabel), new];
         object_setInstanceVariable(this, c"_label".as_ptr(), label);
 
         let _: () = msg_send![label, setText:ns_string("Hello iOS!")];
-        let font: Object = msg_send![class!(UIFont), systemFontOfSize:48.0];
+        let font: *mut Object = msg_send![class!(UIFont), systemFontOfSize:48.0];
         let _: () = msg_send![label, setFont:font];
         let _: () = msg_send![label, setTextAlignment:NSTEXT_ALIGNMENT_CENTER];
         let _: () = msg_send![view, addSubview:label];
     }
 }
 
-extern "C" fn view_controller_view_will_layout_subviews(this: Object, _: Sel) {
+extern "C" fn view_controller_view_will_layout_subviews(this: *mut Object, _: *const Sel) {
     unsafe {
         objc_msgSendSuper(
             &Super {
@@ -74,7 +76,7 @@ extern "C" fn view_controller_view_will_layout_subviews(this: Object, _: Sel) {
             sel!(viewWillLayoutSubviews),
         );
 
-        let mut label: Object = null_mut();
+        let mut label: *mut Object = null_mut();
         object_getInstanceVariable(this, c"_label".as_ptr(), &mut label);
         let bounds: NSRect = msg_send![msg_send![this, view], bounds];
         let _: () = msg_send![label, setFrame:bounds];
@@ -83,17 +85,17 @@ extern "C" fn view_controller_view_will_layout_subviews(this: Object, _: Sel) {
 
 // MARK: AppDelegate
 extern "C" fn app_delegate_application_did_finish_launching_with_options(
-    _: Object,
-    _: Sel,
-    _: Object,
-    _: Object,
+    _: *mut Object,
+    _: *const Sel,
+    _: *const Object,
+    _: *const Object,
 ) -> bool {
     unsafe {
         let main_screen_bounds: NSRect = msg_send![msg_send![class!(UIScreen), mainScreen], bounds];
-        let window: Object =
+        let window: *mut Object =
             msg_send![msg_send![class!(UIWindow), alloc], initWithFrame:main_screen_bounds];
         let _: () = msg_send![window, setOverrideUserInterfaceStyle:UI_USER_INTERFACE_STYLE_DARK];
-        let view_controller: Object = msg_send![class!(ViewController), new];
+        let view_controller: *mut Object = msg_send![class!(ViewController), new];
         let _: () = msg_send![window, setRootViewController:view_controller];
         let _: () = msg_send![window, makeKeyAndVisible];
 

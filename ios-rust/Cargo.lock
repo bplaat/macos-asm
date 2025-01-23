@@ -12,4 +12,4 @@ dependencies = [
 [[package]]
 name = "objc"
 version = "0.1.0"
-source = "git+https://github.com/bplaat/crates.git#720a3abbac9e7bb9770c545272938659cf0334f5"
+source = "git+https://github.com/bplaat/crates.git#0853102dc69b73a248f84236215c376a757226ea"
