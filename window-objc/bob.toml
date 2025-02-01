@@ -1,0 +1,10 @@
+[package]
+name = "BassieTest"
+identifier = "nl.plaatsoft.BassieTest"
+version = "0.1.0"
+
+[build]
+ldflags = "-framework Cocoa"
+
+[package.metadata.bundle]
+copyright = "Copyright © 2022-2025 Bastiaan van der Plaat"

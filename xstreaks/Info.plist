@@ -2,26 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleName</key>
-	<string>XStreaks</string>
-	<key>CFBundleDisplayName</key>
-	<string>XStreaks</string>
-	<key>CFBundleIdentifier</key>
-	<string>nl.plaatsoft.XStreaks</string>
 	<key>CFBundleIconFile</key>
 	<string>app_icon</string>
-	<key>CFBundleVersion</key>
-	<string>0.1.0</string>
-	<key>CFBundleShortVersionString</key>
-	<string>0.1.0</string>
-	<key>CFBundleExecutable</key>
-	<string>XStreaks</string>
-	<key>LSMinimumSystemVersion</key>
-	<string>11.0</string>
-	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2025 Bastiaan van der Plaat</string>
 	<key>LSUIElement</key>
 	<true/>
 </dict>

@@ -1,0 +1,11 @@
+[package]
+name = "XStreaks"
+identifier = "nl.plaatsoft.XStreaks"
+version = "0.1.0"
+
+[build]
+ldflags = "-framework Cocoa"
+
+[package.metadata.bundle]
+iconset = "icons/app_icon.iconset"
+copyright = "Copyright © 2025 Bastiaan van der Plaat"
