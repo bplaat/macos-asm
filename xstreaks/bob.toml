@@ -7,5 +7,6 @@ version = "0.1.0"
 ldflags = "-framework Cocoa"
 
 [package.metadata.bundle]
+lipo = true
 iconset = "icons/app_icon.iconset"
 copyright = "Copyright © 2025 Bastiaan van der Plaat"

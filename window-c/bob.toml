@@ -7,4 +7,5 @@ version = "0.1.0"
 ldflags = "-framework Cocoa"
 
 [package.metadata.bundle]
+lipo = true
 copyright = "Copyright © 2022-2025 Bastiaan van der Plaat"
