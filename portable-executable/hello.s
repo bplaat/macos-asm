@@ -234,10 +234,10 @@ section_data
 print dq 0
 exit dq 0
 
-align 4, db 0
 message db `Hello World!`, 0
 align 4, db 0
 newline db `\n`, 0
+align 4, db 0
 
 pe_import_table
     pe_library kernel32_table, 'KERNEL32.dll'

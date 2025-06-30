@@ -43,6 +43,7 @@
 %define x1 1
 %define x2 2
 %define x16 16
+%define w2 2
 
 %macro arm64_mov 2
     dd 0xAA0003E0 | ((%2 & 31) << 16) | (%1 & 31))
@@ -52,6 +53,9 @@
 %endmacro
 %macro arm64_adr 2
     dd 0x10000000 | ((((%2 - $) >> 2) << 5) | (%1 & 31))
+%endmacro
+%macro arm64_ldrb 2
+    dd 0x39400000 | (((%2 & 31) << 5) | (%1 & 31))
 %endmacro
 
 %macro arm64_add_imm 3
@@ -235,7 +239,7 @@ _start:
 strlen:
     arm64_mov x1, x0
 .repeat:
-    dd 0x39400022 ; ldrb w2, [x1]
+    arm64_ldrb w2, x1
     arm64_cbz x2, .done
     arm64_add_imm x1, x1, 1
     arm64_b .repeat
