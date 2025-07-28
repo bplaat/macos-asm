@@ -66,11 +66,11 @@ fn ns_string(str: impl AsRef<str>) -> *mut Object {
     let str = str.as_ref();
     unsafe {
         let ns_string: *mut Object = msg_send![class!(NSString), alloc];
-        let ns_string: *mut Object = msg_send![ns_string, initWithBytes:str.as_ptr().cast::<c_void>(), length:str.len(), encoding:NS_UTF8_STRING_ENCODING];
-        msg_send![ns_string, autorelease]
+        msg_send![ns_string, initWithBytes:str.as_ptr().cast::<c_void>(), length:str.len(), encoding:NS_UTF8_STRING_ENCODING]
     }
 }
 
+#[link(name = "Cocoa", kind = "framework")]
 extern "C" {
     static NSApp: *mut Object;
     static NSAppearanceNameDarkAqua: *const Object;
@@ -88,7 +88,7 @@ extern "C" fn canvas_view_draw_rect(this: *mut Object, _: Sel, _dirty_rect: NSRe
             msg_send![class!(NSFont), systemFontOfSize:48.0],
             msg_send![class!(NSColor), whiteColor],
         ];
-        let attributes: *mut Object = msg_send![class!(NSDictionary), dictionaryWithObjects:values.as_ptr(), forKeys:keys.as_ptr(), count:values.len()];
+        let attributes: *mut Object = msg_send![class!(NSDictionary), dictionaryWithObjects:values.as_ptr(), forKeys:keys.as_ptr(), count:keys.len()];
 
         let size: NSSize = msg_send![text, sizeWithAttributes:attributes];
         let frame: NSRect = msg_send![this, frame];

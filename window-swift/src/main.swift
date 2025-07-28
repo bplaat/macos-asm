@@ -29,14 +29,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let appMenu = NSMenu()
         menuBarItem.submenu = appMenu
-
-        let aboutMenuItem = NSMenuItem(title: "About BassieTest", action: #selector(AppDelegate.openAbout(_:)), keyEquivalent: "a")
-        appMenu.addItem(aboutMenuItem)
-
+        appMenu.addItem(NSMenuItem(title: "About BassieTest", action: #selector(AppDelegate.openAbout(_:)), keyEquivalent: "a"))
         appMenu.addItem(NSMenuItem.separator())
-
-        let quitMenuItem = NSMenuItem(title: "Quit BassieTest", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        appMenu.addItem(quitMenuItem)
+        appMenu.addItem(NSMenuItem(title: "Quit BassieTest", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         // Create window
         let window = NSWindow(contentRect: NSMakeRect(0, 0, 1024, 768),
@@ -54,7 +49,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.setFrameUsingName("window")
 
         // Create canvas
-        window.contentView! = CanvasView()
+        window.contentView = CanvasView()
 
         // Show window
         NSApp.setActivationPolicy(.regular)

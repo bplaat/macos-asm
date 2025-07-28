@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
 
 // MARK: Objective-C runtime headers
 typedef void *id;
@@ -87,12 +86,12 @@ void canvas_view_draw_rect(id self, SEL cmd, NSRect dirtyRect) {
 
     id text = NSString("Hello macOS!");
 
+    id keys[] = { NSFontAttributeName, NSForegroundColorAttributeName };
     id values[] = {
         msg_cls_double(cls("NSFont"), sel("systemFontOfSize:"), 48),
         msg(cls("NSColor"), sel("whiteColor"))
     };
-    id keys[] = { NSFontAttributeName, NSForegroundColorAttributeName };
-    id attributes = msg_cls_id_id_int(cls("NSDictionary"), sel("dictionaryWithObjects:forKeys:count:"), values, keys, sizeof(values) / sizeof(id));
+    id attributes = msg_cls_id_id_int(cls("NSDictionary"), sel("dictionaryWithObjects:forKeys:count:"), values, keys, sizeof(keys) / sizeof(id));
 
     NSSize size = msg_id_ret_size(text, sel("sizeWithAttributes:"), attributes);
     NSRect frame = msg_ret_rect(self, sel("frame"));
