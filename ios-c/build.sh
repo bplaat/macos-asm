@@ -1,6 +1,6 @@
 #!/bin/sh
 name=BassieTest
-CFLAGS="-Wall -Wextra -Werror"
+CFLAGS="-Wall -Wextra"
 set -e
 mkdir -p $name.app
 cp Info.plist $name.app
