@@ -4,6 +4,7 @@ use std::env;
 use std::ffi::{c_char, c_void, CString};
 use std::ptr::null;
 
+use objc2::rc::{autoreleasepool, Retained};
 use objc2::runtime::{AnyObject as Object, Bool, ClassBuilder, Sel};
 use objc2::{class, msg_send, sel, Encode, Encoding};
 
@@ -112,8 +113,8 @@ extern "C" fn app_delegate_application_did_finish_launching_with_options(
         let window: *mut Object = msg_send![class!(UIWindow), alloc];
         let window: *mut Object = msg_send![window, initWithFrame:main_screen_bounds];
         let _: () = msg_send![window, setOverrideUserInterfaceStyle:UI_USER_INTERFACE_STYLE_DARK];
-        let view_controller: *mut Object = msg_send![class!(ViewController), new];
-        let _: () = msg_send![window, setRootViewController:view_controller];
+        let view_controller: Retained<Object> = msg_send![class!(ViewController), new];
+        let _: () = msg_send![window, setRootViewController:&*view_controller];
         let _: () = msg_send![window, makeKeyAndVisible];
 
         NSLog(ns_string("Hello iOS!"));
@@ -150,9 +151,11 @@ pub extern "C" fn main() {
     decl.register();
 
     // Start application
-    let argc = env::args().count() as i32;
-    let argv = env::args()
-        .map(|arg| CString::new(arg).unwrap().into_raw())
-        .collect::<Vec<*mut c_char>>();
-    unsafe { UIApplicationMain(argc, argv.as_ptr(), null(), ns_string("AppDelegate")) };
+    autoreleasepool(|_| {
+        let argc = env::args().count() as i32;
+        let argv: Vec<*mut c_char> = env::args()
+            .map(|arg| CString::new(arg).unwrap().into_raw())
+            .collect();
+        unsafe { UIApplicationMain(argc, argv.as_ptr(), null(), ns_string("AppDelegate")) };
+    });
 }

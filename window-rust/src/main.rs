@@ -3,6 +3,7 @@
 use std::ffi::c_void;
 use std::ptr::null;
 
+use objc2::rc::{autoreleasepool, Retained};
 use objc2::runtime::{AnyObject as Object, Bool, ClassBuilder, Sel};
 use objc2::{class, msg_send, sel, Encode, Encoding};
 
@@ -66,7 +67,8 @@ fn ns_string(str: impl AsRef<str>) -> *mut Object {
     let str = str.as_ref();
     unsafe {
         let ns_string: *mut Object = msg_send![class!(NSString), alloc];
-        msg_send![ns_string, initWithBytes:str.as_ptr().cast::<c_void>(), length:str.len(), encoding:NS_UTF8_STRING_ENCODING]
+        let ns_string: *mut Object = msg_send![ns_string, initWithBytes:str.as_ptr().cast::<c_void>(), length:str.len(), encoding:NS_UTF8_STRING_ENCODING];
+        msg_send![ns_string, autorelease]
     }
 }
 
@@ -107,31 +109,37 @@ extern "C" fn canvas_view_draw_rect(this: *mut Object, _: Sel, _dirty_rect: NSRe
 extern "C" fn did_finish_launching(_: *mut Object, _: Sel, _: *const Object) {
     unsafe {
         // Create menu
-        let menubar: *mut Object = msg_send![class!(NSMenu), new];
-        let _: () = msg_send![NSApp, setMainMenu:menubar];
+        let menubar: Retained<Object> = msg_send![class!(NSMenu), new];
+        let _: () = msg_send![NSApp, setMainMenu:&*menubar];
 
-        let menu_bar_item: *mut Object = msg_send![class!(NSMenuItem), new];
-        let _: () = msg_send![menubar, addItem:menu_bar_item];
+        let menu_bar_item: Retained<Object> = msg_send![class!(NSMenuItem), new];
+        let _: () = msg_send![&*menubar, addItem:&*menu_bar_item];
 
-        let app_menu: *mut Object = msg_send![class!(NSMenu), new];
-        let _: () = msg_send![menu_bar_item, setSubmenu:app_menu];
+        let app_menu: Retained<Object> = msg_send![class!(NSMenu), new];
+        let _: () = msg_send![&*menu_bar_item, setSubmenu:&*app_menu];
 
         let about_menu_item: *mut Object = msg_send![class!(NSMenuItem), alloc];
-        let about_menu_item: *mut Object = msg_send![about_menu_item,
+        let about_menu_item: Retained<Object> = {
+            Retained::from_raw(msg_send![about_menu_item,
             initWithTitle:ns_string("About BassieTest"),
             action:sel!(openAbout:),
-            keyEquivalent:ns_string("")];
-        let _: () = msg_send![app_menu, addItem:about_menu_item];
+            keyEquivalent:ns_string("")])
+            .unwrap()
+        };
+        let _: () = msg_send![&*app_menu, addItem:&*about_menu_item];
 
         let separator_item: *mut Object = msg_send![class!(NSMenuItem), separatorItem];
-        let _: () = msg_send![app_menu, addItem:separator_item];
+        let _: () = msg_send![&*app_menu, addItem:separator_item];
 
         let quit_menu_item: *mut Object = msg_send![class!(NSMenuItem), alloc];
-        let quit_menu_item: *mut Object = msg_send![quit_menu_item,
+        let quit_menu_item: Retained<Object> = {
+            Retained::from_raw(msg_send![quit_menu_item,
             initWithTitle:ns_string("Quit BassieTest"),
             action:sel!(terminate:),
-            keyEquivalent:ns_string("q")];
-        let _: () = msg_send![app_menu, addItem:quit_menu_item];
+            keyEquivalent:ns_string("q")])
+            .unwrap()
+        };
+        let _: () = msg_send![&*app_menu, addItem:&*quit_menu_item];
 
         // Create window
         let window: *mut Object = msg_send![class!(NSWindow), alloc];
@@ -157,8 +165,8 @@ extern "C" fn did_finish_launching(_: *mut Object, _: Sel, _: *const Object) {
         let _: Bool = msg_send![window, setFrameAutosaveName:ns_string("window")];
 
         // Create canvas
-        let canvas_view: *mut Object = msg_send![class!(CanvasView), new];
-        let _: () = msg_send![window, setContentView:canvas_view];
+        let canvas_view: Retained<Object> = msg_send![class!(CanvasView), new];
+        let _: () = msg_send![window, setContentView:&*canvas_view];
 
         // Show window
         let _: Bool =
@@ -210,10 +218,10 @@ pub extern "C" fn main() {
     decl.register();
 
     // Start application
-    unsafe {
+    autoreleasepool(|_| unsafe {
         let app: *mut Object = msg_send![class!(NSApplication), sharedApplication];
-        let delegate: *mut Object = msg_send![class!(AppDelegate), new];
-        let _: () = msg_send![app, setDelegate:delegate];
+        let delegate: Retained<Object> = msg_send![class!(AppDelegate), new];
+        let _: () = msg_send![app, setDelegate:&*delegate];
         let _: () = msg_send![app, run];
-    }
+    });
 }

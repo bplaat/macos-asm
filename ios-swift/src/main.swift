@@ -25,10 +25,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        window = UIWindow(frame: UIScreen.main.bounds)
-        window!.overrideUserInterfaceStyle = .dark
-        window!.rootViewController = ViewController()
-        window!.makeKeyAndVisible()
+        let win = UIWindow(frame: UIScreen.main.bounds)
+        win.overrideUserInterfaceStyle = .dark
+        win.rootViewController = ViewController()
+        win.makeKeyAndVisible()
+        window = win
 
         NSLog("Hello iOS!")
         return true

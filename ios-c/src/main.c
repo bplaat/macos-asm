@@ -26,6 +26,8 @@ struct objc_super {
     Class super_class;
 };
 extern void objc_msgSendSuper(struct objc_super *super, SEL sel, ...);
+extern void *objc_autoreleasePoolPush(void);
+extern void objc_autoreleasePoolPop(void *pool);
 
 #define cls objc_getClass
 #define sel sel_registerName
@@ -101,9 +103,11 @@ bool app_delegate_application_did_finish_launching_with_options(id self, SEL cmd
     (void)application;
     (void)launch_options;
 
-    id window = window = msg_rect(msg_cls(cls("UIWindow"), sel("alloc")), sel("initWithFrame:"), msg_ret_rect(msg(cls("UIScreen"), sel("mainScreen")), sel("bounds")));
+    id window = msg_rect(msg_cls(cls("UIWindow"), sel("alloc")), sel("initWithFrame:"), msg_ret_rect(msg(cls("UIScreen"), sel("mainScreen")), sel("bounds")));
     msg_int(window, sel("setOverrideUserInterfaceStyle:"), UIUserInterfaceStyleDark);
-    msg_id(window, sel("setRootViewController:"), msg(cls("ViewController"), sel("new")));
+    id view_controller = msg_cls(cls("ViewController"), sel("new"));
+    msg_id(window, sel("setRootViewController:"), view_controller);
+    msg(view_controller, sel("release"));
     msg(window, sel("makeKeyAndVisible"));
 
     NSLog(NSString("Hello iOS!\n"));
@@ -112,6 +116,9 @@ bool app_delegate_application_did_finish_launching_with_options(id self, SEL cmd
 
 // MARK: Main
 int main(int argc, char **argv) {
+    void* pool = objc_autoreleasePoolPush();
+    (void)pool;
+
     // Register classes
     Class ViewController = objc_allocateClassPair(cls("UIViewController"), "ViewController", 0);
     class_addIvar(ViewController, "_label", sizeof(id), log2(sizeof(id)), "^v");
@@ -124,5 +131,6 @@ int main(int argc, char **argv) {
     objc_registerClassPair(AppDelegate);
 
     // Start application
-    return UIApplicationMain(argc, argv, NULL, NSString("AppDelegate"));
+    UIApplicationMain(argc, argv, NULL, NSString("AppDelegate"));
+    return EXIT_SUCCESS;
 }

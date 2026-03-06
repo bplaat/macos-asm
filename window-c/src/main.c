@@ -17,6 +17,8 @@ extern void *objc_msgSend(id self, SEL sel, ...);
 #ifndef __arm64__
 extern void objc_msgSend_stret(void *ret, id self, SEL sel, ...);
 #endif
+extern void *objc_autoreleasePoolPush(void);
+extern void objc_autoreleasePoolPop(void *pool);
 
 #define cls objc_getClass
 #define sel sel_registerName
@@ -108,22 +110,27 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
     // Create menu
     id menubar = msg_cls(cls("NSMenu"), sel("new"));
     msg_cls_id(NSApp, sel("setMainMenu:"), menubar);
+    msg(menubar, sel("release"));
 
     id menu_bar_item = msg_cls(cls("NSMenuItem"), sel("new"));
     msg_id(menubar, sel("addItem:"), menu_bar_item);
+    msg(menu_bar_item, sel("release"));
 
     id app_menu = msg_cls(cls("NSMenu"), sel("new"));
     msg_id(menu_bar_item, sel("setSubmenu:"), app_menu);
+    msg(app_menu, sel("release"));
 
     id about_menu_item = msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")),
         sel("initWithTitle:action:keyEquivalent:"), NSString("About BassieTest"), sel("openAbout:"), NSString(""));
     msg_id(app_menu, sel("addItem:"), about_menu_item);
+    msg(about_menu_item, sel("release"));
 
     msg_id(app_menu, sel("addItem:"), msg_cls(cls("NSMenuItem"), sel("separatorItem")));
 
     id quit_menu_item = msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")),
         sel("initWithTitle:action:keyEquivalent:"), NSString("Quit BassieTest"), sel("terminate:"), NSString("q"));
     msg_id(app_menu, sel("addItem:"), quit_menu_item);
+    msg(quit_menu_item, sel("release"));
 
     // Create window
     id window = msg_rect_int_int_int(
@@ -136,7 +143,7 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
     );
     msg_id(window, sel("setTitle:"), NSString("BassieTest"));
     msg_bool(window, sel("setTitlebarAppearsTransparent:"), true);
-    msg_id(window, sel("setAppearance:"),  msg_cls_str(cls("NSAppearance"), sel("appearanceNamed:"), NSAppearanceNameDarkAqua));
+    msg_id(window, sel("setAppearance:"),  msg_cls_id(cls("NSAppearance"), sel("appearanceNamed:"), NSAppearanceNameDarkAqua));
     NSRect screen_frame = msg_ret_rect(msg(window, sel("screen")), sel("frame"));
     NSRect window_frame = msg_ret_rect(window, sel("frame"));
     double window_x = (screen_frame.width - window_frame.width) / 2;
@@ -148,7 +155,9 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
     msg_id(window, sel("setFrameAutosaveName:"), NSString("window"));
 
     // Create canvas
-    msg_id(window, sel("setContentView:"), msg_cls(cls("CanvasView"), sel("new")));
+    id canvas_view = msg_cls(cls("CanvasView"), sel("new"));
+    msg_id(window, sel("setContentView:"), canvas_view);
+    msg(canvas_view, sel("release"));
 
     // Show window
     msg_int(NSApp, sel("setActivationPolicy:"), NSApplicationActivationPolicyRegular);
@@ -172,6 +181,8 @@ void open_about(id self, SEL cmd, id sender) {
 
 // MARK: Main
 int main(void) {
+    void *pool = objc_autoreleasePoolPush();
+
     // Register classes
     Class CanvasView = objc_allocateClassPair(cls("NSView"), "CanvasView", 0);
     class_addMethod(CanvasView, sel("drawRect:"), (IMP)canvas_view_draw_rect, "v@:{NSRect={CGPoint=dd}{CGSize=dd}}");
@@ -187,5 +198,6 @@ int main(void) {
     id app = msg_cls(cls("NSApplication"), sel("sharedApplication"));
     msg_id(app, sel("setDelegate:"), msg_cls(AppDelegate, sel("new")));
     msg(app, sel("run"));
+    objc_autoreleasePoolPop(pool);
     return EXIT_SUCCESS;
 }

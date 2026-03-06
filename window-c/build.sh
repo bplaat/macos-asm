@@ -1,6 +1,6 @@
 #!/bin/sh
 name=BassieTest
-CFLAGS="-Wall -Wextra"
+CFLAGS="-Wall -Wextra -Wno-cast-function-type-mismatch"
 set -e
 mkdir -p $name.app/Contents/MacOS
 clang $CFLAGS src/main.c -framework Cocoa -o $name.app/Contents/MacOS/$name

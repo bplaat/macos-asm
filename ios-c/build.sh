@@ -1,6 +1,6 @@
 #!/bin/sh
 name=BassieTest
-CFLAGS="-Wall -Wextra"
+CFLAGS="-Wall -Wextra -Wno-cast-function-type-mismatch"
 set -e
 mkdir -p $name.app
 cp Info.plist $name.app
