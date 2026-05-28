@@ -1,23 +1,55 @@
 #!/bin/sh
-name=BassieTest
 set -e
-mkdir -p $name.app
-cp Info.plist $name.app
-if [[ $1 = "device" ]]; then
-    swiftc -Osize -target arm64-apple-ios14 \
-        -sdk $(xcrun --sdk iphoneos --show-sdk-path) \
-        -parse-as-library src/main.swift -o $name.app/$name
-    strip $name.app/$name
 
-    identity=$(security find-identity -v -p codesigning | grep "Apple Development" | head -1 | awk '{print $2}')
-    codesign --sign "$identity" $name.app --entitlements Entitlements.plist
-    ios-deploy --bundle $name.app
+name=BassieTest
+bundle_id=nl.plaatsoft.BassieTest
+
+# Build for real device if provision.sh exists and device is connected, else simulator
+if [ -f provision.sh ]; then
+    . ./provision.sh
+fi
+
+if [ -n "$device_id" ] && xcrun devicectl list devices 2>/dev/null | grep -q "$device_id"; then
+    sdk=$(xcrun --sdk iphoneos --show-sdk-path)
+    mkdir -p $name.app
+    cp Info.plist $name.app
+    swiftc -target arm64-apple-ios15 \
+        -sdk "$sdk" \
+        -parse-as-library src/main.swift -o $name.app/$name
+
+    cp "$provision" $name.app/embedded.mobileprovision
+
+    cat > /tmp/$name.entitlements.plist <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>application-identifier</key>
+    <string>$team_id.$bundle_id</string>
+    <key>com.apple.developer.team-identifier</key>
+    <string>$team_id</string>
+    <key>get-task-allow</key>
+    <true/>
+</dict>
+</plist>
+EOF
+
+    codesign --force --sign "$sign_id" \
+        --entitlements /tmp/$name.entitlements.plist \
+        --timestamp=none \
+        $name.app
+
+    xcrun devicectl device install app --device "$device_id" $name.app
+    xcrun devicectl device process launch --device "$device_id" $bundle_id
 else
-    swiftc -target arm64-apple-ios14-simulator \
-        -sdk $(xcrun --sdk iphonesimulator --show-sdk-path) \
+    sdk=$(xcrun --sdk iphonesimulator --show-sdk-path)
+    mkdir -p $name.app
+    cp Info.plist $name.app
+    swiftc -target arm64-apple-ios15-simulator \
+        -sdk "$sdk" \
         -parse-as-library src/main.swift -o $name.app/$name
 
-    xcrun simctl uninstall booted nl.plaatsoft.$name
+    xcrun simctl uninstall booted $bundle_id
     xcrun simctl install booted $name.app
-    xcrun simctl launch --console booted nl.plaatsoft.$name
+    xcrun simctl launch --console booted $bundle_id
 fi

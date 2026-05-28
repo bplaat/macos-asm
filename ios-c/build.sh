@@ -4,7 +4,7 @@ CFLAGS="-Wall -Wextra -Wno-cast-function-type-mismatch"
 set -e
 mkdir -p $name.app
 cp Info.plist $name.app
-clang $CFLAGS --target=arm64-apple-ios13-simulator src/main.c \
+clang $CFLAGS --target=arm64-apple-ios15-simulator src/main.c \
     -isysroot $(xcrun --sdk iphonesimulator --show-sdk-path) \
     -framework Foundation -framework UIKit -o $name.app/$name
 

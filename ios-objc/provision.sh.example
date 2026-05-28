@@ -1,0 +1,7 @@
+#!/bin/sh
+# Copy this file to provision.sh and fill in your own Apple Developer credentials and provisioning profile information.
+
+team_id=XXXXXXXXXX
+sign_id="Apple Development: you@example.com (XXXXXXXXXX)"
+provision="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.mobileprovision"
+device_id=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
