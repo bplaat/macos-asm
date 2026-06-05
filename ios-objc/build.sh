@@ -12,7 +12,7 @@ fi
 if [ -n "$device_id" ] && xcrun devicectl list devices 2>/dev/null | grep -q "$device_id"; then
     sdk=$(xcrun --sdk iphoneos --show-sdk-path)
     mkdir -p $name.app
-    cp Info.plist $name.app
+    plutil -convert binary1 -o $name.app/Info.plist Info.plist
     clang -x objective-c -Wall -Wextra -Werror \
         --target=arm64-apple-ios15 \
         -isysroot "$sdk" \
@@ -46,7 +46,7 @@ EOF
 else
     sdk=$(xcrun --sdk iphonesimulator --show-sdk-path)
     mkdir -p $name.app
-    cp Info.plist $name.app
+    plutil -convert binary1 -o $name.app/Info.plist Info.plist
     clang -x objective-c -Wall -Wextra -Werror \
         --target=arm64-apple-ios15-simulator \
         -isysroot "$sdk" \

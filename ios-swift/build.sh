@@ -2,7 +2,7 @@
 name=BassieTest
 set -e
 mkdir -p $name.app
-cp Info.plist $name.app
+plutil -convert binary1 -o $name.app/Info.plist Info.plist
 swiftc -target arm64-apple-ios15-simulator \
     -sdk $(xcrun --sdk iphonesimulator --show-sdk-path) \
     -parse-as-library src/main.swift -o $name.app/$name
