@@ -19,7 +19,7 @@ if [ -n "$device_id" ] && xcrun devicectl list devices 2>/dev/null | grep -q "$d
 
     cp "$provision" $name.app/embedded.mobileprovision
 
-    cat > /tmp/$name.entitlements.plist <<EOF
+    cat > /tmp/$name.Entitlements.plist <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -35,7 +35,7 @@ if [ -n "$device_id" ] && xcrun devicectl list devices 2>/dev/null | grep -q "$d
 EOF
 
     codesign --force --sign "$sign_id" \
-        --entitlements /tmp/$name.entitlements.plist \
+        --entitlements /tmp/$name.Entitlements.plist \
         --timestamp=none \
         $name.app
 

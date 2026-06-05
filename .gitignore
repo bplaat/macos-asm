@@ -1,5 +1,4 @@
 *.app/
 target/
-Entitlements.plist
 .DS_Store
 provision.sh
