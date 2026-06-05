@@ -1,12 +1,15 @@
 #![no_main]
 
+use std::cell::Cell;
 use std::env;
 use std::ffi::{c_char, c_void, CString};
 use std::ptr::null;
 
 use objc2::rc::{autoreleasepool, Retained};
-use objc2::runtime::{AnyObject as Object, Bool, ClassBuilder, Sel};
-use objc2::{class, msg_send, sel, Encode, Encoding};
+use objc2::runtime::{AnyObject as Object, Bool, NSObject};
+use objc2::{
+    class, define_class, extern_class, msg_send, ClassType, DefinedClass, Encode, Encoding,
+};
 
 // MARK: UIKit headers
 #[repr(C)]
@@ -60,95 +63,98 @@ extern "C" {
     );
 }
 
+extern_class!(
+    #[unsafe(super(NSObject))]
+    struct UIResponder;
+);
+extern_class!(
+    #[unsafe(super(UIResponder))]
+    struct UIViewController;
+);
+
 // MARK: ViewController
-const IVAR_LABEL: &str = "_label";
-
-extern "C" fn view_controller_view_did_load(this: *mut Object, _: Sel) {
-    unsafe {
-        let _: () = msg_send![super(this, class!(UIViewController)), viewDidLoad];
-
-        let view: *mut Object = msg_send![this, view];
-
-        let background_color: *mut Object = msg_send![class!(UIColor), colorWithRed:(0x05 as f64) / 255.0, green:(0x44 as f64) / 255.0, blue:(0x5e as f64) / 255.0, alpha:1.0];
-        let _: () = msg_send![view, setBackgroundColor:background_color];
-
-        let label: *mut Object = msg_send![class!(UILabel), new];
-        let _: () = msg_send![label, setText:ns_string("Hello iOS!")];
-        let font: *mut Object = msg_send![class!(UIFont), systemFontOfSize:48.0];
-        let _: () = msg_send![label, setFont:font];
-        let _: () = msg_send![label, setTextAlignment:NSTEXT_ALIGNMENT_CENTER];
-        let _: () = msg_send![view, addSubview:label];
-
-        #[allow(deprecated)]
-        let label_ptr: &mut *mut Object = (*this).get_mut_ivar::<*mut Object>(IVAR_LABEL);
-        *label_ptr = label;
-    }
+#[derive(Default)]
+struct ViewControllerIvars {
+    label: Cell<*mut Object>,
 }
 
-extern "C" fn view_controller_view_will_layout_subviews(this: *mut Object, _: Sel) {
-    unsafe {
-        let _: () = msg_send![
-            super(this, class!(UIViewController)),
-            viewWillLayoutSubviews
-        ];
+define_class!(
+    #[unsafe(super(UIViewController))]
+    #[name = "ViewController"]
+    #[ivars = ViewControllerIvars]
+    struct ViewController;
 
-        let view: *mut Object = msg_send![this, view];
-        let bounds: NSRect = msg_send![view, bounds];
-        #[allow(deprecated)]
-        let label = *(*this).get_ivar::<*mut Object>(IVAR_LABEL);
-        let _: () = msg_send![label, setFrame:bounds];
+    impl ViewController {
+        #[unsafe(method(viewDidLoad))]
+        fn view_did_load(&self) {
+            unsafe {
+                let _: () = msg_send![super(self), viewDidLoad];
+                let view: *mut Object = msg_send![self, view];
+
+                let background_color: *mut Object = msg_send![class!(UIColor), colorWithRed:(0x05 as f64) / 255.0, green:(0x44 as f64) / 255.0, blue:(0x5e as f64) / 255.0, alpha:1.0];
+                let _: () = msg_send![view, setBackgroundColor:background_color];
+
+                let label: *mut Object = msg_send![class!(UILabel), new];
+                let _: () = msg_send![label, setText:ns_string("Hello iOS!")];
+                let font: *mut Object = msg_send![class!(UIFont), systemFontOfSize:48.0];
+                let _: () = msg_send![label, setFont:font];
+                let _: () = msg_send![label, setTextAlignment:NSTEXT_ALIGNMENT_CENTER];
+                let _: () = msg_send![view, addSubview:label];
+                self.ivars().label.set(label);
+            }
+        }
+
+        #[unsafe(method(viewWillLayoutSubviews))]
+        fn view_will_layout_subviews(&self) {
+            unsafe {
+                let _: () = msg_send![super(self), viewWillLayoutSubviews];
+                let view: *mut Object = msg_send![self, view];
+                let bounds: NSRect = msg_send![view, bounds];
+                let label = self.ivars().label.get();
+                if !label.is_null() {
+                    let _: () = msg_send![label, setFrame:bounds];
+                }
+            }
+        }
     }
-}
+);
 
 // MARK: AppDelegate
-extern "C" fn app_delegate_application_did_finish_launching_with_options(
-    _: *mut Object,
-    _: Sel,
-    _: *const Object,
-    _: *const Object,
-) -> Bool {
-    unsafe {
-        let main_screen: *mut Object = msg_send![class!(UIScreen), mainScreen];
-        let main_screen_bounds: NSRect = msg_send![main_screen, bounds];
-        let window: *mut Object = msg_send![class!(UIWindow), alloc];
-        let window: *mut Object = msg_send![window, initWithFrame:main_screen_bounds];
-        let _: () = msg_send![window, setOverrideUserInterfaceStyle:UI_USER_INTERFACE_STYLE_DARK];
-        let view_controller: Retained<Object> = msg_send![class!(ViewController), new];
-        let _: () = msg_send![window, setRootViewController:&*view_controller];
-        let _: () = msg_send![window, makeKeyAndVisible];
+define_class!(
+    #[unsafe(super(NSObject))]
+    #[name = "AppDelegate"]
+    struct AppDelegate;
 
-        NSLog(ns_string("Hello iOS!"));
+    impl AppDelegate {
+        #[unsafe(method(application:didFinishLaunchingWithOptions:))]
+        fn application_did_finish_launching(
+            &self,
+            _app: *const Object,
+            _options: *const Object,
+        ) -> Bool {
+            unsafe {
+                let main_screen: *mut Object = msg_send![class!(UIScreen), mainScreen];
+                let main_screen_bounds: NSRect = msg_send![main_screen, bounds];
+                let window: *mut Object = msg_send![class!(UIWindow), alloc];
+                let window: *mut Object = msg_send![window, initWithFrame:main_screen_bounds];
+                let _: () = msg_send![window, setOverrideUserInterfaceStyle:UI_USER_INTERFACE_STYLE_DARK];
+                let view_controller: Retained<Object> = msg_send![class!(ViewController), new];
+                let _: () = msg_send![window, setRootViewController:&*view_controller];
+                let _: () = msg_send![window, makeKeyAndVisible];
+
+                NSLog(ns_string("Hello iOS!"));
+            }
+            Bool::YES
+        }
     }
-    Bool::YES
-}
+);
 
 // MARK: Main
 #[no_mangle]
 pub extern "C" fn main() {
     // Register classes
-    let mut decl = ClassBuilder::new(c"ViewController", class!(UIViewController)).unwrap();
-    decl.add_ivar::<*const Object>(&CString::new(IVAR_LABEL).unwrap());
-    unsafe {
-        decl.add_method(
-            sel!(viewDidLoad),
-            view_controller_view_did_load as extern "C" fn(_, _),
-        );
-        decl.add_method(
-            sel!(viewWillLayoutSubviews),
-            view_controller_view_will_layout_subviews as extern "C" fn(_, _),
-        );
-    }
-    decl.register();
-
-    let mut decl = ClassBuilder::new(c"AppDelegate", class!(NSObject)).unwrap();
-    unsafe {
-        decl.add_method(
-            sel!(application:didFinishLaunchingWithOptions:),
-            app_delegate_application_did_finish_launching_with_options
-                as extern "C" fn(_, _, _, _) -> _,
-        );
-    }
-    decl.register();
+    let _ = ViewController::class();
+    let _ = AppDelegate::class();
 
     // Start application
     autoreleasepool(|_| {
