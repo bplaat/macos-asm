@@ -86,7 +86,8 @@
 int main(void) {
     @autoreleasepool {
         NSApplication *app = [NSApplication sharedApplication];
-        app.delegate = [AppDelegate new];
+        AppDelegate *delegate = [AppDelegate new];
+        app.delegate = delegate;
         [app run];
     }
     return EXIT_SUCCESS;

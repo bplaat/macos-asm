@@ -196,7 +196,8 @@ int main(void) {
 
     // Start application
     id app = msg_cls(cls("NSApplication"), sel("sharedApplication"));
-    msg_id(app, sel("setDelegate:"), msg_cls(AppDelegate, sel("new")));
+    id delegate = msg_cls(AppDelegate, sel("new"));
+    msg_id(app, sel("setDelegate:"), delegate);
     msg(app, sel("run"));
     objc_autoreleasePoolPop(pool);
     return EXIT_SUCCESS;

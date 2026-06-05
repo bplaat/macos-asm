@@ -1,6 +1,6 @@
 #!/bin/sh
 name=BassieTest
-CFLAGS="-x objective-c -Wall -Wextra -Werror"
+CFLAGS="-x objective-c -fobjc-arc -Wall -Wextra -Werror"
 set -e
 mkdir -p $name.app/Contents/MacOS
 clang $CFLAGS src/main.m -framework Cocoa -o $name.app/Contents/MacOS/$name
