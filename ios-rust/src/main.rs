@@ -1,5 +1,3 @@
-#![no_main]
-
 use std::cell::Cell;
 use std::env;
 use std::ffi::{c_char, CString};
@@ -102,8 +100,7 @@ define_class!(
 );
 
 // MARK: Main
-#[no_mangle]
-pub extern "C" fn main() {
+fn main() {
     // Register classes
     let _ = ViewController::class();
     let _ = AppDelegate::class();

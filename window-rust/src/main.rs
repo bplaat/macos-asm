@@ -1,5 +1,3 @@
-#![no_main]
-
 use std::ffi::c_void;
 use std::ptr::null;
 
@@ -137,8 +135,7 @@ define_class!(
 );
 
 // MARK: Main
-#[no_mangle]
-pub extern "C" fn main() {
+fn main() {
     // Register classes
     let _ = CanvasView::class();
     let _ = AppDelegate::class();
