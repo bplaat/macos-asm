@@ -5,89 +5,11 @@ use std::ptr::null;
 
 use objc2::rc::{autoreleasepool, Retained};
 use objc2::runtime::{AnyObject as Object, Bool, NSObject};
-use objc2::{class, define_class, extern_class, msg_send, sel, ClassType, Encode, Encoding};
+use objc2::{class, define_class, msg_send, sel, ClassType};
 
-// MARK: Cocoa headers
-#[repr(C)]
-struct CGPoint {
-    x: f64,
-    y: f64,
-}
-impl CGPoint {
-    fn new(x: f64, y: f64) -> Self {
-        Self { x, y }
-    }
-}
-unsafe impl Encode for CGPoint {
-    const ENCODING: Encoding = Encoding::Struct("CGPoint", &[f64::ENCODING, f64::ENCODING]);
-}
-type NSPoint = CGPoint;
+use crate::cocoa::*;
 
-#[repr(C)]
-struct CGSize {
-    width: f64,
-    height: f64,
-}
-impl CGSize {
-    fn new(width: f64, height: f64) -> Self {
-        Self { width, height }
-    }
-}
-unsafe impl Encode for CGSize {
-    const ENCODING: Encoding = Encoding::Struct("CGSize", &[f64::ENCODING, f64::ENCODING]);
-}
-type NSSize = CGSize;
-
-#[repr(C)]
-struct CGRect {
-    origin: CGPoint,
-    size: CGSize,
-}
-impl CGRect {
-    fn new(origin: CGPoint, size: CGSize) -> Self {
-        Self { origin, size }
-    }
-}
-unsafe impl Encode for CGRect {
-    const ENCODING: Encoding = Encoding::Struct("CGRect", &[CGPoint::ENCODING, CGSize::ENCODING]);
-}
-type NSRect = CGRect;
-
-const NS_APPLICATION_ACTIVATION_POLICY_REGULAR: i64 = 0;
-
-const NS_WINDOW_STYLE_MASK_TITLED: u64 = 1;
-const NS_WINDOW_STYLE_MASK_CLOSABLE: u64 = 2;
-const NS_WINDOW_STYLE_MASK_MINIATURIZABLE: u64 = 4;
-const NS_WINDOW_STYLE_MASK_RESIZABLE: u64 = 8;
-
-const NS_BACKING_STORE_BUFFERED: u64 = 2;
-
-const NS_UTF8_STRING_ENCODING: u64 = 4;
-fn ns_string(str: impl AsRef<str>) -> *mut Object {
-    let str = str.as_ref();
-    unsafe {
-        let ns_string: *mut Object = msg_send![class!(NSString), alloc];
-        let ns_string: *mut Object = msg_send![ns_string, initWithBytes:str.as_ptr().cast::<c_void>(), length:str.len(), encoding:NS_UTF8_STRING_ENCODING];
-        msg_send![ns_string, autorelease]
-    }
-}
-
-#[link(name = "Cocoa", kind = "framework")]
-extern "C" {
-    static NSApp: *mut Object;
-    static NSAppearanceNameDarkAqua: *const Object;
-    static NSFontAttributeName: *const Object;
-    static NSForegroundColorAttributeName: *const Object;
-}
-
-extern_class!(
-    #[unsafe(super(NSObject))]
-    struct NSResponder;
-);
-extern_class!(
-    #[unsafe(super(NSResponder))]
-    struct NSView;
-);
+mod cocoa;
 
 // MARK: CanvasView
 define_class!(
@@ -99,7 +21,7 @@ define_class!(
         #[unsafe(method(drawRect:))]
         fn draw_rect(&self, _dirty_rect: NSRect) {
             unsafe {
-                   let text: *mut Object = ns_string("Hello macOS!");
+                let text: *mut Object = ns_string!("Hello macOS!");
 
                 let keys: [*const Object; 2] = [NSFontAttributeName, NSForegroundColorAttributeName];
                 let values: [*const Object; 2] = [
@@ -145,55 +67,58 @@ define_class!(
 
                 let about_menu_item: *mut Object = msg_send![class!(NSMenuItem), alloc];
                 let about_menu_item: Retained<Object> = Retained::from_raw(msg_send![about_menu_item,
-                    initWithTitle:ns_string("About BassieTest"),
+                    initWithTitle:ns_string!("About BassieTest"),
                     action:sel!(openAbout:),
-                    keyEquivalent:ns_string("")])
+                    keyEquivalent:ns_string!("")])
                             .unwrap();
                 let _: () = msg_send![&*app_menu, addItem:&*about_menu_item];
 
-                let separator_item: *mut Object = msg_send![class!(NSMenuItem), separatorItem];
-                let _: () = msg_send![&*app_menu, addItem:separator_item];
+                let separator_item: Retained<Object> =
+                    Retained::retain_autoreleased(msg_send![class!(NSMenuItem), separatorItem])
+                        .unwrap();
+                let _: () = msg_send![&*app_menu, addItem:&*separator_item];
 
                 let quit_menu_item: *mut Object = msg_send![class!(NSMenuItem), alloc];
                 let quit_menu_item: Retained<Object> = Retained::from_raw(msg_send![quit_menu_item,
-                    initWithTitle:ns_string("Quit BassieTest"),
+                    initWithTitle:ns_string!("Quit BassieTest"),
                     action:sel!(terminate:),
-                    keyEquivalent:ns_string("q")])
+                    keyEquivalent:ns_string!("q")])
                             .unwrap();
                 let _: () = msg_send![&*app_menu, addItem:&*quit_menu_item];
 
                 // Create window
                 let window: *mut Object = msg_send![class!(NSWindow), alloc];
-                let window: *mut Object = msg_send![window,
+                let window: Retained<Object> = Retained::from_raw(msg_send![window,
                     initWithContentRect:NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(1024.0, 768.0)),
                     styleMask:NS_WINDOW_STYLE_MASK_TITLED | NS_WINDOW_STYLE_MASK_CLOSABLE | NS_WINDOW_STYLE_MASK_MINIATURIZABLE | NS_WINDOW_STYLE_MASK_RESIZABLE,
                     backing:NS_BACKING_STORE_BUFFERED,
-                    defer:false];
-                let _: () = msg_send![window, setTitle:ns_string("BassieTest")];
-                let _: () = msg_send![window, setTitlebarAppearsTransparent:true];
+                    defer:false])
+                        .unwrap();
+                let _: () = msg_send![&*window, setTitle:ns_string!("BassieTest")];
+                let _: () = msg_send![&*window, setTitlebarAppearsTransparent:true];
                 let appearance: *mut Object =
                     msg_send![class!(NSAppearance), appearanceNamed:NSAppearanceNameDarkAqua];
-                let _: () = msg_send![window, setAppearance:appearance];
-                let screen: *mut Object = msg_send![window, screen];
+                let _: () = msg_send![&*window, setAppearance:appearance];
+                let screen: *mut Object = msg_send![&*window, screen];
                 let screen_frame: NSRect = msg_send![screen, frame];
-                let window_frame: NSRect = msg_send![window, frame];
+                let window_frame: NSRect = msg_send![&*window, frame];
                 let window_x = (screen_frame.size.width - window_frame.size.width) / 2.0;
                 let window_y = (screen_frame.size.height - window_frame.size.height) / 2.0;
-                let _: () = msg_send![window, setFrame:NSRect::new(NSPoint::new(window_x, window_y), window_frame.size), display:true];
-                let _: () = msg_send![window, setMinSize:NSSize::new(320.0, 240.0)];
+                let _: () = msg_send![&*window, setFrame:NSRect::new(NSPoint::new(window_x, window_y), window_frame.size), display:true];
+                let _: () = msg_send![&*window, setMinSize:NSSize::new(320.0, 240.0)];
                 let background_color: *mut Object = msg_send![class!(NSColor), colorWithRed:(0x05 as f64) / 255.0, green:(0x44 as f64) / 255.0, blue:(0x5e as f64) / 255.0, alpha:1.0];
-                let _: () = msg_send![window, setBackgroundColor:background_color];
-                let _: Bool = msg_send![window, setFrameAutosaveName:ns_string("window")];
+                let _: () = msg_send![&*window, setBackgroundColor:background_color];
+                let _: Bool = msg_send![&*window, setFrameAutosaveName:ns_string!("window")];
 
                 // Create canvas
                 let canvas_view: Retained<Object> = msg_send![class!(CanvasView), new];
-                let _: () = msg_send![window, setContentView:&*canvas_view];
+                let _: () = msg_send![&*window, setContentView:&*canvas_view];
 
                 // Show window
                 let _: Bool =
                     msg_send![NSApp, setActivationPolicy:NS_APPLICATION_ACTIVATION_POLICY_REGULAR];
                 let _: () = msg_send![NSApp, activateIgnoringOtherApps:true];
-                let _: () = msg_send![window, makeKeyAndOrderFront:null::<Object>()];
+                let _: () = msg_send![&*window, makeKeyAndOrderFront:null::<Object>()];
             }
         }
 

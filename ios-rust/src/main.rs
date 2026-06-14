@@ -2,75 +2,16 @@
 
 use std::cell::Cell;
 use std::env;
-use std::ffi::{c_char, c_void, CString};
+use std::ffi::{c_char, CString};
 use std::ptr::null;
 
 use objc2::rc::{autoreleasepool, Retained};
 use objc2::runtime::{AnyObject as Object, Bool, NSObject};
-use objc2::{
-    class, define_class, extern_class, msg_send, ClassType, DefinedClass, Encode, Encoding,
-};
+use objc2::{class, define_class, msg_send, ClassType, DefinedClass};
 
-// MARK: UIKit headers
-#[repr(C)]
-struct CGPoint {
-    x: f64,
-    y: f64,
-}
-unsafe impl Encode for CGPoint {
-    const ENCODING: Encoding = Encoding::Struct("CGPoint", &[f64::ENCODING, f64::ENCODING]);
-}
+use crate::uikit::*;
 
-#[repr(C)]
-struct CGSize {
-    width: f64,
-    height: f64,
-}
-unsafe impl Encode for CGSize {
-    const ENCODING: Encoding = Encoding::Struct("CGSize", &[f64::ENCODING, f64::ENCODING]);
-}
-
-#[repr(C)]
-struct CGRect {
-    origin: CGPoint,
-    size: CGSize,
-}
-unsafe impl Encode for CGRect {
-    const ENCODING: Encoding = Encoding::Struct("CGRect", &[CGPoint::ENCODING, CGSize::ENCODING]);
-}
-type NSRect = CGRect;
-
-const NS_UTF8_STRING_ENCODING: u64 = 4;
-fn ns_string(str: impl AsRef<str>) -> *mut Object {
-    let str = str.as_ref();
-    unsafe {
-        let ns_string: *mut Object = msg_send![class!(NSString), alloc];
-        let ns_string: *mut Object = msg_send![ns_string, initWithBytes:str.as_ptr().cast::<c_void>(), length:str.len(), encoding:NS_UTF8_STRING_ENCODING];
-        msg_send![ns_string, autorelease]
-    }
-}
-const UI_USER_INTERFACE_STYLE_DARK: i64 = 2;
-
-const NSTEXT_ALIGNMENT_CENTER: i64 = 1;
-
-extern "C" {
-    fn NSLog(format: *mut Object, ...);
-    fn UIApplicationMain(
-        argc: i32,
-        argv: *const *mut c_char,
-        principalClassName: *const Object,
-        delegateClassName: *mut Object,
-    );
-}
-
-extern_class!(
-    #[unsafe(super(NSObject))]
-    struct UIResponder;
-);
-extern_class!(
-    #[unsafe(super(UIResponder))]
-    struct UIViewController;
-);
+mod uikit;
 
 // MARK: ViewController
 #[derive(Default)]
@@ -94,13 +35,13 @@ define_class!(
                 let background_color: *mut Object = msg_send![class!(UIColor), colorWithRed:(0x05 as f64) / 255.0, green:(0x44 as f64) / 255.0, blue:(0x5e as f64) / 255.0, alpha:1.0];
                 let _: () = msg_send![view, setBackgroundColor:background_color];
 
-                let label: *mut Object = msg_send![class!(UILabel), new];
-                let _: () = msg_send![label, setText:ns_string("Hello iOS!")];
+                let label: Retained<Object> = msg_send![class!(UILabel), new];
+                let _: () = msg_send![&*label, setText:ns_string!("Hello iOS!")];
                 let font: *mut Object = msg_send![class!(UIFont), systemFontOfSize:48.0];
-                let _: () = msg_send![label, setFont:font];
-                let _: () = msg_send![label, setTextAlignment:NSTEXT_ALIGNMENT_CENTER];
-                let _: () = msg_send![view, addSubview:label];
-                self.ivars().label.set(label);
+                let _: () = msg_send![&*label, setFont:font];
+                let _: () = msg_send![&*label, setTextAlignment:NSTEXT_ALIGNMENT_CENTER];
+                let _: () = msg_send![view, addSubview:&*label];
+                self.ivars().label.set(Retained::as_ptr(&label) as *mut _);
             }
         }
 
@@ -120,9 +61,15 @@ define_class!(
 );
 
 // MARK: AppDelegate
+#[derive(Default)]
+struct AppDelegateIvars {
+    window: Cell<*mut Object>,
+}
+
 define_class!(
     #[unsafe(super(NSObject))]
     #[name = "AppDelegate"]
+    #[ivars = AppDelegateIvars]
     struct AppDelegate;
 
     impl AppDelegate {
@@ -136,13 +83,18 @@ define_class!(
                 let main_screen: *mut Object = msg_send![class!(UIScreen), mainScreen];
                 let main_screen_bounds: NSRect = msg_send![main_screen, bounds];
                 let window: *mut Object = msg_send![class!(UIWindow), alloc];
-                let window: *mut Object = msg_send![window, initWithFrame:main_screen_bounds];
-                let _: () = msg_send![window, setOverrideUserInterfaceStyle:UI_USER_INTERFACE_STYLE_DARK];
+                let window: Retained<Object> =
+                    Retained::from_raw(msg_send![window, initWithFrame:main_screen_bounds])
+                        .unwrap();
+                let _: () = msg_send![&*window, setOverrideUserInterfaceStyle:UI_USER_INTERFACE_STYLE_DARK];
                 let view_controller: Retained<Object> = msg_send![class!(ViewController), new];
-                let _: () = msg_send![window, setRootViewController:&*view_controller];
-                let _: () = msg_send![window, makeKeyAndVisible];
+                let _: () = msg_send![&*window, setRootViewController:&*view_controller];
+                let _: () = msg_send![&*window, makeKeyAndVisible];
+                // Keep the window alive for the app's lifetime; UIKit on iOS 13+ does not
+                // guarantee retaining a window that has no UIWindowScene association.
+                self.ivars().window.set(Retained::into_raw(window) as *mut _);
 
-                NSLog(ns_string("Hello iOS!"));
+                NSLog(ns_string!("Hello iOS!"));
             }
             Bool::YES
         }
@@ -157,11 +109,12 @@ pub extern "C" fn main() {
     let _ = AppDelegate::class();
 
     // Start application
+    let app_delegate_name = ns_string!("AppDelegate");
     autoreleasepool(|_| {
         let argc = env::args().count() as i32;
         let argv: Vec<*mut c_char> = env::args()
             .map(|arg| CString::new(arg).unwrap().into_raw())
             .collect();
-        unsafe { UIApplicationMain(argc, argv.as_ptr(), null(), ns_string("AppDelegate")) };
+        unsafe { UIApplicationMain(argc, argv.as_ptr(), null(), app_delegate_name) };
     });
 }
