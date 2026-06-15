@@ -10,6 +10,8 @@ fn main() {
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleName</key>
@@ -27,7 +29,9 @@ fn main() {
 	<key>LSMinimumSystemVersion</key>
 	<string>11.0</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2024-2025 Bastiaan van der Plaat</string>
+	<string>Copyright © 2024-2026 Bastiaan van der Plaat</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 </dict>
 </plist>
 "#,
