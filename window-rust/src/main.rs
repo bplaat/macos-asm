@@ -1,7 +1,6 @@
-use std::ffi::c_void;
 use std::ptr::null;
 
-use objc2::rc::{autoreleasepool, Retained};
+use objc2::rc::autoreleasepool;
 use objc2::runtime::{AnyObject as Object, Bool, NSObject};
 use objc2::{class, define_class, msg_send, sel, ClassType};
 
@@ -54,69 +53,64 @@ define_class!(
         fn did_finish_launching(&self, _notification: *const Object) {
             unsafe {
                 // Create menu
-                let menubar: Retained<Object> = msg_send![class!(NSMenu), new];
-                let _: () = msg_send![NSApp, setMainMenu:&*menubar];
+                let menubar: *mut Object = msg_send![class!(NSMenu), new];
+                let _: () = msg_send![NSApp, setMainMenu:menubar];
 
-                let menu_bar_item: Retained<Object> = msg_send![class!(NSMenuItem), new];
-                let _: () = msg_send![&*menubar, addItem:&*menu_bar_item];
+                let menu_bar_item: *mut Object = msg_send![class!(NSMenuItem), new];
+                let _: () = msg_send![menubar, addItem:menu_bar_item];
 
-                let app_menu: Retained<Object> = msg_send![class!(NSMenu), new];
-                let _: () = msg_send![&*menu_bar_item, setSubmenu:&*app_menu];
+                let app_menu: *mut Object = msg_send![class!(NSMenu), new];
+                let _: () = msg_send![menu_bar_item, setSubmenu:app_menu];
 
                 let about_menu_item: *mut Object = msg_send![class!(NSMenuItem), alloc];
-                let about_menu_item: Retained<Object> = Retained::from_raw(msg_send![about_menu_item,
+                let about_menu_item: *mut Object = msg_send![about_menu_item,
                     initWithTitle:ns_string!("About BassieTest"),
                     action:sel!(openAbout:),
-                    keyEquivalent:ns_string!("")])
-                            .unwrap();
-                let _: () = msg_send![&*app_menu, addItem:&*about_menu_item];
+                    keyEquivalent:ns_string!("")];
+                let _: () = msg_send![app_menu, addItem:about_menu_item];
 
-                let separator_item: Retained<Object> =
-                    Retained::retain_autoreleased(msg_send![class!(NSMenuItem), separatorItem])
-                        .unwrap();
-                let _: () = msg_send![&*app_menu, addItem:&*separator_item];
+                let separator_item: *mut Object = msg_send![class!(NSMenuItem), separatorItem];
+                let _: () = msg_send![app_menu, addItem:separator_item];
 
                 let quit_menu_item: *mut Object = msg_send![class!(NSMenuItem), alloc];
-                let quit_menu_item: Retained<Object> = Retained::from_raw(msg_send![quit_menu_item,
+                let quit_menu_item: *mut Object = msg_send![quit_menu_item,
                     initWithTitle:ns_string!("Quit BassieTest"),
                     action:sel!(terminate:),
-                    keyEquivalent:ns_string!("q")])
-                            .unwrap();
-                let _: () = msg_send![&*app_menu, addItem:&*quit_menu_item];
+                    keyEquivalent:ns_string!("q")];
+                let _: () = msg_send![app_menu, addItem:quit_menu_item];
 
                 // Create window
                 let window: *mut Object = msg_send![class!(NSWindow), alloc];
-                let window: Retained<Object> = Retained::from_raw(msg_send![window,
+                let window: *mut Object = msg_send![window,
                     initWithContentRect:NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(1024.0, 768.0)),
                     styleMask:NS_WINDOW_STYLE_MASK_TITLED | NS_WINDOW_STYLE_MASK_CLOSABLE | NS_WINDOW_STYLE_MASK_MINIATURIZABLE | NS_WINDOW_STYLE_MASK_RESIZABLE,
                     backing:NS_BACKING_STORE_BUFFERED,
-                    defer:false])
-                        .unwrap();
-                let _: () = msg_send![&*window, setTitle:ns_string!("BassieTest")];
-                let _: () = msg_send![&*window, setTitlebarAppearsTransparent:true];
+                    defer:false];
+                let _: () = msg_send![window, setTitle:ns_string!("BassieTest")];
+                let _: () = msg_send![window, setTitlebarAppearsTransparent:true];
                 let appearance: *mut Object =
                     msg_send![class!(NSAppearance), appearanceNamed:NSAppearanceNameDarkAqua];
-                let _: () = msg_send![&*window, setAppearance:appearance];
-                let screen: *mut Object = msg_send![&*window, screen];
+                let _: () = msg_send![window, setAppearance:appearance];
+                let screen: *mut Object = msg_send![window, screen];
                 let screen_frame: NSRect = msg_send![screen, frame];
-                let window_frame: NSRect = msg_send![&*window, frame];
+                let window_frame: NSRect = msg_send![window, frame];
                 let window_x = (screen_frame.size.width - window_frame.size.width) / 2.0;
                 let window_y = (screen_frame.size.height - window_frame.size.height) / 2.0;
-                let _: () = msg_send![&*window, setFrame:NSRect::new(NSPoint::new(window_x, window_y), window_frame.size), display:true];
-                let _: () = msg_send![&*window, setMinSize:NSSize::new(320.0, 240.0)];
+                let _: () = msg_send![window, setFrame:NSRect::new(NSPoint::new(window_x, window_y), window_frame.size), display:true];
+                let _: () = msg_send![window, setMinSize:NSSize::new(320.0, 240.0)];
                 let background_color: *mut Object = msg_send![class!(NSColor), colorWithRed:(0x05 as f64) / 255.0, green:(0x44 as f64) / 255.0, blue:(0x5e as f64) / 255.0, alpha:1.0];
-                let _: () = msg_send![&*window, setBackgroundColor:background_color];
-                let _: Bool = msg_send![&*window, setFrameAutosaveName:ns_string!("window")];
+                let _: () = msg_send![window, setBackgroundColor:background_color];
+                let _: Bool = msg_send![window, setFrameAutosaveName:ns_string!("window")];
 
                 // Create canvas
-                let canvas_view: Retained<Object> = msg_send![class!(CanvasView), new];
-                let _: () = msg_send![&*window, setContentView:&*canvas_view];
+                let canvas_view: *mut Object = msg_send![class!(CanvasView), new];
+                let _: () = msg_send![window, setContentView:canvas_view];
 
                 // Show window
                 let _: Bool =
                     msg_send![NSApp, setActivationPolicy:NS_APPLICATION_ACTIVATION_POLICY_REGULAR];
                 let _: () = msg_send![NSApp, activateIgnoringOtherApps:true];
-                let _: () = msg_send![&*window, makeKeyAndOrderFront:null::<Object>()];
+                let _: () = msg_send![window, makeKeyAndOrderFront:null::<Object>()];
             }
         }
 
@@ -128,7 +122,7 @@ define_class!(
         #[unsafe(method(openAbout:))]
         fn open_about(&self, _: *const Object) {
             unsafe {
-                let _: () = msg_send![NSApp, orderFrontStandardAboutPanel:null::<c_void>()];
+                let _: () = msg_send![NSApp, orderFrontStandardAboutPanel:null::<Object>()];
             }
         }
     }
@@ -143,8 +137,8 @@ fn main() {
     // Start application
     autoreleasepool(|_| unsafe {
         let app: *mut Object = msg_send![class!(NSApplication), sharedApplication];
-        let delegate: Retained<Object> = msg_send![class!(AppDelegate), new];
-        let _: () = msg_send![app, setDelegate:&*delegate];
+        let delegate: *mut Object = msg_send![class!(AppDelegate), new];
+        let _: () = msg_send![app, setDelegate:delegate];
         let _: () = msg_send![app, run];
     });
 }

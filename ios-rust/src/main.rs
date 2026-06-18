@@ -3,7 +3,7 @@ use std::env;
 use std::ffi::{c_char, CString};
 use std::ptr::null;
 
-use objc2::rc::{autoreleasepool, Retained};
+use objc2::rc::autoreleasepool;
 use objc2::runtime::{AnyObject as Object, Bool, NSObject};
 use objc2::{class, define_class, msg_send, ClassType, DefinedClass};
 
@@ -33,13 +33,13 @@ define_class!(
                 let background_color: *mut Object = msg_send![class!(UIColor), colorWithRed:(0x05 as f64) / 255.0, green:(0x44 as f64) / 255.0, blue:(0x5e as f64) / 255.0, alpha:1.0];
                 let _: () = msg_send![view, setBackgroundColor:background_color];
 
-                let label: Retained<Object> = msg_send![class!(UILabel), new];
-                let _: () = msg_send![&*label, setText:ns_string!("Hello iOS!")];
+                let label: *mut Object = msg_send![class!(UILabel), new];
+                let _: () = msg_send![label, setText:ns_string!("Hello iOS!")];
                 let font: *mut Object = msg_send![class!(UIFont), systemFontOfSize:48.0];
-                let _: () = msg_send![&*label, setFont:font];
-                let _: () = msg_send![&*label, setTextAlignment:NSTEXT_ALIGNMENT_CENTER];
-                let _: () = msg_send![view, addSubview:&*label];
-                self.ivars().label.set(Retained::as_ptr(&label) as *mut _);
+                let _: () = msg_send![label, setFont:font];
+                let _: () = msg_send![label, setTextAlignment:NSTEXT_ALIGNMENT_CENTER];
+                let _: () = msg_send![view, addSubview:label];
+                self.ivars().label.set(label);
             }
         }
 
@@ -81,16 +81,12 @@ define_class!(
                 let main_screen: *mut Object = msg_send![class!(UIScreen), mainScreen];
                 let main_screen_bounds: NSRect = msg_send![main_screen, bounds];
                 let window: *mut Object = msg_send![class!(UIWindow), alloc];
-                let window: Retained<Object> =
-                    Retained::from_raw(msg_send![window, initWithFrame:main_screen_bounds])
-                        .unwrap();
-                let _: () = msg_send![&*window, setOverrideUserInterfaceStyle:UI_USER_INTERFACE_STYLE_DARK];
-                let view_controller: Retained<Object> = msg_send![class!(ViewController), new];
-                let _: () = msg_send![&*window, setRootViewController:&*view_controller];
-                let _: () = msg_send![&*window, makeKeyAndVisible];
-                // Keep the window alive for the app's lifetime; UIKit on iOS 13+ does not
-                // guarantee retaining a window that has no UIWindowScene association.
-                self.ivars().window.set(Retained::into_raw(window) as *mut _);
+                let window: *mut Object = msg_send![window, initWithFrame:main_screen_bounds];
+                let _: () = msg_send![window, setOverrideUserInterfaceStyle:UI_USER_INTERFACE_STYLE_DARK];
+                let view_controller: *mut Object = msg_send![class!(ViewController), new];
+                let _: () = msg_send![window, setRootViewController:view_controller];
+                let _: () = msg_send![window, makeKeyAndVisible];
+                self.ivars().window.set(window);
 
                 NSLog(ns_string!("Hello iOS!"));
             }
