@@ -9,7 +9,27 @@ if [ -f provision.sh ]; then
     . ./provision.sh
 fi
 
-if [ -n "$device_id" ] && xcrun devicectl list devices 2>/dev/null | grep -q "$device_id"; then
+deploy_device_app() {
+    case "$deploy_tool" in
+        devicectl)
+            xcrun devicectl device install app --device "$device_id" "$name.app"
+            xcrun devicectl device process launch --device "$device_id" "$bundle_id"
+            ;;
+        ios-deploy)
+            if ! command -v ios-deploy >/dev/null 2>&1; then
+                echo "ios-deploy was not found" >&2
+                exit 1
+            fi
+            ios-deploy --id "$device_id" --bundle "$name.app" --justlaunch --no-wifi --timeout 10
+            ;;
+        *)
+            echo "Unknown deploy_tool: $deploy_tool" >&2
+            exit 1
+            ;;
+    esac
+}
+
+if [ -n "$device_id" ] && { [ "$deploy_tool" = ios-deploy ] || xcrun devicectl list devices 2>/dev/null | grep -q "$device_id"; }; then
     sdk=$(xcrun --sdk iphoneos --show-sdk-path)
     mkdir -p $name.app
     plutil -convert binary1 -o $name.app/Info.plist Info.plist
@@ -41,8 +61,7 @@ EOF
         --timestamp=none \
         $name.app
 
-    xcrun devicectl device install app --device "$device_id" $name.app
-    xcrun devicectl device process launch --device "$device_id" $bundle_id
+    deploy_device_app
 else
     sdk=$(xcrun --sdk iphonesimulator --show-sdk-path)
     mkdir -p $name.app

@@ -4,4 +4,5 @@
 team_id=XXXXXXXXXX
 sign_id="Apple Development: you@example.com (XXXXXXXXXX)"
 provision="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.mobileprovision"
-device_id=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+device_id=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX # or xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+deploy_tool=devicectl # Use ios-deploy for older 15.6 or earlier iOS versions
