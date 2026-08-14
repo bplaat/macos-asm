@@ -7,16 +7,12 @@
 @implementation CanvasView
 
 - (void)drawRect:(NSRect)dirtyRect {
-    NSString *text = @"Hello macOS!";
-    NSDictionary *attributes = @{
-        NSFontAttributeName: [NSFont systemFontOfSize:48],
-        NSForegroundColorAttributeName: [NSColor whiteColor]
-    };
+    NSString* text = @"Hello macOS!";
+    NSDictionary* attributes =
+        @{NSFontAttributeName : [NSFont systemFontOfSize:48], NSForegroundColorAttributeName : [NSColor whiteColor]};
     NSSize size = [text sizeWithAttributes:attributes];
-    NSRect rect = NSMakeRect((self.frame.size.width - size.width) / 2,
-        (self.frame.size.height - size.height) / 2,
-        size.width,
-        size.height);
+    NSRect rect = NSMakeRect((self.frame.size.width - size.width) / 2, (self.frame.size.height - size.height) / 2,
+                             size.width, size.height);
     [text drawInRect:rect withAttributes:attributes];
 }
 
@@ -28,32 +24,36 @@
 
 @implementation AppDelegate
 
-- (void)applicationDidFinishLaunching:(NSNotification *)notification {
+- (void)applicationDidFinishLaunching:(NSNotification*)notification {
     // Create menu
-    NSMenu *menubar = [NSMenu new];
+    NSMenu* menubar = [NSMenu new];
     NSApp.mainMenu = menubar;
 
-    NSMenuItem *menuBarItem = [NSMenuItem new];
+    NSMenuItem* menuBarItem = [NSMenuItem new];
     [menubar addItem:menuBarItem];
 
-    NSMenu *appMenu = [NSMenu new];
+    NSMenu* appMenu = [NSMenu new];
     menuBarItem.submenu = appMenu;
 
-    NSMenuItem *aboutMenuItem = [[NSMenuItem alloc] initWithTitle:@"About BassieTest"
-        action:@selector(openAbout:) keyEquivalent:@""];
+    NSMenuItem* aboutMenuItem = [[NSMenuItem alloc] initWithTitle:@"About BassieTest"
+                                                           action:@selector(openAbout:)
+                                                    keyEquivalent:@""];
     [appMenu addItem:aboutMenuItem];
 
     [appMenu addItem:[NSMenuItem separatorItem]];
 
-    NSMenuItem *quitMenuItem = [[NSMenuItem alloc] initWithTitle:@"Quit BassieTest"
-        action:@selector(terminate:) keyEquivalent:@"q"];
+    NSMenuItem* quitMenuItem = [[NSMenuItem alloc] initWithTitle:@"Quit BassieTest"
+                                                          action:@selector(terminate:)
+                                                   keyEquivalent:@"q"];
     [appMenu addItem:quitMenuItem];
 
     // Create window
-    NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 1024, 768)
-        styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
-        backing:NSBackingStoreBuffered
-        defer:NO];
+    NSWindow* window =
+        [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 1024, 768)
+                                    styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
+                                              NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
+                                      backing:NSBackingStoreBuffered
+                                        defer:NO];
     window.title = @"BassieTest";
     window.titlebarAppearsTransparent = YES;
     window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
@@ -73,7 +73,7 @@
     [window makeKeyAndOrderFront:nil];
 }
 
-- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication*)sender {
     return YES;
 }
 
@@ -85,8 +85,8 @@
 
 int main(void) {
     @autoreleasepool {
-        NSApplication *app = [NSApplication sharedApplication];
-        AppDelegate *delegate = [AppDelegate new];
+        NSApplication* app = [NSApplication sharedApplication];
+        AppDelegate* delegate = [AppDelegate new];
         app.delegate = delegate;
         [app run];
     }

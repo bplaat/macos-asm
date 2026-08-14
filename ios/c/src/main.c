@@ -1,33 +1,33 @@
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <math.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 // MARK: Objective-C runtime headers
-typedef void *id;
+typedef void* id;
 typedef id Class;
 typedef id SEL;
 typedef id IMP;
 
-extern Class objc_getClass(const char *name);
-extern Class objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes);
-extern void class_addIvar(Class cls, const char *name, size_t size, uint8_t alignment, const char *types);
-extern void class_addMethod(Class cls, SEL name, IMP imp, const char *types);
+extern Class objc_getClass(const char* name);
+extern Class objc_allocateClassPair(Class superclass, const char* name, size_t extraBytes);
+extern void class_addIvar(Class cls, const char* name, size_t size, uint8_t alignment, const char* types);
+extern void class_addMethod(Class cls, SEL name, IMP imp, const char* types);
 extern void objc_registerClassPair(Class cls);
-extern SEL sel_registerName(const char *name);
-extern void *objc_msgSend(id self, SEL sel, ...);
+extern SEL sel_registerName(const char* name);
+extern void* objc_msgSend(id self, SEL sel, ...);
 #ifndef __arm64__
-extern void objc_msgSend_stret(void *ret, id self, SEL sel, ...);
+extern void objc_msgSend_stret(void* ret, id self, SEL sel, ...);
 #endif
-extern void object_setInstanceVariable(id obj, const char *name, void *value);
-extern void object_getInstanceVariable(id obj, const char *name, void **outValue);
+extern void object_setInstanceVariable(id obj, const char* name, void* value);
+extern void object_getInstanceVariable(id obj, const char* name, void** outValue);
 struct objc_super {
     id receiver;
     Class super_class;
 };
-extern void objc_msgSendSuper(struct objc_super *super, SEL sel, ...);
-extern void *objc_autoreleasePoolPush(void);
-extern void objc_autoreleasePoolPop(void *pool);
+extern void objc_msgSendSuper(struct objc_super* super, SEL sel, ...);
+extern void* objc_autoreleasePoolPush(void);
+extern void objc_autoreleasePoolPop(void* pool);
 
 #define cls objc_getClass
 #define sel sel_registerName
@@ -36,18 +36,19 @@ extern void objc_autoreleasePoolPop(void *pool);
 #define msg_int ((id (*)(id, SEL, int))objc_msgSend)
 #define msg_rect ((id (*)(id, SEL, NSRect))objc_msgSend)
 #define msg_cls ((id (*)(Class, SEL))objc_msgSend)
-#define msg_cls_str ((id (*)(Class, SEL, char *))objc_msgSend)
+#define msg_cls_str ((id (*)(Class, SEL, char*))objc_msgSend)
 #define msg_cls_double ((id (*)(Class, SEL, double))objc_msgSend)
 #define msg_cls_double_double_double_double ((id (*)(Class, SEL, double, double, double, double))objc_msgSend)
 
 #ifdef __arm64__
 #define msg_ret_rect ((NSRect (*)(id, SEL))objc_msgSend)
 #else
-#define msg_ret_rect(a, b) ({ \
-    NSRect tmp; \
-    ((void (*)(NSRect *, id, SEL))objc_msgSend_stret)(&tmp, a, b); \
-    tmp; \
-})
+#define msg_ret_rect(a, b)                                            \
+    ({                                                                \
+        NSRect tmp;                                                   \
+        ((void (*)(NSRect*, id, SEL))objc_msgSend_stret)(&tmp, a, b); \
+        tmp;                                                          \
+    })
 #endif
 
 // MARK: UIKit headers
@@ -62,21 +63,23 @@ typedef struct NSRect {
 
 #define NSTextAlignmentCenter 1
 
-static id NSString(char *string) {
+static id NSString(char* string) {
     return msg_cls_str(cls("NSString"), sel("stringWithUTF8String:"), string);
 }
 
-extern int UIApplicationMain(int argc, char **argv, id principalClassName, id delegateClassName);
-extern void NSLog(char *format, ...);
+extern int UIApplicationMain(int argc, char** argv, id principalClassName, id delegateClassName);
+extern void NSLog(char* format, ...);
 
 // MARK: ViewController
 void view_controller_view_did_load(id self, SEL cmd) {
     (void)cmd;
-    struct objc_super super = { self, cls("UIViewController") };
+    struct objc_super super = {self, cls("UIViewController")};
     objc_msgSendSuper(&super, sel("viewDidLoad"));
 
     id view = msg(self, sel("view"));
-    msg_id(view, sel("setBackgroundColor:"), msg_cls_double_double_double_double(cls("UIColor"), sel("colorWithRed:green:blue:alpha:"), 0x05 / 255.0, 0x44 / 255.0, 0x5e / 255.0, 1));
+    msg_id(view, sel("setBackgroundColor:"),
+           msg_cls_double_double_double_double(cls("UIColor"), sel("colorWithRed:green:blue:alpha:"), 0x05 / 255.0,
+                                               0x44 / 255.0, 0x5e / 255.0, 1));
 
     id label = msg_cls(cls("UILabel"), sel("new"));
     object_setInstanceVariable(self, "_label", label);
@@ -88,11 +91,11 @@ void view_controller_view_did_load(id self, SEL cmd) {
 
 void view_controller_view_will_layout_subviews(id self, SEL cmd) {
     (void)cmd;
-    struct objc_super super = { self, cls("UIViewController") };
+    struct objc_super super = {self, cls("UIViewController")};
     objc_msgSendSuper(&super, sel("viewWillLayoutSubviews"));
 
     id label;
-    object_getInstanceVariable(self, "_label", (void **)&label);
+    object_getInstanceVariable(self, "_label", (void**)&label);
     msg_rect(label, sel("setFrame:"), msg_ret_rect(msg(self, sel("view")), sel("bounds")));
 }
 
@@ -103,7 +106,8 @@ bool app_delegate_application_did_finish_launching_with_options(id self, SEL cmd
     (void)application;
     (void)launch_options;
 
-    id window = msg_rect(msg_cls(cls("UIWindow"), sel("alloc")), sel("initWithFrame:"), msg_ret_rect(msg(cls("UIScreen"), sel("mainScreen")), sel("bounds")));
+    id window = msg_rect(msg_cls(cls("UIWindow"), sel("alloc")), sel("initWithFrame:"),
+                         msg_ret_rect(msg(cls("UIScreen"), sel("mainScreen")), sel("bounds")));
     msg_int(window, sel("setOverrideUserInterfaceStyle:"), UIUserInterfaceStyleDark);
     id view_controller = msg_cls(cls("ViewController"), sel("new"));
     msg_id(window, sel("setRootViewController:"), view_controller);
@@ -115,7 +119,7 @@ bool app_delegate_application_did_finish_launching_with_options(id self, SEL cmd
 }
 
 // MARK: Main
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     void* pool = objc_autoreleasePoolPush();
     (void)pool;
 
@@ -123,11 +127,13 @@ int main(int argc, char **argv) {
     Class ViewController = objc_allocateClassPair(cls("UIViewController"), "ViewController", 0);
     class_addIvar(ViewController, "_label", sizeof(id), log2(sizeof(id)), "^v");
     class_addMethod(ViewController, sel("viewDidLoad"), (IMP)view_controller_view_did_load, "v@:");
-    class_addMethod(ViewController, sel("viewWillLayoutSubviews"), (IMP)view_controller_view_will_layout_subviews, "v@:");
+    class_addMethod(ViewController, sel("viewWillLayoutSubviews"), (IMP)view_controller_view_will_layout_subviews,
+                    "v@:");
     objc_registerClassPair(ViewController);
 
     Class AppDelegate = objc_allocateClassPair(cls("NSObject"), "AppDelegate", 0);
-    class_addMethod(AppDelegate, sel("application:didFinishLaunchingWithOptions:"), (IMP)app_delegate_application_did_finish_launching_with_options, "B@:@");
+    class_addMethod(AppDelegate, sel("application:didFinishLaunchingWithOptions:"),
+                    (IMP)app_delegate_application_did_finish_launching_with_options, "B@:@");
     objc_registerClassPair(AppDelegate);
 
     // Start application

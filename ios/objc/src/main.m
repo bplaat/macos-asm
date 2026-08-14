@@ -2,7 +2,7 @@
 
 // MARK: ViewController
 @interface ViewController : UIViewController
-    @property (strong, nonatomic) UILabel *label;
+@property(strong, nonatomic) UILabel* label;
 @end
 
 @implementation ViewController
@@ -26,12 +26,12 @@
 
 // MARK: AppDelegate
 @interface AppDelegate : NSObject <UIApplicationDelegate>
-    @property (strong, nonatomic) UIWindow *window;
+@property(strong, nonatomic) UIWindow* window;
 @end
 
 @implementation AppDelegate
 
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+- (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
     _window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     _window.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
     _window.rootViewController = [ViewController new];
@@ -44,7 +44,7 @@
 @end
 
 // MARK: Main
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     @autoreleasepool {
         return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
     }

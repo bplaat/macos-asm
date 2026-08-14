@@ -1,24 +1,24 @@
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 // MARK: Objective-C runtime headers
-typedef void *id;
+typedef void* id;
 typedef id Class;
 typedef id SEL;
 typedef id IMP;
 
-extern Class objc_getClass(const char *name);
-extern Class objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes);
-extern void class_addMethod(Class cls, SEL name, IMP imp, const char *types);
+extern Class objc_getClass(const char* name);
+extern Class objc_allocateClassPair(Class superclass, const char* name, size_t extraBytes);
+extern void class_addMethod(Class cls, SEL name, IMP imp, const char* types);
 extern void objc_registerClassPair(Class cls);
-extern SEL sel_registerName(const char *name);
-extern void *objc_msgSend(id self, SEL sel, ...);
+extern SEL sel_registerName(const char* name);
+extern void* objc_msgSend(id self, SEL sel, ...);
 #ifndef __arm64__
-extern void objc_msgSend_stret(void *ret, id self, SEL sel, ...);
+extern void objc_msgSend_stret(void* ret, id self, SEL sel, ...);
 #endif
-extern void *objc_autoreleasePoolPush(void);
-extern void objc_autoreleasePoolPop(void *pool);
+extern void* objc_autoreleasePoolPush(void);
+extern void objc_autoreleasePoolPop(void* pool);
 
 #define cls objc_getClass
 #define sel sel_registerName
@@ -34,7 +34,7 @@ extern void objc_autoreleasePoolPop(void *pool);
 #define msg_rect_int_int_int ((id (*)(id, SEL, NSRect, int, int, int))objc_msgSend)
 #define msg_cls ((id (*)(Class, SEL))objc_msgSend)
 #define msg_cls_id ((id (*)(Class, SEL, id))objc_msgSend)
-#define msg_cls_str ((id (*)(Class, SEL, char *))objc_msgSend)
+#define msg_cls_str ((id (*)(Class, SEL, char*))objc_msgSend)
 #define msg_cls_double ((id (*)(Class, SEL, double))objc_msgSend)
 #define msg_cls_double_double_double_double ((id (*)(Class, SEL, double, double, double, double))objc_msgSend)
 #define msg_cls_id_id_int ((id (*)(Class, SEL, id, id, int))objc_msgSend)
@@ -43,11 +43,12 @@ extern void objc_autoreleasePoolPop(void *pool);
 #ifdef __arm64__
 #define msg_ret_rect ((NSRect (*)(id, SEL))objc_msgSend)
 #else
-#define msg_ret_rect(a, b) ({ \
-    NSRect tmp; \
-    ((void (*)(NSRect *, id, SEL))objc_msgSend_stret)(&tmp, a, b); \
-    tmp; \
-})
+#define msg_ret_rect(a, b)                                            \
+    ({                                                                \
+        NSRect tmp;                                                   \
+        ((void (*)(NSRect*, id, SEL))objc_msgSend_stret)(&tmp, a, b); \
+        tmp;                                                          \
+    })
 #endif
 
 // MARK: Cocoa headers
@@ -72,7 +73,7 @@ typedef struct NSRect {
 
 #define NSBackingStoreBuffered 2
 
-static id NSString(char *string) {
+static id NSString(char* string) {
     return msg_cls_str(cls("NSString"), sel("stringWithUTF8String:"), string);
 }
 
@@ -88,16 +89,14 @@ void canvas_view_draw_rect(id self, SEL cmd, NSRect dirtyRect) {
 
     id text = NSString("Hello macOS!");
 
-    id keys[] = { NSFontAttributeName, NSForegroundColorAttributeName };
-    id values[] = {
-        msg_cls_double(cls("NSFont"), sel("systemFontOfSize:"), 48),
-        msg(cls("NSColor"), sel("whiteColor"))
-    };
-    id attributes = msg_cls_id_id_int(cls("NSDictionary"), sel("dictionaryWithObjects:forKeys:count:"), values, keys, sizeof(keys) / sizeof(id));
+    id keys[] = {NSFontAttributeName, NSForegroundColorAttributeName};
+    id values[] = {msg_cls_double(cls("NSFont"), sel("systemFontOfSize:"), 48), msg(cls("NSColor"), sel("whiteColor"))};
+    id attributes = msg_cls_id_id_int(cls("NSDictionary"), sel("dictionaryWithObjects:forKeys:count:"), values, keys,
+                                      sizeof(keys) / sizeof(id));
 
     NSSize size = msg_id_ret_size(text, sel("sizeWithAttributes:"), attributes);
     NSRect frame = msg_ret_rect(self, sel("frame"));
-    NSRect rect = { (frame.width - size.width) / 2, (frame.height - size.height) / 2, size.width, size.height };
+    NSRect rect = {(frame.width - size.width) / 2, (frame.height - size.height) / 2, size.width, size.height};
     msg_rect_id(text, sel("drawInRect:withAttributes:"), rect, attributes);
 }
 
@@ -120,38 +119,40 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
     msg_id(menu_bar_item, sel("setSubmenu:"), app_menu);
     msg(app_menu, sel("release"));
 
-    id about_menu_item = msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")),
-        sel("initWithTitle:action:keyEquivalent:"), NSString("About BassieTest"), sel("openAbout:"), NSString(""));
+    id about_menu_item =
+        msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")), sel("initWithTitle:action:keyEquivalent:"),
+                      NSString("About BassieTest"), sel("openAbout:"), NSString(""));
     msg_id(app_menu, sel("addItem:"), about_menu_item);
     msg(about_menu_item, sel("release"));
 
     msg_id(app_menu, sel("addItem:"), msg_cls(cls("NSMenuItem"), sel("separatorItem")));
 
-    id quit_menu_item = msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")),
-        sel("initWithTitle:action:keyEquivalent:"), NSString("Quit BassieTest"), sel("terminate:"), NSString("q"));
+    id quit_menu_item =
+        msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")), sel("initWithTitle:action:keyEquivalent:"),
+                      NSString("Quit BassieTest"), sel("terminate:"), NSString("q"));
     msg_id(app_menu, sel("addItem:"), quit_menu_item);
     msg(quit_menu_item, sel("release"));
 
     // Create window
-    id window = msg_rect_int_int_int(
-        msg_cls(cls("NSWindow"), sel("alloc")),
-        sel("initWithContentRect:styleMask:backing:defer:"),
-        (NSRect){0, 0, 1024, 768},
-        NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable,
-        NSBackingStoreBuffered,
-        false
-    );
+    id window = msg_rect_int_int_int(msg_cls(cls("NSWindow"), sel("alloc")),
+                                     sel("initWithContentRect:styleMask:backing:defer:"), (NSRect){0, 0, 1024, 768},
+                                     NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
+                                         NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable,
+                                     NSBackingStoreBuffered, false);
     msg_id(window, sel("setTitle:"), NSString("BassieTest"));
     msg_bool(window, sel("setTitlebarAppearsTransparent:"), true);
-    msg_id(window, sel("setAppearance:"),  msg_cls_id(cls("NSAppearance"), sel("appearanceNamed:"), NSAppearanceNameDarkAqua));
+    msg_id(window, sel("setAppearance:"),
+           msg_cls_id(cls("NSAppearance"), sel("appearanceNamed:"), NSAppearanceNameDarkAqua));
     NSRect screen_frame = msg_ret_rect(msg(window, sel("screen")), sel("frame"));
     NSRect window_frame = msg_ret_rect(window, sel("frame"));
     double window_x = (screen_frame.width - window_frame.width) / 2;
     double window_y = (screen_frame.height - window_frame.height) / 2;
-    msg_rect_bool(window, sel("setFrame:display:"), (NSRect){window_x, window_y, window_frame.width, window_frame.height}, true);
+    msg_rect_bool(window, sel("setFrame:display:"),
+                  (NSRect){window_x, window_y, window_frame.width, window_frame.height}, true);
     msg_size(window, sel("setMinSize:"), (NSSize){320, 240});
-    msg_id(window, sel("setBackgroundColor:"), msg_cls_double_double_double_double(
-        cls("NSColor"), sel("colorWithRed:green:blue:alpha:"), 0x05 / 255.0, 0x44 / 255.0, 0x5e / 255.0, 1));
+    msg_id(window, sel("setBackgroundColor:"),
+           msg_cls_double_double_double_double(cls("NSColor"), sel("colorWithRed:green:blue:alpha:"), 0x05 / 255.0,
+                                               0x44 / 255.0, 0x5e / 255.0, 1));
     msg_id(window, sel("setFrameAutosaveName:"), NSString("window"));
 
     // Create canvas
@@ -181,7 +182,7 @@ void open_about(id self, SEL cmd, id sender) {
 
 // MARK: Main
 int main(void) {
-    void *pool = objc_autoreleasePoolPush();
+    void* pool = objc_autoreleasePoolPush();
 
     // Register classes
     Class CanvasView = objc_allocateClassPair(cls("NSView"), "CanvasView", 0);
@@ -190,7 +191,8 @@ int main(void) {
 
     Class AppDelegate = objc_allocateClassPair(cls("NSObject"), "AppDelegate", 0);
     class_addMethod(AppDelegate, sel("applicationDidFinishLaunching:"), (IMP)app_delegate_did_finish_loading, "v@:@");
-    class_addMethod(AppDelegate, sel("applicationShouldTerminateAfterLastWindowClosed:"), (IMP)app_should_terminate_after_last_window_closed, "B@:@");
+    class_addMethod(AppDelegate, sel("applicationShouldTerminateAfterLastWindowClosed:"),
+                    (IMP)app_should_terminate_after_last_window_closed, "B@:@");
     class_addMethod(AppDelegate, sel("openAbout:"), (IMP)open_about, "v@:@");
     objc_registerClassPair(AppDelegate);
 
