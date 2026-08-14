@@ -1,6 +1,10 @@
 ; A portable native executable library
 ; Written by Bastiaan van der Plaat (https://bplaat.nl/)
 
+%ifndef SIGNATURE_IDENTIFIER_SIZE
+    %error "Build with build-portable.py"
+%endif
+
 ; PE consts
 %define IMAGE_FILE_RELOCS_STRIPPED 0x0001
 %define IMAGE_FILE_EXECUTABLE_IMAGE 0x0002
@@ -34,6 +38,7 @@
 %define LC_DYSYMTAB 0x0b
 %define LC_LOAD_DYLIB 0xc
 %define LC_LOAD_DYLINKER 0xe
+%define LC_CODE_SIGNATURE 0x1d
 %define LC_DYLD_INFO_ONLY (0x22 | LC_REQ_DYLD)
 %define LC_MAIN (0x28 | LC_REQ_DYLD)
 %define LC_BUILD_VERSION 0x32
@@ -103,6 +108,7 @@
 %define HEADER_ARM64 2
 
 %macro header 1
+    _header_flags equ %1
     _pe_origin equ 0x0000000000400000
     _macho_origin equ 0x0000000100000000
     _elf_origin equ 0x0000000000400000
@@ -142,7 +148,6 @@ _shell_script:
             db `" count="`
             number_ascii _alignment
             db `" conv=notrunc 2> /dev/null\n`
-            db `codesign -s - "$0"\n`
         db `else\n`
         %endif
             db `dd if="$0" of="$0" bs=1 skip="`
@@ -189,7 +194,7 @@ _pe_header:
     db 'PE', 0, 0               ; Signature
     dw 0x8664                   ; Machine
     dw 2                        ; NumberOfSections
-    dd __?POSIX_TIME?__         ; TimeDateStamp
+    dd 0                        ; TimeDateStamp
     dd 0                        ; PointerToSymbolTable
     dd 0                        ; NumberOfSymbols
     dw _pe_optional_header_size ; SizeOfOptionalHeader
@@ -264,15 +269,15 @@ _macho_x86_64_header:
     dd MH_EXECUTE                         ; filetype
     %ifmacro macho_bindings
         %ifmacro macho_libraries
-            dd 10 + macho_libraries_count  ; ncmds
+            dd 11 + macho_libraries_count  ; ncmds
         %else
-            dd 10 + 1                      ; ncmds
+            dd 11 + 1                      ; ncmds
         %endif
     %else
         %ifmacro macho_libraries
-            dd 9 + macho_libraries_count  ; ncmds
+            dd 10 + macho_libraries_count ; ncmds
         %else
-            dd 9 + 1                      ; ncmds
+            dd 10 + 1                     ; ncmds
         %endif
     %endif
     dd _macho_x86_64_commands_size        ; sizeofcmds
@@ -413,6 +418,13 @@ _macho_x86_64_commands:
         dq _macos_start          ; entry point offset
         dq 0                     ; init stack size
     _x86_64_cmd_main_size equ $ - _x86_64_cmd_main
+
+    _x86_64_cmd_code_signature:
+        dd LC_CODE_SIGNATURE                       ; command
+        dd _x86_64_cmd_code_signature_size         ; command size
+        dd _macho_x86_64_signature                  ; signature offset
+        dd _file_end - _macho_x86_64_signature     ; signature size
+    _x86_64_cmd_code_signature_size equ $ - _x86_64_cmd_code_signature
 _macho_x86_64_commands_size equ $ - _macho_x86_64_commands
 
 ; ########################################################################################
@@ -426,15 +438,15 @@ _macho_arm64_header:
     dd MH_EXECUTE                         ; filetype
     %ifmacro macho_bindings
         %ifmacro macho_libraries
-            dd 10 + macho_libraries_count  ; ncmds
+            dd 11 + macho_libraries_count  ; ncmds
         %else
-            dd 10 + 1                      ; ncmds
+            dd 11 + 1                      ; ncmds
         %endif
     %else
         %ifmacro macho_libraries
-            dd 9 + macho_libraries_count  ; ncmds
+            dd 10 + macho_libraries_count ; ncmds
         %else
-            dd 9 + 1                      ; ncmds
+            dd 10 + 1                     ; ncmds
         %endif
     %endif
     dd _macho_arm64_commands_size         ; sizeofcmds
@@ -575,6 +587,13 @@ _macho_arm64_commands:
         dq _arm64_macos_start   ; entry point offset
         dq 0                    ; init stack size
     _arm64_cmd_main_size equ $ - _arm64_cmd_main
+
+    _arm64_cmd_code_signature:
+        dd LC_CODE_SIGNATURE                    ; command
+        dd _arm64_cmd_code_signature_size       ; command size
+        dd _macho_arm64_signature               ; signature offset
+        dd _file_end - _macho_arm64_signature   ; signature size
+    _arm64_cmd_code_signature_size equ $ - _arm64_cmd_code_signature
 _macho_arm64_commands_size equ $ - _macho_arm64_commands
 %endif
 
@@ -802,6 +821,31 @@ _macho_bindings_size equ $ - _macho_bindings
 %else
     db 0
 %endif
-    times _alignment db 0
+
+    align 16, db 0
+_macho_x86_64_signature:
+    _macho_x86_64_code_slots equ (_macho_x86_64_signature - _header + 0xfff) / 0x1000
+    _macho_x86_64_signature_content_size equ 20 + 88 + SIGNATURE_IDENTIFIER_SIZE + _macho_x86_64_code_slots * 32
+    _macho_x86_64_signature_size equ (_macho_x86_64_signature_content_size + 15) & ~15
+    %ifdef MACHO_X86_64_SIGNATURE_FILE
+        incbin MACHO_X86_64_SIGNATURE_FILE
+    %else
+        times _macho_x86_64_signature_size db 0
+    %endif
+
+    %if (_header_flags & HEADER_ARM64) != 0
+_macho_arm64_signature:
+        _macho_arm64_code_slots equ (_macho_arm64_signature - _header + _alignment - 1) / _alignment
+        _macho_arm64_signature_content_size equ 20 + 88 + SIGNATURE_IDENTIFIER_SIZE + _macho_arm64_code_slots * 32
+        _macho_arm64_signature_size equ (_macho_arm64_signature_content_size + 15) & ~15
+        %ifdef MACHO_ARM64_SIGNATURE_FILE
+            incbin MACHO_ARM64_SIGNATURE_FILE
+        %else
+            times _macho_arm64_signature_size db 0
+        %endif
+    %endif
+
+    align _alignment, db 0
+_file_end:
 _section_linkedit_raw_size equ $ - _section_linkedit
 %endmacro

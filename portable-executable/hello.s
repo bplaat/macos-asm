@@ -12,10 +12,9 @@
 ; - linux x86_64, arm64
 ;
 ; Build instructions:
-; - windows: nasm -f bin hello.s -o hello.com && ./hello.com
-; - unix: nasm -f bin hello.s -o hello.com && chmod +x hello.com && sh ./hello.com
-;
-; FIXME: Do macOS codesign without self on first run (needed for arm64)
+; - build: ./build-portable.py hello.s
+; - windows: ./hello.com
+; - unix: sh ./hello.com
 
 %include 'libportable.s'
 %include 'libarm64.s'

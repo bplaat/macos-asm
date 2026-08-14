@@ -7,8 +7,9 @@
 ; - FIXME: linux x86_64
 ;
 ; Build instructions:
-; - windows: nasm -f bin alert.s -o alert.com && ./alert.com
-; - unix: nasm -f bin alert.s -o alert.com && chmod +x alert.com && sh ./alert.com
+; - build: ./build-portable.py alert.s
+; - windows: ./alert.com
+; - unix: sh ./alert.com
 
 %include 'libportable.s'
 
