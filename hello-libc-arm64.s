@@ -1,11 +1,15 @@
-; A simple pure assembly MACH-O ARM64 adhoc code signed dynamicly linked macOS executable with symbols
-; nasm -f bin hello-libc-arm64.s -o hello-libc-arm64 && chmod +x hello-libc-arm64 && codesign -s - hello-libc-arm64 && ./hello-libc-arm64
+; A simple pure assembly Mach-O ARM64 ad-hoc code signed dynamically linked macOS executable with symbols.
+; ./build-arm64.py hello-libc-arm64.s
 
     origin equ 0x100000000
     alignment equ 0x4000
 
     bits 64
     org origin
+
+    %ifndef SIGNATURE_IDENTIFIER_SIZE
+        %error "Build with build-arm64.py"
+    %endif
 
     %define MH_MAGIC_64 0xfeedfacf
     %define MH_EXECUTE 2
@@ -21,6 +25,7 @@
     %define LC_DYSYMTAB 0x0b
     %define LC_LOAD_DYLINKER 0xe
     %define LC_LOAD_DYLIB 0xc
+    %define LC_CODE_SIGNATURE 0x1d
     %define LC_DYLD_INFO_ONLY (0x22 | LC_REQ_DYLD)
     %define LC_MAIN (0x28 | LC_REQ_DYLD)
 
@@ -95,7 +100,7 @@ macho_header:
     dd CPU_TYPE_ARM64                     ; cpu type
     dd CPU_SUBTYPE_ARM64_ALL              ; cpu subtype
     dd MH_EXECUTE                         ; file type
-    dd 10                                 ; number of load commands
+    dd 11                                 ; number of load commands
     dd commands_end - commands            ; size of load commands
     dd MH_NOUNDEFS | MH_DYLDLINK | MH_PIE ; flags
     dd 0                                  ; reserved
@@ -238,6 +243,13 @@ commands:
         dq _start - origin ; entry point offset
         dq 0               ; init stack size
     main_end:
+
+    code_signature:
+        dd LC_CODE_SIGNATURE                   ; command
+        dd code_signature_end - code_signature ; command size
+        dd signature_start - origin            ; signature offset
+        dd linkedit_raw_end - signature_start   ; signature size
+    code_signature_end:
 commands_end:
 
     align 256, db 0
@@ -326,6 +338,17 @@ strings:
     Ltime db 'time', 0
 strings_end:
     align 8, db 0
+
+signature_start:
+    signature_code_slots equ (signature_start - macho_header + alignment - 1) / alignment
+    signature_content_size equ 20 + 88 + SIGNATURE_IDENTIFIER_SIZE + signature_code_slots * 32
+    signature_size equ (signature_content_size + 15) & ~15
+%ifdef SIGNATURE_FILE
+    incbin SIGNATURE_FILE
+%else
+    times signature_size db 0
+%endif
+signature_end:
 
 linkedit_end:
     align alignment, db 0

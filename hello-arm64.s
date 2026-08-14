@@ -1,13 +1,17 @@
-; A simple pure assembly macho-o ARM64 adhoc code signed 'static' macOS executable
-; It is realy a dynamic linked executable but static linked ARM64 MACHO executables don't exists,
+; A simple pure assembly Mach-O ARM64 ad-hoc code signed 'static' macOS executable.
+; It is really a dynamically linked executable, but static ARM64 Mach-O executables don't exist,
 ; because when an executable is not following some strict rules it is killed before it will be started.
-; nasm -f bin hello-arm64.s -o hello-arm64 && chmod +x hello-arm64 && codesign -s - hello-arm64 && ./hello-arm64
+; ./build-arm64.py hello-arm64.s
 
     origin equ 0x100000000
     alignment equ 0x4000
 
     bits 64
     org origin
+
+    %ifndef SIGNATURE_IDENTIFIER_SIZE
+        %error "Build with build-arm64.py"
+    %endif
 
     %define MH_MAGIC_64 0xfeedfacf
     %define MH_EXECUTE 2
@@ -23,6 +27,7 @@
     %define LC_DYSYMTAB 0x0b
     %define LC_LOAD_DYLINKER 0xe
     %define LC_LOAD_DYLIB 0xc
+    %define LC_CODE_SIGNATURE 0x1d
     %define LC_MAIN (0x28 | LC_REQ_DYLD)
 
     %define VM_PROT_NONE 0x0
@@ -87,7 +92,7 @@ macho_header:
     dd CPU_TYPE_ARM64                     ; cpu type
     dd CPU_SUBTYPE_ARM64_ALL              ; cpu subtype
     dd MH_EXECUTE                         ; file type
-    dd 9                                  ; number of load commands
+    dd 10                                 ; number of load commands
     dd commands_end - commands            ; size of load commands
     dd MH_NOUNDEFS | MH_DYLDLINK | MH_PIE ; flags
     dd 0                                  ; reserved
@@ -215,6 +220,13 @@ commands:
         dq _start - origin ; entry point offset
         dq 0               ; init stack size
     main_end:
+
+    code_signature:
+        dd LC_CODE_SIGNATURE                   ; command
+        dd code_signature_end - code_signature ; command size
+        dd linkedit_start - origin             ; signature offset
+        dd linkedit_raw_end - linkedit_start   ; signature size
+    code_signature_end:
 commands_end:
 
     align 256, db 0
@@ -262,6 +274,18 @@ data_raw_end:
 
 ; Linkedit section
 linkedit_start:
+
+signature_start:
+    signature_code_slots equ (linkedit_start - macho_header + alignment - 1) / alignment
+    signature_content_size equ 20 + 88 + SIGNATURE_IDENTIFIER_SIZE + signature_code_slots * 32
+    signature_size equ (signature_content_size + 15) & ~15
+%ifdef SIGNATURE_FILE
+    incbin SIGNATURE_FILE
+%else
+    times signature_size db 0
+%endif
+signature_end:
+
 linkedit_end:
     align alignment, db 0
 linkedit_raw_end:
