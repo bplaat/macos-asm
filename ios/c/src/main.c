@@ -62,7 +62,7 @@ typedef struct NSRect {
 
 #define NSTextAlignmentCenter 1
 
-id NSString(char *string) {
+static id NSString(char *string) {
     return msg_cls_str(cls("NSString"), sel("stringWithUTF8String:"), string);
 }
 

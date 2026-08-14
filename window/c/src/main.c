@@ -72,7 +72,7 @@ typedef struct NSRect {
 
 #define NSBackingStoreBuffered 2
 
-id NSString(char *string) {
+static id NSString(char *string) {
     return msg_cls_str(cls("NSString"), sel("stringWithUTF8String:"), string);
 }
 
