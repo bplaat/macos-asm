@@ -14,6 +14,9 @@ Rust, Swift, and SwiftUI.
   Cocoa through the Objective-C runtime, while the other versions use their
   language's usual Cocoa bindings. The Rust example also demonstrates a small
   hand-written Cocoa bridge.
+- `metal/` contains graphics examples built with Apple's Metal API. The
+  Objective-C, Rust, and Swift examples open a Cocoa window and render a
+  rainbow triangle with vertex and fragment shaders.
 - `ios/` contains equivalent UIKit or SwiftUI applications for C,
   Objective-C, Rust, Swift, and SwiftUI. Their build scripts target an iOS
   simulator; selected examples can also use a local provisioning configuration
@@ -29,6 +32,7 @@ Rust, Swift, and SwiftUI.
 
 - macOS with Xcode Command Line Tools
 - NASM for the assembly examples
+- Xcode's optional Metal Toolchain for the Metal examples
 - Rust and the required Apple targets for the Rust examples
 - A booted iOS Simulator for the simulator examples
 

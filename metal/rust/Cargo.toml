@@ -1,0 +1,12 @@
+[package]
+name = "triangle"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+objc2 = "0.6"
+
+[profile.release]
+opt-level = "z"
+panic = "abort"
+lto = "fat"
