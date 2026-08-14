@@ -20,10 +20,6 @@
 %include 'libportable.s'
 %include 'libarm64.s'
 
-%define NULL 0
-%define STD_OUTPUT_HANDLE -11
-%define stdout 1
-
 header HEADER_X86_64 | HEADER_ARM64
 
 section_text
@@ -41,13 +37,13 @@ windows_print:
     mov rbp, rsp
     sub rsp, 16
     mov qword [rbp - 8], rdi
-    mov r9, NULL
-    mov rcx, NULL
+    mov r9, 0 ; NULL
+    mov rcx, 0 ; NULL
     mov rdi, qword [rbp - 8]
     call strlen
     mov rdx, rax
     mov rsi, qword [rbp - 8]
-    mov rdi, STD_OUTPUT_HANDLE
+    mov rdi, -11 ; STD_OUTPUT_HANDLE
     call GetStdHandle
     mov rdi, rax
     call WriteConsoleA
@@ -74,7 +70,7 @@ macos_print:
     call strlen
     mov rdx, rax
     mov rsi, qword [rbp - 8]
-    mov edi, stdout
+    mov edi, 1 ; stdout
     mov eax, 0x2000004 ; write
     syscall
     leave
@@ -100,7 +96,7 @@ linux_print:
     call strlen
     mov rdx, rax
     mov rsi, qword [rbp - 8]
-    mov edi, stdout
+    mov edi, 1 ; stdout
     mov eax, 1 ; write
     syscall
     leave
@@ -150,15 +146,15 @@ _arm64_macos_start:
     arm64_b _arm64_start
 
 arm64_macos_print:
-    dd 0xA9BE7BFD ; stp fp, lr, [sp, -32]!
-    dd 0xF9000FE0 ; str x0, [sp, 24]
+    arm64_stp_pre fp, lr, sp, -32
+    arm64_str_imm x0, sp, 24
     arm64_bl arm64_strlen
     arm64_mov x2, x0
-    dd 0xF9400FE1 ; ldr x1, [sp, 24]
-    arm64_mov_imm x0, stdout
+    arm64_ldr_imm x1, sp, 24
+    arm64_mov_imm x0, 1 ; stdout
     arm64_mov_imm x16, 4 ; write
     arm64_svc 0x80
-    dd 0xA8C27BFD ; ldp fp, lr, [sp], 32
+    arm64_ldp_post fp, lr, sp, 32
     arm64_ret
 
 arm64_macos_exit:
@@ -176,15 +172,15 @@ _arm64_linux_start:
     arm64_b _arm64_start
 
 arm64_linux_print:
-    dd 0xA9BE7BFD ; stp fp, lr, [sp, -32]!
-    dd 0xF9000FE0 ; str x0, [sp, 24]
+    arm64_stp_pre fp, lr, sp, -32
+    arm64_str_imm x0, sp, 24
     arm64_bl arm64_strlen
     arm64_mov x2, x0
-    dd 0xF9400FE1 ; ldr x1, [sp, 24]
-    arm64_mov_imm x0, stdout
+    arm64_ldr_imm x1, sp, 24
+    arm64_mov_imm x0, 1 ; stdout
     arm64_mov_imm x8, 64 ; write
     arm64_svc 0x0
-    dd 0xA8C27BFD ; ldp fp, lr, [sp], 32
+    arm64_ldp_post fp, lr, sp, 32
     arm64_ret
 
 arm64_linux_exit:
@@ -204,14 +200,14 @@ _arm64_start:
 arm64_strlen:
     arm64_mov x1, x0
 .repeat:
-    dd 0x38401422 ; ldrb w2, [x1], 1
+    arm64_ldrb_post x2, x1, 1
     arm64_cbnz x2, .repeat
     arm64_sub x0, x1, x0
     arm64_sub_imm x0, x0, 1
     arm64_ret
 
 arm64_println:
-    dd 0xF81F0FFE ; str lr, [sp, -16]!
+    arm64_str_pre lr, sp, -16
 
     arm64_adr x8, print
     arm64_ldr x8, x8
@@ -222,7 +218,7 @@ arm64_println:
     arm64_ldr x8, x8
     arm64_blr x8
 
-    dd 0xF84107FE ; ldr lr, [sp], 16
+    arm64_ldr_post lr, sp, 16
     arm64_ret
 
 end_section_text

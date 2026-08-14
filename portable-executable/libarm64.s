@@ -43,8 +43,29 @@
 %macro arm64_ldr 2
     dd 0xF9400000 | ((%2 & 31) << 5) | (%1 & 31))
 %endmacro
+%macro arm64_ldr_imm 3
+    dd 0xF9400000 | (((%3 / 8) & 0xfff) << 10) | ((%2 & 31) << 5) | (%1 & 31)
+%endmacro
 %macro arm64_str 2
     dd 0xF9000000 | ((%2 & 31) << 5) | (%1 & 31))
+%endmacro
+%macro arm64_str_imm 3
+    dd 0xF9000000 | (((%3 / 8) & 0xfff) << 10) | ((%2 & 31) << 5) | (%1 & 31)
+%endmacro
+%macro arm64_ldr_post 3
+    dd 0xF8400400 | ((%3 & 0x1ff) << 12) | ((%2 & 31) << 5) | (%1 & 31)
+%endmacro
+%macro arm64_str_pre 3
+    dd 0xF8000C00 | ((%3 & 0x1ff) << 12) | ((%2 & 31) << 5) | (%1 & 31)
+%endmacro
+%macro arm64_ldrb_post 3
+    dd 0x38400400 | ((%3 & 0x1ff) << 12) | ((%2 & 31) << 5) | (%1 & 31)
+%endmacro
+%macro arm64_ldp_post 4
+    dd 0xA8C00000 | (((%4 / 8) & 0x7f) << 15) | ((%2 & 31) << 10) | ((%3 & 31) << 5) | (%1 & 31)
+%endmacro
+%macro arm64_stp_pre 4
+    dd 0xA9800000 | (((%4 / 8) & 0x7f) << 15) | ((%2 & 31) << 10) | ((%3 & 31) << 5) | (%1 & 31)
 %endmacro
 %macro arm64_adr 2
     dd 0x10000000 | ((((%2 - $) >> 2) << 5) | (%1 & 31))

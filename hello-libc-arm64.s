@@ -66,6 +66,12 @@
 %macro arm64_str 2
     dd 0xF9000000 | ((%2 & 31) << 5) | (%1 & 31))
 %endmacro
+%macro arm64_ldp_post 4
+    dd 0xA8C00000 | (((%4 / 8) & 0x7f) << 15) | ((%2 & 31) << 10) | ((%3 & 31) << 5) | (%1 & 31)
+%endmacro
+%macro arm64_stp_pre 4
+    dd 0xA9800000 | (((%4 / 8) & 0x7f) << 15) | ((%2 & 31) << 10) | ((%3 & 31) << 5) | (%1 & 31)
+%endmacro
 %macro arm64_adr 2
     dd 0x10000000 | ((((%2 - $) >> 2) << 5) | (%1 & 31))
 %endmacro
@@ -240,7 +246,7 @@ commands_end:
 text_start:
 
 _start:
-    dd 0xA9BE7BFD ; stp fp, lr, [sp, -32]!
+    arm64_stp_pre fp, lr, sp, -32
 
     arm64_mov_imm x1, 0
     arm64_adr x0, hello_string
@@ -253,7 +259,7 @@ _start:
     arm64_bl printf
 
     arm64_mov_imm x0, 0
-    dd 0xA8C27BFD ; ldp fp, lr, [sp], 32
+    arm64_ldp_post fp, lr, sp, 32
     arm64_ret
 
 printf:
