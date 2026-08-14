@@ -107,9 +107,10 @@ macro_rules! ns_string {
             arr
         };
         #[link_section = "__DATA,__cfstring"]
-        static CFSTRING: CFConstString = unsafe {
-            CFConstString {
-                isa: &__CFConstantStringClassReference as *const Object
+        static CFSTRING: $crate::uikit::CFConstString = unsafe {
+            $crate::uikit::CFConstString {
+                isa: &$crate::uikit::__CFConstantStringClassReference
+                    as *const objc2::runtime::AnyObject
                     as *const ::std::ffi::c_void,
                 cfinfo: 0x07C8,
                 #[cfg(target_pointer_width = "64")]
@@ -118,7 +119,7 @@ macro_rules! ns_string {
                 len: BYTES.len(),
             }
         };
-        &CFSTRING as *const CFConstString as *mut objc2::runtime::AnyObject
+        &CFSTRING as *const $crate::uikit::CFConstString as *mut objc2::runtime::AnyObject
     }};
 }
 pub(crate) use ns_string;

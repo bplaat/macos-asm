@@ -7,7 +7,10 @@ use objc2::rc::autoreleasepool;
 use objc2::runtime::{AnyObject as Object, Bool, NSObject};
 use objc2::{class, define_class, msg_send, ClassType, DefinedClass};
 
-use crate::uikit::*;
+use crate::uikit::{
+    ns_string, NSLog, NSRect, UIApplicationMain, UIViewController, NSTEXT_ALIGNMENT_CENTER,
+    UI_USER_INTERFACE_STYLE_DARK,
+};
 
 mod uikit;
 

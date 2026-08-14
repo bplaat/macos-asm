@@ -4,7 +4,13 @@ use objc2::rc::autoreleasepool;
 use objc2::runtime::{AnyObject as Object, Bool, NSObject};
 use objc2::{class, define_class, msg_send, sel, ClassType};
 
-use crate::cocoa::*;
+use crate::cocoa::{
+    ns_string, NSApp, NSAppearanceNameDarkAqua, NSFontAttributeName,
+    NSForegroundColorAttributeName, NSPoint, NSRect, NSSize, NSView,
+    NS_APPLICATION_ACTIVATION_POLICY_REGULAR, NS_BACKING_STORE_BUFFERED,
+    NS_WINDOW_STYLE_MASK_CLOSABLE, NS_WINDOW_STYLE_MASK_MINIATURIZABLE,
+    NS_WINDOW_STYLE_MASK_RESIZABLE, NS_WINDOW_STYLE_MASK_TITLED,
+};
 
 mod cocoa;
 
