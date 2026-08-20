@@ -45,10 +45,10 @@ extern "C" {
 extern "C" {
     pub(crate) fn UIApplicationMain(
         argc: i32,
-        argv: *const *mut c_char,
-        principalClassName: *const Object,
+        argv: *mut *mut c_char,
+        principalClassName: *mut Object,
         delegateClassName: *mut Object,
-    );
+    ) -> i32;
 }
 
 extern_class!(
