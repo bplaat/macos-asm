@@ -1,0 +1,15 @@
+[package]
+name = "triangle"
+version = "0.1.0"
+edition = "2024"
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[dependencies]
+objc2 = "0.6"
+
+[profile.release]
+opt-level = "z"
+panic = "abort"
+lto = "fat"
