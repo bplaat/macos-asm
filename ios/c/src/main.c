@@ -52,7 +52,6 @@ extern void objc_autoreleasePoolPop(void* pool);
 #define msg_void_rect ((void (*)(id, SEL, NSRect))objc_msgSend)
 #define msg_init_rect ((id (*)(id, SEL, NSRect))objc_msgSend)
 #define msg_cls ((id (*)(Class, SEL))objc_msgSend)
-#define msg_cls_str ((id (*)(Class, SEL, const char*))objc_msgSend)
 #define msg_cls_double ((id (*)(Class, SEL, double))objc_msgSend)
 #define msg_cls_double_double_double_double ((id (*)(Class, SEL, double, double, double, double))objc_msgSend)
 #define msg_super_void ((void (*)(struct objc_super*, SEL))objc_msgSendSuper)
@@ -68,6 +67,11 @@ extern void objc_autoreleasePoolPop(void* pool);
     })
 #endif
 
+// MARK: CoreFoundation headers
+typedef const void* CFStringRef;
+
+#define CFSTR(c_string) ((CFStringRef)__builtin___CFStringMakeConstantString("" c_string ""))
+
 // MARK: UIKit headers
 typedef struct NSRect {
     double x;
@@ -80,12 +84,8 @@ typedef struct NSRect {
 
 #define NSTextAlignmentCenter 1
 
-static id ns_string(const char* string) {
-    return msg_cls_str(cls("NSString"), sel("stringWithUTF8String:"), string);
-}
-
 extern int UIApplicationMain(int argc, char** argv, id principalClassName, id delegateClassName);
-extern void NSLog(char* format, ...);
+extern void NSLog(id format, ...);
 
 // MARK: ViewController
 void view_controller_view_did_load(id self, SEL cmd) {
@@ -105,7 +105,7 @@ void view_controller_view_did_load(id self, SEL cmd) {
         msg_void(old_label, sel("release"));
     }
     object_setInstanceVariable(self, "_label", label);
-    msg_void_id(label, sel("setText:"), ns_string("Hello iOS!"));
+    msg_void_id(label, sel("setText:"), (id)CFSTR("Hello iOS!"));
     msg_void_id(label, sel("setFont:"), msg_cls_double(cls("UIFont"), sel("systemFontOfSize:"), 48));
     msg_void_integer(label, sel("setTextAlignment:"), NSTextAlignmentCenter);
     msg_void_id(view, sel("addSubview:"), label);
@@ -152,7 +152,7 @@ BOOL app_delegate_application_did_finish_launching_with_options(id self, SEL cmd
     msg_void(view_controller, sel("release"));
     msg_void(window, sel("makeKeyAndVisible"));
 
-    NSLog(ns_string("Hello iOS!\n"));
+    NSLog((id)CFSTR("Hello iOS!\n"));
     return YES;
 }
 
@@ -188,7 +188,7 @@ int main(int argc, char** argv) {
     objc_registerClassPair(AppDelegate);
 
     // Start application
-    int result = UIApplicationMain(argc, argv, NULL, ns_string("AppDelegate"));
+    int result = UIApplicationMain(argc, argv, NULL, (id)CFSTR("AppDelegate"));
     objc_autoreleasePoolPop(pool);
     return result;
 }

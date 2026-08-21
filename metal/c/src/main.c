@@ -62,13 +62,11 @@ extern void objc_autoreleasePoolPop(void* pool);
 #define msg_id_sel_id ((id (*)(id, SEL, id, SEL, id))objc_msgSend)
 #define msg_id_id ((id (*)(id, SEL, id))objc_msgSend)
 #define msg_id_uint ((id (*)(id, SEL, NSUInteger))objc_msgSend)
-#define msg_id_id_id ((id (*)(id, SEL, id, id))objc_msgSend)
 #define msg_id_id_id_ptr ((id (*)(id, SEL, id, id*))objc_msgSend)
 #define msg_id_rect_id ((id (*)(id, SEL, NSRect, id))objc_msgSend)
 #define msg_id_rect_uint_uint_bool ((id (*)(id, SEL, NSRect, NSUInteger, NSUInteger, BOOL))objc_msgSend)
 #define msg_cls ((id (*)(Class, SEL))objc_msgSend)
 #define msg_cls_id ((id (*)(Class, SEL, id))objc_msgSend)
-#define msg_cls_str ((id (*)(Class, SEL, const char*))objc_msgSend)
 #define msg_ret_uint ((NSUInteger (*)(id, SEL))objc_msgSend)
 #define msg_ret_cstr ((const char* (*)(id, SEL))objc_msgSend)
 #define msg_super_void ((void (*)(struct objc_super*, SEL))objc_msgSendSuper)
@@ -83,6 +81,19 @@ extern void objc_autoreleasePoolPop(void* pool);
         result;                                                                      \
     })
 #endif
+
+// MARK: CoreFoundation headers
+typedef const void* CFTypeRef;
+typedef CFTypeRef CFBundleRef;
+typedef CFTypeRef CFStringRef;
+typedef CFTypeRef CFURLRef;
+
+extern CFBundleRef CFBundleGetMainBundle(void);
+extern CFURLRef CFBundleCopyResourceURL(CFBundleRef bundle, CFStringRef resource_name, CFStringRef resource_type,
+                                        CFStringRef subdirectory_name);
+extern void CFRelease(CFTypeRef object);
+
+#define CFSTR(c_string) ((CFStringRef)__builtin___CFStringMakeConstantString("" c_string ""))
 
 // MARK: Cocoa and Metal headers
 typedef struct NSSize {
@@ -131,10 +142,6 @@ static const Vertex vertices[] = {
     {.position = {0.7f, -0.6f}, .color = {0.1f, 0.3f, 1.0f, 1.0f}},
 };
 
-static id ns_string(const char* string) {
-    return msg_cls_str(cls("NSString"), sel("stringWithUTF8String:"), string);
-}
-
 static void print_error(const char* message, id error) {
     if (error == NULL) {
         fprintf(stderr, "%s\n", message);
@@ -162,26 +169,25 @@ bool renderer_configure(id self, id view) {
     id fragment_function = NULL;
     id pipeline_state = NULL;
     id command_queue = NULL;
+    CFURLRef library_url = NULL;
     bool success = false;
 
-    id bundle = msg_cls(cls("NSBundle"), sel("mainBundle"));
-    id library_url =
-        msg_id_id_id(bundle, sel("URLForResource:withExtension:"), ns_string("default"), ns_string("metallib"));
+    library_url = CFBundleCopyResourceURL(CFBundleGetMainBundle(), CFSTR("default"), CFSTR("metallib"), NULL);
     if (library_url == NULL) {
         print_error("Could not find Metal library", NULL);
         goto cleanup;
     }
 
     id error = NULL;
-    library = msg_id_id_id_ptr(device, sel("newLibraryWithURL:error:"), library_url, &error);
+    library = msg_id_id_id_ptr(device, sel("newLibraryWithURL:error:"), (id)library_url, &error);
     if (library == NULL) {
         print_error("Could not load Metal library", error);
         goto cleanup;
     }
 
     pipeline_descriptor = msg_cls(cls("MTLRenderPipelineDescriptor"), sel("new"));
-    vertex_function = msg_id_id(library, sel("newFunctionWithName:"), ns_string("vertex_main"));
-    fragment_function = msg_id_id(library, sel("newFunctionWithName:"), ns_string("fragment_main"));
+    vertex_function = msg_id_id(library, sel("newFunctionWithName:"), (id)CFSTR("vertex_main"));
+    fragment_function = msg_id_id(library, sel("newFunctionWithName:"), (id)CFSTR("fragment_main"));
     if (vertex_function == NULL || fragment_function == NULL) {
         print_error("Could not load Metal shader functions", NULL);
         goto cleanup;
@@ -214,6 +220,9 @@ bool renderer_configure(id self, id view) {
     success = true;
 
 cleanup:
+    if (library_url != NULL) {
+        CFRelease(library_url);
+    }
     if (command_queue != NULL) {
         msg_void(command_queue, sel("release"));
     }
@@ -259,10 +268,10 @@ void renderer_draw(id self, SEL cmd, id view) {
     object_getInstanceVariable(self, "_pipelineState", (void**)&pipeline_state);
 
     id command_buffer = msg_id0(command_queue, sel("commandBuffer"));
-    msg_void_id(command_buffer, sel("setLabel:"), ns_string("Rainbow Triangle"));
+    msg_void_id(command_buffer, sel("setLabel:"), (id)CFSTR("Rainbow Triangle"));
 
     id encoder = msg_id_id(command_buffer, sel("renderCommandEncoderWithDescriptor:"), render_pass);
-    msg_void_id(encoder, sel("setLabel:"), ns_string("Triangle Render Pass"));
+    msg_void_id(encoder, sel("setLabel:"), (id)CFSTR("Triangle Render Pass"));
     msg_void_id(encoder, sel("setRenderPipelineState:"), pipeline_state);
     msg_void_ptr_uint_uint(encoder, sel("setVertexBytes:length:atIndex:"), vertices, sizeof(vertices), 0);
     msg_void_uint_uint_uint(encoder, sel("drawPrimitives:vertexStart:vertexCount:"), MTLPrimitiveTypeTriangle, 0,
@@ -308,7 +317,7 @@ void app_delegate_did_finish_launching(id self, SEL cmd, id notification) {
     msg_void(app_menu, sel("release"));
 
     id quit_item = msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")), sel("initWithTitle:action:keyEquivalent:"),
-                                 ns_string("Quit Triangle"), sel("terminate:"), ns_string("q"));
+                                 (id)CFSTR("Quit Triangle"), sel("terminate:"), (id)CFSTR("q"));
     msg_void_id(app_menu, sel("addItem:"), quit_item);
     msg_void(quit_item, sel("release"));
 
@@ -320,7 +329,7 @@ void app_delegate_did_finish_launching(id self, SEL cmd, id notification) {
                                    NSBackingStoreBuffered, NO);
     object_setInstanceVariable(self, "_window", window);
     msg_void_bool(window, sel("setReleasedWhenClosed:"), NO);
-    msg_void_id(window, sel("setTitle:"), ns_string("Triangle"));
+    msg_void_id(window, sel("setTitle:"), (id)CFSTR("Triangle"));
     msg_void_id(window, sel("setAppearance:"),
                 msg_cls_id(cls("NSAppearance"), sel("appearanceNamed:"), NSAppearanceNameDarkAqua));
 

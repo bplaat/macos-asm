@@ -59,7 +59,6 @@ extern void objc_autoreleasePoolPop(void* pool);
 #define msg_rect_uint_uint_bool ((id (*)(id, SEL, NSRect, NSUInteger, NSUInteger, BOOL))objc_msgSend)
 #define msg_cls ((id (*)(Class, SEL))objc_msgSend)
 #define msg_cls_id ((id (*)(Class, SEL, id))objc_msgSend)
-#define msg_cls_str ((id (*)(Class, SEL, const char*))objc_msgSend)
 #define msg_cls_double ((id (*)(Class, SEL, double))objc_msgSend)
 #define msg_cls_double_double_double_double ((id (*)(Class, SEL, double, double, double, double))objc_msgSend)
 #define msg_cls_id_id_uint ((id (*)(Class, SEL, id, id, NSUInteger))objc_msgSend)
@@ -76,6 +75,11 @@ extern void objc_autoreleasePoolPop(void* pool);
         tmp;                                                          \
     })
 #endif
+
+// MARK: CoreFoundation headers
+typedef const void* CFStringRef;
+
+#define CFSTR(c_string) ((CFStringRef)__builtin___CFStringMakeConstantString("" c_string ""))
 
 // MARK: Cocoa headers
 typedef struct NSSize {
@@ -99,10 +103,6 @@ typedef struct NSRect {
 
 #define NSBackingStoreBuffered 2
 
-static id ns_string(const char* string) {
-    return msg_cls_str(cls("NSString"), sel("stringWithUTF8String:"), string);
-}
-
 extern id NSApp;
 extern id NSAppearanceNameDarkAqua;
 extern id NSFontAttributeName;
@@ -113,7 +113,7 @@ void canvas_view_draw_rect(id self, SEL cmd, NSRect dirtyRect) {
     (void)cmd;
     (void)dirtyRect;
 
-    id text = ns_string("Hello macOS!");
+    id text = (id)CFSTR("Hello macOS!");
 
     id keys[] = {NSFontAttributeName, NSForegroundColorAttributeName};
     id values[] = {
@@ -150,7 +150,7 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
 
     id about_menu_item =
         msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")), sel("initWithTitle:action:keyEquivalent:"),
-                      ns_string("About BassieTest"), sel("openAbout:"), ns_string(""));
+                      (id)CFSTR("About BassieTest"), sel("openAbout:"), (id)CFSTR(""));
     msg_void_id(app_menu, sel("addItem:"), about_menu_item);
     msg_void(about_menu_item, sel("release"));
 
@@ -158,7 +158,7 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
 
     id quit_menu_item =
         msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")), sel("initWithTitle:action:keyEquivalent:"),
-                      ns_string("Quit BassieTest"), sel("terminate:"), ns_string("q"));
+                      (id)CFSTR("Quit BassieTest"), sel("terminate:"), (id)CFSTR("q"));
     msg_void_id(app_menu, sel("addItem:"), quit_menu_item);
     msg_void(quit_menu_item, sel("release"));
 
@@ -175,7 +175,7 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
     }
     object_setInstanceVariable(self, "_window", window);
     msg_void_bool(window, sel("setReleasedWhenClosed:"), NO);
-    msg_void_id(window, sel("setTitle:"), ns_string("BassieTest"));
+    msg_void_id(window, sel("setTitle:"), (id)CFSTR("BassieTest"));
     msg_void_bool(window, sel("setTitlebarAppearsTransparent:"), YES);
     msg_void_id(window, sel("setAppearance:"),
                 msg_cls_id(cls("NSAppearance"), sel("appearanceNamed:"), NSAppearanceNameDarkAqua));
@@ -192,7 +192,7 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
     msg_void_id(window, sel("setBackgroundColor:"),
                 msg_cls_double_double_double_double(cls("NSColor"), sel("colorWithRed:green:blue:alpha:"), 0x05 / 255.0,
                                                     0x44 / 255.0, 0x5e / 255.0, 1));
-    (void)msg_bool_id(window, sel("setFrameAutosaveName:"), ns_string("window"));
+    (void)msg_bool_id(window, sel("setFrameAutosaveName:"), (id)CFSTR("window"));
 
     // Create canvas
     id canvas_view = msg_cls(cls("CanvasView"), sel("new"));

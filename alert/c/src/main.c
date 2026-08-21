@@ -17,17 +17,17 @@ extern void objc_autoreleasePoolPop(void* pool);
 #define msg_void ((void (*)(id, SEL))objc_msgSend)
 #define msg_void_id ((void (*)(id, SEL, id))objc_msgSend)
 #define msg_integer ((long (*)(id, SEL))objc_msgSend)
-#define msg_cls_str ((id (*)(Class, SEL, const char*))objc_msgSend)
 
-static id ns_string(const char* string) {
-    return msg_cls_str(cls("NSString"), sel("stringWithUTF8String:"), string);
-}
+// MARK: CoreFoundation headers
+typedef const void* CFStringRef;
+
+#define CFSTR(c_string) ((CFStringRef)__builtin___CFStringMakeConstantString("" c_string ""))
 
 // MARK: Main
 int main(void) {
     void* pool = objc_autoreleasePoolPush();
     id alert = msg_id0(cls("NSAlert"), sel("new"));
-    msg_void_id(alert, sel("setMessageText:"), ns_string("Hello Cocoa from C!"));
+    msg_void_id(alert, sel("setMessageText:"), (id)CFSTR("Hello Cocoa from C!"));
     (void)msg_integer(alert, sel("runModal"));
     msg_void(alert, sel("release"));
     objc_autoreleasePoolPop(pool);

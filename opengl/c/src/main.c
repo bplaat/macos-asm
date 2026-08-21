@@ -62,7 +62,6 @@ extern void objc_autoreleasePoolPop(void* pool);
 #define msg_bool_integer ((BOOL (*)(id, SEL, NSInteger))objc_msgSend)
 #define msg_cls ((id (*)(Class, SEL))objc_msgSend)
 #define msg_cls_id ((id (*)(Class, SEL, id))objc_msgSend)
-#define msg_cls_str ((id (*)(Class, SEL, const char*))objc_msgSend)
 #define msg_super_void ((void (*)(struct objc_super*, SEL))objc_msgSendSuper)
 
 #ifdef __arm64__
@@ -82,6 +81,11 @@ extern void objc_autoreleasePoolPop(void* pool);
         result;                                                                                    \
     })
 #endif
+
+// MARK: CoreFoundation headers
+typedef const void* CFStringRef;
+
+#define CFSTR(c_string) ((CFStringRef)__builtin___CFStringMakeConstantString("" c_string ""))
 
 // MARK: Cocoa headers
 typedef struct NSSize {
@@ -115,10 +119,6 @@ typedef struct NSRect {
 
 extern id NSApp;
 extern id NSAppearanceNameDarkAqua;
-
-static id ns_string(const char* string) {
-    return msg_cls_str(cls("NSString"), sel("stringWithUTF8String:"), string);
-}
 
 // MARK: OpenGL renderer
 typedef struct Vertex {
@@ -317,7 +317,7 @@ void app_delegate_did_finish_launching(id self, SEL cmd, id notification) {
     msg_void(app_menu, sel("release"));
 
     id quit_item = msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")), sel("initWithTitle:action:keyEquivalent:"),
-                                 ns_string("Quit Triangle"), sel("terminate:"), ns_string("q"));
+                                 (id)CFSTR("Quit Triangle"), sel("terminate:"), (id)CFSTR("q"));
     msg_void_id(app_menu, sel("addItem:"), quit_item);
     msg_void(quit_item, sel("release"));
 
@@ -329,7 +329,7 @@ void app_delegate_did_finish_launching(id self, SEL cmd, id notification) {
         NSBackingStoreBuffered, NO);
     object_setInstanceVariable(self, "_window", window);
     msg_void_bool(window, sel("setReleasedWhenClosed:"), NO);
-    msg_void_id(window, sel("setTitle:"), ns_string("OpenGL Triangle"));
+    msg_void_id(window, sel("setTitle:"), (id)CFSTR("OpenGL Triangle"));
     msg_void_id(window, sel("setAppearance:"),
                 msg_cls_id(cls("NSAppearance"), sel("appearanceNamed:"), NSAppearanceNameDarkAqua));
 
