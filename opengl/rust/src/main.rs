@@ -359,7 +359,7 @@ impl AppDelegate {
                 initWithContentRect:NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(900.0, 650.0)),
                 styleMask:NS_WINDOW_STYLE_MASK_TITLED | NS_WINDOW_STYLE_MASK_CLOSABLE | NS_WINDOW_STYLE_MASK_MINIATURIZABLE | NS_WINDOW_STYLE_MASK_RESIZABLE,
                 backing:NS_BACKING_STORE_BUFFERED,
-                defer:false];
+                defer:Bool::NO];
             let _: () = msg_send![&window, setTitle:ns_string!("OpenGL Triangle")];
             let appearance: Option<Retained<Object>> =
                 msg_send![class!(NSAppearance), appearanceNamed:NSAppearanceNameDarkAqua];
@@ -374,7 +374,7 @@ impl AppDelegate {
                 let window_y = (screen_frame.size.height - window_frame.size.height) / 2.0;
                 let centered_frame =
                     NSRect::new(NSPoint::new(window_x, window_y), window_frame.size);
-                let _: () = msg_send![&window, setFrame:centered_frame, display:true];
+                let _: () = msg_send![&window, setFrame:centered_frame, display:Bool::YES];
             }
             let _: () = msg_send![&window, setMinSize:NSSize::new(480.0, 360.0)];
 
@@ -414,7 +414,7 @@ impl AppDelegate {
                 let _: () = msg_send![NSApp, terminate:null::<Object>()];
                 return;
             };
-            let _: () = msg_send![&renderer, setWantsBestResolutionOpenGLSurface:true];
+            let _: () = msg_send![&renderer, setWantsBestResolutionOpenGLSurface:Bool::YES];
             let _: () = msg_send![&renderer,
                 setAutoresizingMask:NS_VIEW_WIDTH_SIZABLE | NS_VIEW_HEIGHT_SIZABLE];
             let _: () = msg_send![&window, setContentView:&*renderer];
@@ -427,7 +427,7 @@ impl AppDelegate {
 
             let _: Bool =
                 msg_send![NSApp, setActivationPolicy:NS_APPLICATION_ACTIVATION_POLICY_REGULAR];
-            let _: () = msg_send![NSApp, activateIgnoringOtherApps:true];
+            let _: () = msg_send![NSApp, activateIgnoringOtherApps:Bool::YES];
             let state = self.ivars().state.get().unwrap();
             let _: () = msg_send![&state.window, makeKeyAndOrderFront:null::<Object>()];
         }

@@ -11,10 +11,22 @@ typedef id (*IMP)(id self, SEL selector, ...);
 typedef void* Ivar;
 typedef long NSInteger;
 
+// Objective-C BOOL is C bool on arm64 and signed char on x86_64.
+#if __OBJC_BOOL_IS_BOOL
+typedef bool BOOL;
+#define OBJC_BOOL_ENCODING "B"
+#else
+typedef signed char BOOL;
+#define OBJC_BOOL_ENCODING "c"
+#endif
+
+#define YES ((BOOL)1)
+#define NO ((BOOL)0)
+
 extern Class objc_getClass(const char* name);
 extern Class objc_allocateClassPair(Class superclass, const char* name, size_t extraBytes);
-extern bool class_addIvar(Class cls, const char* name, size_t size, uint8_t alignment, const char* types);
-extern bool class_addMethod(Class cls, SEL name, IMP imp, const char* types);
+extern BOOL class_addIvar(Class cls, const char* name, size_t size, uint8_t alignment, const char* types);
+extern BOOL class_addMethod(Class cls, SEL name, IMP imp, const char* types);
 extern void objc_registerClassPair(Class cls);
 extern SEL sel_registerName(const char* name);
 extern void objc_msgSend(void);
@@ -121,7 +133,7 @@ void view_controller_dealloc(id self, SEL cmd) {
 }
 
 // MARK: AppDelegate
-bool app_delegate_application_did_finish_launching_with_options(id self, SEL cmd, id application, id launch_options) {
+BOOL app_delegate_application_did_finish_launching_with_options(id self, SEL cmd, id application, id launch_options) {
     (void)cmd;
     (void)application;
     (void)launch_options;
@@ -141,7 +153,7 @@ bool app_delegate_application_did_finish_launching_with_options(id self, SEL cmd
     msg_void(window, sel("makeKeyAndVisible"));
 
     NSLog(ns_string("Hello iOS!\n"));
-    return true;
+    return YES;
 }
 
 void app_delegate_dealloc(id self, SEL cmd) {
@@ -171,7 +183,7 @@ int main(int argc, char** argv) {
     Class AppDelegate = objc_allocateClassPair(cls("NSObject"), "AppDelegate", 0);
     class_addIvar(AppDelegate, "_window", sizeof(id), (uint8_t)__builtin_ctzll(_Alignof(id)), "@");
     class_addMethod(AppDelegate, sel("application:didFinishLaunchingWithOptions:"),
-                    (IMP)app_delegate_application_did_finish_launching_with_options, "B@:@@");
+                    (IMP)app_delegate_application_did_finish_launching_with_options, OBJC_BOOL_ENCODING "@:@@");
     class_addMethod(AppDelegate, sel("dealloc"), (IMP)app_delegate_dealloc, "v@:");
     objc_registerClassPair(AppDelegate);
 

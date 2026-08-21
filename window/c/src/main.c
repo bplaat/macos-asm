@@ -12,10 +12,22 @@ typedef void* Ivar;
 typedef long NSInteger;
 typedef unsigned long NSUInteger;
 
+// Objective-C BOOL is C bool on arm64 and signed char on x86_64.
+#if __OBJC_BOOL_IS_BOOL
+typedef bool BOOL;
+#define OBJC_BOOL_ENCODING "B"
+#else
+typedef signed char BOOL;
+#define OBJC_BOOL_ENCODING "c"
+#endif
+
+#define YES ((BOOL)1)
+#define NO ((BOOL)0)
+
 extern Class objc_getClass(const char* name);
 extern Class objc_allocateClassPair(Class superclass, const char* name, size_t extraBytes);
-extern bool class_addIvar(Class cls, const char* name, size_t size, uint8_t alignment, const char* types);
-extern bool class_addMethod(Class cls, SEL name, IMP imp, const char* types);
+extern BOOL class_addIvar(Class cls, const char* name, size_t size, uint8_t alignment, const char* types);
+extern BOOL class_addMethod(Class cls, SEL name, IMP imp, const char* types);
 extern void objc_registerClassPair(Class cls);
 extern SEL sel_registerName(const char* name);
 extern void objc_msgSend(void);
@@ -37,14 +49,14 @@ extern void objc_autoreleasePoolPop(void* pool);
 #define msg_id0 ((id (*)(id, SEL))objc_msgSend)
 #define msg_void ((void (*)(id, SEL))objc_msgSend)
 #define msg_void_id ((void (*)(id, SEL, id))objc_msgSend)
-#define msg_void_bool ((void (*)(id, SEL, bool))objc_msgSend)
+#define msg_void_bool ((void (*)(id, SEL, BOOL))objc_msgSend)
 #define msg_void_rect_id ((void (*)(id, SEL, NSRect, id))objc_msgSend)
 #define msg_void_size ((void (*)(id, SEL, NSSize))objc_msgSend)
-#define msg_void_rect_bool ((void (*)(id, SEL, NSRect, bool))objc_msgSend)
-#define msg_bool_integer ((bool (*)(id, SEL, NSInteger))objc_msgSend)
-#define msg_bool_id ((bool (*)(id, SEL, id))objc_msgSend)
+#define msg_void_rect_bool ((void (*)(id, SEL, NSRect, BOOL))objc_msgSend)
+#define msg_bool_integer ((BOOL (*)(id, SEL, NSInteger))objc_msgSend)
+#define msg_bool_id ((BOOL (*)(id, SEL, id))objc_msgSend)
 #define msg_id_sel_id ((id (*)(id, SEL, id, SEL, id))objc_msgSend)
-#define msg_rect_uint_uint_bool ((id (*)(id, SEL, NSRect, NSUInteger, NSUInteger, bool))objc_msgSend)
+#define msg_rect_uint_uint_bool ((id (*)(id, SEL, NSRect, NSUInteger, NSUInteger, BOOL))objc_msgSend)
 #define msg_cls ((id (*)(Class, SEL))objc_msgSend)
 #define msg_cls_id ((id (*)(Class, SEL, id))objc_msgSend)
 #define msg_cls_str ((id (*)(Class, SEL, const char*))objc_msgSend)
@@ -155,16 +167,16 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
                                         sel("initWithContentRect:styleMask:backing:defer:"), (NSRect){0, 0, 1024, 768},
                                         NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
                                             NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable,
-                                        NSBackingStoreBuffered, false);
+                                        NSBackingStoreBuffered, NO);
     id old_window = NULL;
     object_getInstanceVariable(self, "_window", (void**)&old_window);
     if (old_window != NULL) {
         msg_void(old_window, sel("release"));
     }
     object_setInstanceVariable(self, "_window", window);
-    msg_void_bool(window, sel("setReleasedWhenClosed:"), false);
+    msg_void_bool(window, sel("setReleasedWhenClosed:"), NO);
     msg_void_id(window, sel("setTitle:"), ns_string("BassieTest"));
-    msg_void_bool(window, sel("setTitlebarAppearsTransparent:"), true);
+    msg_void_bool(window, sel("setTitlebarAppearsTransparent:"), YES);
     msg_void_id(window, sel("setAppearance:"),
                 msg_cls_id(cls("NSAppearance"), sel("appearanceNamed:"), NSAppearanceNameDarkAqua));
     id screen = msg_id0(window, sel("screen"));
@@ -174,7 +186,7 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
         double window_x = (screen_frame.width - window_frame.width) / 2;
         double window_y = (screen_frame.height - window_frame.height) / 2;
         msg_void_rect_bool(window, sel("setFrame:display:"),
-                           (NSRect){window_x, window_y, window_frame.width, window_frame.height}, true);
+                           (NSRect){window_x, window_y, window_frame.width, window_frame.height}, YES);
     }
     msg_void_size(window, sel("setMinSize:"), (NSSize){320, 240});
     msg_void_id(window, sel("setBackgroundColor:"),
@@ -189,15 +201,15 @@ void app_delegate_did_finish_loading(id self, SEL cmd, id notification) {
 
     // Show window
     (void)msg_bool_integer(NSApp, sel("setActivationPolicy:"), NSApplicationActivationPolicyRegular);
-    msg_void_bool(NSApp, sel("activateIgnoringOtherApps:"), true);
+    msg_void_bool(NSApp, sel("activateIgnoringOtherApps:"), YES);
     msg_void_id(window, sel("makeKeyAndOrderFront:"), NULL);
 }
 
-bool app_should_terminate_after_last_window_closed(id self, SEL cmd, id sender) {
+BOOL app_should_terminate_after_last_window_closed(id self, SEL cmd, id sender) {
     (void)self;
     (void)cmd;
     (void)sender;
-    return true;
+    return YES;
 }
 
 void open_about(id self, SEL cmd, id sender) {
@@ -231,7 +243,7 @@ int main(void) {
     class_addIvar(AppDelegate, "_window", sizeof(id), (uint8_t)__builtin_ctzll(_Alignof(id)), "@");
     class_addMethod(AppDelegate, sel("applicationDidFinishLaunching:"), (IMP)app_delegate_did_finish_loading, "v@:@");
     class_addMethod(AppDelegate, sel("applicationShouldTerminateAfterLastWindowClosed:"),
-                    (IMP)app_should_terminate_after_last_window_closed, "B@:@");
+                    (IMP)app_should_terminate_after_last_window_closed, OBJC_BOOL_ENCODING "@:@");
     class_addMethod(AppDelegate, sel("openAbout:"), (IMP)open_about, "v@:@");
     class_addMethod(AppDelegate, sel("dealloc"), (IMP)app_delegate_dealloc, "v@:");
     objc_registerClassPair(AppDelegate);

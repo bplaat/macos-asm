@@ -13,10 +13,22 @@ typedef void* Ivar;
 typedef long NSInteger;
 typedef unsigned long NSUInteger;
 
+// Objective-C BOOL is C bool on arm64 and signed char on x86_64.
+#if __OBJC_BOOL_IS_BOOL
+typedef bool BOOL;
+#define OBJC_BOOL_ENCODING "B"
+#else
+typedef signed char BOOL;
+#define OBJC_BOOL_ENCODING "c"
+#endif
+
+#define YES ((BOOL)1)
+#define NO ((BOOL)0)
+
 extern Class objc_getClass(const char* name);
 extern Class objc_allocateClassPair(Class superclass, const char* name, size_t extra_bytes);
-extern bool class_addIvar(Class cls, const char* name, size_t size, uint8_t alignment, const char* types);
-extern bool class_addMethod(Class cls, SEL name, IMP implementation, const char* types);
+extern BOOL class_addIvar(Class cls, const char* name, size_t size, uint8_t alignment, const char* types);
+extern BOOL class_addMethod(Class cls, SEL name, IMP implementation, const char* types);
 extern void objc_registerClassPair(Class cls);
 extern SEL sel_registerName(const char* name);
 extern void objc_msgSend(void);
@@ -38,22 +50,22 @@ extern void objc_autoreleasePoolPop(void* pool);
 #define msg_id0 ((id (*)(id, SEL))objc_msgSend)
 #define msg_void ((void (*)(id, SEL))objc_msgSend)
 #define msg_void_id ((void (*)(id, SEL, id))objc_msgSend)
-#define msg_void_bool ((void (*)(id, SEL, bool))objc_msgSend)
+#define msg_void_bool ((void (*)(id, SEL, BOOL))objc_msgSend)
 #define msg_void_integer ((void (*)(id, SEL, NSInteger))objc_msgSend)
 #define msg_void_uint ((void (*)(id, SEL, NSUInteger))objc_msgSend)
 #define msg_void_size ((void (*)(id, SEL, NSSize))objc_msgSend)
-#define msg_void_rect_bool ((void (*)(id, SEL, NSRect, bool))objc_msgSend)
+#define msg_void_rect_bool ((void (*)(id, SEL, NSRect, BOOL))objc_msgSend)
 #define msg_void_clear_color ((void (*)(id, SEL, MTLClearColor))objc_msgSend)
 #define msg_void_ptr_uint_uint ((void (*)(id, SEL, const void*, NSUInteger, NSUInteger))objc_msgSend)
 #define msg_void_uint_uint_uint ((void (*)(id, SEL, NSUInteger, NSUInteger, NSUInteger))objc_msgSend)
-#define msg_bool_integer ((bool (*)(id, SEL, NSInteger))objc_msgSend)
+#define msg_bool_integer ((BOOL (*)(id, SEL, NSInteger))objc_msgSend)
 #define msg_id_sel_id ((id (*)(id, SEL, id, SEL, id))objc_msgSend)
 #define msg_id_id ((id (*)(id, SEL, id))objc_msgSend)
 #define msg_id_uint ((id (*)(id, SEL, NSUInteger))objc_msgSend)
 #define msg_id_id_id ((id (*)(id, SEL, id, id))objc_msgSend)
 #define msg_id_id_id_ptr ((id (*)(id, SEL, id, id*))objc_msgSend)
 #define msg_id_rect_id ((id (*)(id, SEL, NSRect, id))objc_msgSend)
-#define msg_id_rect_uint_uint_bool ((id (*)(id, SEL, NSRect, NSUInteger, NSUInteger, bool))objc_msgSend)
+#define msg_id_rect_uint_uint_bool ((id (*)(id, SEL, NSRect, NSUInteger, NSUInteger, BOOL))objc_msgSend)
 #define msg_cls ((id (*)(Class, SEL))objc_msgSend)
 #define msg_cls_id ((id (*)(Class, SEL, id))objc_msgSend)
 #define msg_cls_str ((id (*)(Class, SEL, const char*))objc_msgSend)
@@ -64,11 +76,11 @@ extern void objc_autoreleasePoolPop(void* pool);
 #ifdef __arm64__
 #define msg_ret_rect ((NSRect (*)(id, SEL))objc_msgSend)
 #else
-#define msg_ret_rect(object, selector)                                         \
-    ({                                                                         \
-        NSRect result;                                                         \
+#define msg_ret_rect(object, selector)                                               \
+    ({                                                                               \
+        NSRect result;                                                               \
         ((void (*)(NSRect*, id, SEL))objc_msgSend_stret)(&result, object, selector); \
-        result;                                                               \
+        result;                                                                      \
     })
 #endif
 
@@ -182,8 +194,8 @@ bool renderer_configure(id self, id view) {
     msg_void_uint(color_attachment, sel("setPixelFormat:"), msg_ret_uint(view, sel("colorPixelFormat")));
 
     error = NULL;
-    pipeline_state = msg_id_id_id_ptr(device, sel("newRenderPipelineStateWithDescriptor:error:"),
-                                      pipeline_descriptor, &error);
+    pipeline_state =
+        msg_id_id_id_ptr(device, sel("newRenderPipelineStateWithDescriptor:error:"), pipeline_descriptor, &error);
     if (pipeline_state == NULL) {
         print_error("Could not create Metal pipeline", error);
         goto cleanup;
@@ -295,20 +307,19 @@ void app_delegate_did_finish_launching(id self, SEL cmd, id notification) {
     msg_void_id(app_menu_item, sel("setSubmenu:"), app_menu);
     msg_void(app_menu, sel("release"));
 
-    id quit_item = msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")),
-                                 sel("initWithTitle:action:keyEquivalent:"), ns_string("Quit Triangle"),
-                                 sel("terminate:"), ns_string("q"));
+    id quit_item = msg_id_sel_id(msg_cls(cls("NSMenuItem"), sel("alloc")), sel("initWithTitle:action:keyEquivalent:"),
+                                 ns_string("Quit Triangle"), sel("terminate:"), ns_string("q"));
     msg_void_id(app_menu, sel("addItem:"), quit_item);
     msg_void(quit_item, sel("release"));
 
-    id window = msg_id_rect_uint_uint_bool(
-        msg_cls(cls("NSWindow"), sel("alloc")), sel("initWithContentRect:styleMask:backing:defer:"),
-        (NSRect){0, 0, 900, 650},
-        NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable |
-            NSWindowStyleMaskResizable,
-        NSBackingStoreBuffered, false);
+    id window =
+        msg_id_rect_uint_uint_bool(msg_cls(cls("NSWindow"), sel("alloc")),
+                                   sel("initWithContentRect:styleMask:backing:defer:"), (NSRect){0, 0, 900, 650},
+                                   NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
+                                       NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable,
+                                   NSBackingStoreBuffered, NO);
     object_setInstanceVariable(self, "_window", window);
-    msg_void_bool(window, sel("setReleasedWhenClosed:"), false);
+    msg_void_bool(window, sel("setReleasedWhenClosed:"), NO);
     msg_void_id(window, sel("setTitle:"), ns_string("Triangle"));
     msg_void_id(window, sel("setAppearance:"),
                 msg_cls_id(cls("NSAppearance"), sel("appearanceNamed:"), NSAppearanceNameDarkAqua));
@@ -320,7 +331,7 @@ void app_delegate_did_finish_launching(id self, SEL cmd, id notification) {
         double window_x = (screen_frame.width - window_frame.width) / 2;
         double window_y = (screen_frame.height - window_frame.height) / 2;
         msg_void_rect_bool(window, sel("setFrame:display:"),
-                           (NSRect){window_x, window_y, window_frame.width, window_frame.height}, true);
+                           (NSRect){window_x, window_y, window_frame.width, window_frame.height}, YES);
     }
     msg_void_size(window, sel("setMinSize:"), (NSSize){480, 360});
 
@@ -337,13 +348,11 @@ void app_delegate_did_finish_launching(id self, SEL cmd, id notification) {
     } else if (msg_bool_integer(device, sel("supportsFamily:"), MTLGPUFamilyMetal3)) {
         metal_version = "3";
     }
-    fprintf(stderr, "Metal version: %s, device: %s\n", metal_version,
-            msg_ret_cstr(device_name, sel("UTF8String")));
+    fprintf(stderr, "Metal version: %s, device: %s\n", metal_version, msg_ret_cstr(device_name, sel("UTF8String")));
 
     id content_view = msg_id0(window, sel("contentView"));
     NSRect bounds = msg_ret_rect(content_view, sel("bounds"));
-    id metal_view = msg_id_rect_id(msg_cls(cls("MTKView"), sel("alloc")), sel("initWithFrame:device:"), bounds,
-                                   device);
+    id metal_view = msg_id_rect_id(msg_cls(cls("MTKView"), sel("alloc")), sel("initWithFrame:device:"), bounds, device);
     msg_void(device, sel("release"));
     msg_void_uint(metal_view, sel("setAutoresizingMask:"), NSViewWidthSizable | NSViewHeightSizable);
     msg_void_uint(metal_view, sel("setColorPixelFormat:"), MTLPixelFormatBGRA8Unorm);
@@ -363,15 +372,15 @@ void app_delegate_did_finish_launching(id self, SEL cmd, id notification) {
     msg_void(metal_view, sel("release"));
 
     (void)msg_bool_integer(NSApp, sel("setActivationPolicy:"), NSApplicationActivationPolicyRegular);
-    msg_void_bool(NSApp, sel("activateIgnoringOtherApps:"), true);
+    msg_void_bool(NSApp, sel("activateIgnoringOtherApps:"), YES);
     msg_void_id(window, sel("makeKeyAndOrderFront:"), NULL);
 }
 
-bool app_should_terminate_after_last_window_closed(id self, SEL cmd, id sender) {
+BOOL app_should_terminate_after_last_window_closed(id self, SEL cmd, id sender) {
     (void)self;
     (void)cmd;
     (void)sender;
-    return true;
+    return YES;
 }
 
 void app_delegate_dealloc(id self, SEL cmd) {
@@ -406,10 +415,9 @@ int main(void) {
     Class AppDelegate = objc_allocateClassPair(cls("NSObject"), "AppDelegate", 0);
     class_addIvar(AppDelegate, "_window", sizeof(id), (uint8_t)__builtin_ctzll(_Alignof(id)), "@");
     class_addIvar(AppDelegate, "_renderer", sizeof(id), (uint8_t)__builtin_ctzll(_Alignof(id)), "@");
-    class_addMethod(AppDelegate, sel("applicationDidFinishLaunching:"), (IMP)app_delegate_did_finish_launching,
-                    "v@:@");
+    class_addMethod(AppDelegate, sel("applicationDidFinishLaunching:"), (IMP)app_delegate_did_finish_launching, "v@:@");
     class_addMethod(AppDelegate, sel("applicationShouldTerminateAfterLastWindowClosed:"),
-                    (IMP)app_should_terminate_after_last_window_closed, "B@:@");
+                    (IMP)app_should_terminate_after_last_window_closed, OBJC_BOOL_ENCODING "@:@");
     class_addMethod(AppDelegate, sel("dealloc"), (IMP)app_delegate_dealloc, "v@:");
     objc_registerClassPair(AppDelegate);
 

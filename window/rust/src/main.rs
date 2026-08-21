@@ -120,9 +120,9 @@ impl AppDelegate {
                 initWithContentRect:NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(1024.0, 768.0)),
                 styleMask:NS_WINDOW_STYLE_MASK_TITLED | NS_WINDOW_STYLE_MASK_CLOSABLE | NS_WINDOW_STYLE_MASK_MINIATURIZABLE | NS_WINDOW_STYLE_MASK_RESIZABLE,
                 backing:NS_BACKING_STORE_BUFFERED,
-                defer:false];
+                defer:Bool::NO];
             let _: () = msg_send![&window, setTitle:ns_string!("BassieTest")];
-            let _: () = msg_send![&window, setTitlebarAppearsTransparent:true];
+            let _: () = msg_send![&window, setTitlebarAppearsTransparent:Bool::YES];
             let appearance: Option<Retained<Object>> =
                 msg_send![class!(NSAppearance), appearanceNamed:NSAppearanceNameDarkAqua];
             if let Some(appearance) = appearance {
@@ -134,7 +134,7 @@ impl AppDelegate {
                 let window_frame: NSRect = msg_send![&window, frame];
                 let window_x = (screen_frame.size.width - window_frame.size.width) / 2.0;
                 let window_y = (screen_frame.size.height - window_frame.size.height) / 2.0;
-                let _: () = msg_send![&window, setFrame:NSRect::new(NSPoint::new(window_x, window_y), window_frame.size), display:true];
+                let _: () = msg_send![&window, setFrame:NSRect::new(NSPoint::new(window_x, window_y), window_frame.size), display:Bool::YES];
             }
             let _: () = msg_send![&window, setMinSize:NSSize::new(320.0, 240.0)];
             let background_color: Retained<Object> = msg_send![class!(NSColor), colorWithRed:(0x05 as f64) / 255.0, green:(0x44 as f64) / 255.0, blue:(0x5e as f64) / 255.0, alpha:1.0];
@@ -154,7 +154,7 @@ impl AppDelegate {
             // Show window
             let _: Bool =
                 msg_send![NSApp, setActivationPolicy:NS_APPLICATION_ACTIVATION_POLICY_REGULAR];
-            let _: () = msg_send![NSApp, activateIgnoringOtherApps:true];
+            let _: () = msg_send![NSApp, activateIgnoringOtherApps:Bool::YES];
             let window = self.ivars().window.get().unwrap();
             let _: () = msg_send![window, makeKeyAndOrderFront:null::<Object>()];
         }
