@@ -14,7 +14,7 @@ Rust, Swift, and SwiftUI.
   Cocoa through the Objective-C runtime, while the other versions use their
   language's usual Cocoa bindings. The Rust example also demonstrates a small
   hand-written Cocoa bridge.
-- `metal/` contains graphics examples built with Apple's Metal API. The
+- `metal/` contains graphics examples built with Apple's Metal API. The C,
   Objective-C, Rust, and Swift examples open a Cocoa window and render a
   rainbow triangle with vertex and fragment shaders.
 - `ios/` contains equivalent UIKit or SwiftUI applications for C,
