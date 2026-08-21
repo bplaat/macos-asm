@@ -97,23 +97,23 @@ pub(crate) const MTL_PIXEL_FORMAT_BGRA8_UNORM: usize = 80;
 pub(crate) const MTL_PRIMITIVE_TYPE_TRIANGLE: usize = 3;
 
 #[link(name = "Foundation", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     pub(crate) static __CFConstantStringClassReference: Object;
 }
 
 #[link(name = "Cocoa", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     pub(crate) static NSApp: *mut Object;
     pub(crate) static NSAppearanceNameDarkAqua: *const Object;
 }
 
 #[link(name = "Metal", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     pub(crate) fn MTLCreateSystemDefaultDevice() -> *mut Object;
 }
 
 #[link(name = "MetalKit", kind = "framework")]
-extern "C" {}
+unsafe extern "C" {}
 
 #[repr(C)]
 pub(crate) struct CFConstString {
@@ -140,7 +140,7 @@ macro_rules! ns_string {
             }
         };
 
-        #[link_section = "__TEXT,__cstring,cstring_literals"]
+        #[unsafe(link_section = "__TEXT,__cstring,cstring_literals")]
         static DATA: [u8; BYTES.len() + 1] = {
             let mut data = [0; BYTES.len() + 1];
             let mut index = 0;
@@ -151,7 +151,7 @@ macro_rules! ns_string {
             data
         };
 
-        #[link_section = "__DATA,__cfstring"]
+        #[unsafe(link_section = "__DATA,__cfstring")]
         static CFSTRING: $crate::cocoa::CFConstString = unsafe {
             $crate::cocoa::CFConstString {
                 isa: &$crate::cocoa::__CFConstantStringClassReference

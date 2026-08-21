@@ -1,18 +1,19 @@
 use std::cell::OnceCell;
-use std::ffi::{c_void, CStr};
+use std::ffi::{CStr, c_void};
 use std::mem::size_of_val;
 use std::ptr::null;
 
-use objc2::rc::{autoreleasepool, Allocated, Retained};
+use objc2::rc::{Allocated, Retained, autoreleasepool};
 use objc2::runtime::{AnyObject as Object, Bool, NSObject};
-use objc2::{class, define_class, msg_send, sel, ClassType, DefinedClass};
+use objc2::{ClassType, DefinedClass, class, define_class, msg_send, sel};
 
 use crate::cocoa::{
-    ns_string, MTLClearColor, MTLCreateSystemDefaultDevice, NSApp, NSAppearanceNameDarkAqua,
-    NSPoint, NSRect, NSSize, MTL_PIXEL_FORMAT_BGRA8_UNORM, MTL_PRIMITIVE_TYPE_TRIANGLE,
-    NS_APPLICATION_ACTIVATION_POLICY_REGULAR, NS_BACKING_STORE_BUFFERED, NS_VIEW_HEIGHT_SIZABLE,
-    NS_VIEW_WIDTH_SIZABLE, NS_WINDOW_STYLE_MASK_CLOSABLE, NS_WINDOW_STYLE_MASK_MINIATURIZABLE,
-    NS_WINDOW_STYLE_MASK_RESIZABLE, NS_WINDOW_STYLE_MASK_TITLED,
+    MTL_PIXEL_FORMAT_BGRA8_UNORM, MTL_PRIMITIVE_TYPE_TRIANGLE, MTLClearColor,
+    MTLCreateSystemDefaultDevice, NS_APPLICATION_ACTIVATION_POLICY_REGULAR,
+    NS_BACKING_STORE_BUFFERED, NS_VIEW_HEIGHT_SIZABLE, NS_VIEW_WIDTH_SIZABLE,
+    NS_WINDOW_STYLE_MASK_CLOSABLE, NS_WINDOW_STYLE_MASK_MINIATURIZABLE,
+    NS_WINDOW_STYLE_MASK_RESIZABLE, NS_WINDOW_STYLE_MASK_TITLED, NSApp, NSAppearanceNameDarkAqua,
+    NSPoint, NSRect, NSSize, ns_string,
 };
 
 mod cocoa;

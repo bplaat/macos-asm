@@ -1,7 +1,10 @@
 [package]
 name = "alert"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
 
 [dependencies]
 objc2 = "0.6"

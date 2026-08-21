@@ -1,15 +1,15 @@
 use std::cell::{OnceCell, RefCell};
 use std::env;
-use std::ffi::{c_char, CString};
+use std::ffi::{CString, c_char};
 use std::ptr::null_mut;
 
-use objc2::rc::{autoreleasepool, Allocated, Retained};
+use objc2::rc::{Allocated, Retained, autoreleasepool};
 use objc2::runtime::{AnyObject as Object, Bool, NSObject};
-use objc2::{class, define_class, msg_send, ClassType, DefinedClass};
+use objc2::{ClassType, DefinedClass, class, define_class, msg_send};
 
 use crate::uikit::{
-    ns_string, NSLog, NSRect, UIApplicationMain, UIViewController, NSTEXT_ALIGNMENT_CENTER,
-    UI_USER_INTERFACE_STYLE_DARK,
+    NSLog, NSRect, NSTEXT_ALIGNMENT_CENTER, UI_USER_INTERFACE_STYLE_DARK, UIApplicationMain,
+    UIViewController, ns_string,
 };
 
 mod uikit;

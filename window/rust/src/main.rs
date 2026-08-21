@@ -1,16 +1,16 @@
 use std::cell::OnceCell;
 use std::ptr::null;
 
-use objc2::rc::{autoreleasepool, Allocated, Retained};
+use objc2::rc::{Allocated, Retained, autoreleasepool};
 use objc2::runtime::{AnyObject as Object, Bool, NSObject};
-use objc2::{class, define_class, msg_send, sel, ClassType, DefinedClass};
+use objc2::{ClassType, DefinedClass, class, define_class, msg_send, sel};
 
 use crate::cocoa::{
-    ns_string, NSApp, NSAppearanceNameDarkAqua, NSFontAttributeName,
-    NSForegroundColorAttributeName, NSPoint, NSRect, NSSize, NSView,
     NS_APPLICATION_ACTIVATION_POLICY_REGULAR, NS_BACKING_STORE_BUFFERED,
     NS_WINDOW_STYLE_MASK_CLOSABLE, NS_WINDOW_STYLE_MASK_MINIATURIZABLE,
-    NS_WINDOW_STYLE_MASK_RESIZABLE, NS_WINDOW_STYLE_MASK_TITLED,
+    NS_WINDOW_STYLE_MASK_RESIZABLE, NS_WINDOW_STYLE_MASK_TITLED, NSApp, NSAppearanceNameDarkAqua,
+    NSFontAttributeName, NSForegroundColorAttributeName, NSPoint, NSRect, NSSize, NSView,
+    ns_string,
 };
 
 mod cocoa;

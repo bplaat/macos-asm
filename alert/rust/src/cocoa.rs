@@ -3,12 +3,12 @@ use std::ffi::c_void;
 use objc2::runtime::AnyObject as Object;
 
 #[link(name = "Foundation", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     pub(crate) static __CFConstantStringClassReference: Object;
 }
 
 #[link(name = "Cocoa", kind = "framework")]
-extern "C" {}
+unsafe extern "C" {}
 
 // CFConstString mirrors the layout of Apple's __CFConstantString (CFRuntimeBase + data + len).
 // Statics of this type placed in __DATA,__cfstring are recognised by dyld as NSString literals,
@@ -46,7 +46,7 @@ macro_rules! ns_string {
                 i += 1;
             }
         };
-        #[link_section = "__TEXT,__cstring,cstring_literals"]
+        #[unsafe(link_section = "__TEXT,__cstring,cstring_literals")]
         static DATA: [u8; BYTES.len() + 1] = {
             let mut arr = [0u8; BYTES.len() + 1];
             let mut i = 0usize;
@@ -56,7 +56,7 @@ macro_rules! ns_string {
             }
             arr
         };
-        #[link_section = "__DATA,__cfstring"]
+        #[unsafe(link_section = "__DATA,__cfstring")]
         static CFSTRING: $crate::cocoa::CFConstString = unsafe {
             $crate::cocoa::CFConstString {
                 isa: &$crate::cocoa::__CFConstantStringClassReference

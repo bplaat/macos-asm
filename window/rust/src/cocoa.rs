@@ -1,7 +1,7 @@
 use std::ffi::c_void;
 
 use objc2::runtime::{AnyObject as Object, NSObject};
-use objc2::{extern_class, Encode, Encoding};
+use objc2::{Encode, Encoding, extern_class};
 
 #[repr(C)]
 pub(crate) struct CGPoint {
@@ -58,12 +58,12 @@ pub(crate) const NS_WINDOW_STYLE_MASK_RESIZABLE: u64 = 8;
 pub(crate) const NS_BACKING_STORE_BUFFERED: u64 = 2;
 
 #[link(name = "Foundation", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     pub(crate) static __CFConstantStringClassReference: Object;
 }
 
 #[link(name = "Cocoa", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     pub(crate) static NSApp: *mut Object;
     pub(crate) static NSAppearanceNameDarkAqua: *const Object;
     pub(crate) static NSFontAttributeName: *const Object;
@@ -115,7 +115,7 @@ macro_rules! ns_string {
                 i += 1;
             }
         };
-        #[link_section = "__TEXT,__cstring,cstring_literals"]
+        #[unsafe(link_section = "__TEXT,__cstring,cstring_literals")]
         static DATA: [u8; BYTES.len() + 1] = {
             let mut arr = [0u8; BYTES.len() + 1];
             let mut i = 0usize;
@@ -125,7 +125,7 @@ macro_rules! ns_string {
             }
             arr
         };
-        #[link_section = "__DATA,__cfstring"]
+        #[unsafe(link_section = "__DATA,__cfstring")]
         static CFSTRING: $crate::cocoa::CFConstString = unsafe {
             $crate::cocoa::CFConstString {
                 isa: &$crate::cocoa::__CFConstantStringClassReference

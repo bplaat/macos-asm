@@ -1,7 +1,7 @@
 use std::ffi::{c_char, c_void};
 
 use objc2::runtime::{AnyObject as Object, NSObject};
-use objc2::{extern_class, Encode, Encoding};
+use objc2::{Encode, Encoding, extern_class};
 
 #[repr(C)]
 pub(crate) struct CGPoint {
@@ -36,13 +36,13 @@ pub(crate) const UI_USER_INTERFACE_STYLE_DARK: i64 = 2;
 pub(crate) const NSTEXT_ALIGNMENT_CENTER: i64 = 1;
 
 #[link(name = "Foundation", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     pub(crate) static __CFConstantStringClassReference: Object;
     pub(crate) fn NSLog(format: *mut Object, ...);
 }
 
 #[link(name = "UIKit", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     pub(crate) fn UIApplicationMain(
         argc: i32,
         argv: *mut *mut c_char,
@@ -96,7 +96,7 @@ macro_rules! ns_string {
                 i += 1;
             }
         };
-        #[link_section = "__TEXT,__cstring,cstring_literals"]
+        #[unsafe(link_section = "__TEXT,__cstring,cstring_literals")]
         static DATA: [u8; BYTES.len() + 1] = {
             let mut arr = [0u8; BYTES.len() + 1];
             let mut i = 0usize;
@@ -106,7 +106,7 @@ macro_rules! ns_string {
             }
             arr
         };
-        #[link_section = "__DATA,__cfstring"]
+        #[unsafe(link_section = "__DATA,__cfstring")]
         static CFSTRING: $crate::uikit::CFConstString = unsafe {
             $crate::uikit::CFConstString {
                 isa: &$crate::uikit::__CFConstantStringClassReference
