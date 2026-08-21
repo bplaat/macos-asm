@@ -29,7 +29,7 @@ fn main() {
 	<key>LSMinimumSystemVersion</key>
 	<string>11.0</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright (c) 2024-2026 Bastiaan van der Plaat</string>
+	<string>Copyright © 2024-2026 Bastiaan van der Plaat</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 </dict>
