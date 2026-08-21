@@ -1,5 +1,5 @@
 use std::cell::OnceCell;
-use std::ffi::c_void;
+use std::ffi::{c_void, CStr};
 use std::mem::size_of_val;
 use std::ptr::null;
 
@@ -271,6 +271,21 @@ impl AppDelegate {
                 let _: () = msg_send![NSApp, terminate:null::<Object>()];
                 return;
             };
+            let device_name: Retained<Object> = msg_send![&device, name];
+            let device_name_utf8: *const std::ffi::c_char = msg_send![&device_name, UTF8String];
+            let supports_metal_4: Bool = msg_send![&device, supportsFamily:5002isize];
+            let supports_metal_3: Bool = msg_send![&device, supportsFamily:5001isize];
+            let metal_version = if supports_metal_4.as_bool() {
+                "4"
+            } else if supports_metal_3.as_bool() {
+                "3"
+            } else {
+                "2 or earlier"
+            };
+            eprintln!(
+                "Metal version: {metal_version}, device: {}",
+                CStr::from_ptr(device_name_utf8).to_string_lossy(),
+            );
 
             let content_view: Option<Retained<Object>> = msg_send![&window, contentView];
             let Some(content_view) = content_view else {

@@ -110,6 +110,8 @@ typedef struct __attribute__((aligned(16))) Vertex {
 
 #define MTLPixelFormatBGRA8Unorm 80
 #define MTLPrimitiveTypeTriangle 3
+#define MTLGPUFamilyMetal3 5001
+#define MTLGPUFamilyMetal4 5002
 
 static const Vertex vertices[] = {
     {.position = {0.0f, 0.75f}, .color = {1.0f, 0.1f, 0.1f, 1.0f}},
@@ -328,6 +330,15 @@ void app_delegate_did_finish_launching(id self, SEL cmd, id notification) {
         msg_void_id(NSApp, sel("terminate:"), NULL);
         return;
     }
+    id device_name = msg_id0(device, sel("name"));
+    const char* metal_version = "2 or earlier";
+    if (msg_bool_integer(device, sel("supportsFamily:"), MTLGPUFamilyMetal4)) {
+        metal_version = "4";
+    } else if (msg_bool_integer(device, sel("supportsFamily:"), MTLGPUFamilyMetal3)) {
+        metal_version = "3";
+    }
+    fprintf(stderr, "Metal version: %s, device: %s\n", metal_version,
+            msg_ret_cstr(device_name, sel("UTF8String")));
 
     id content_view = msg_id0(window, sel("contentView"));
     NSRect bounds = msg_ret_rect(content_view, sel("bounds"));

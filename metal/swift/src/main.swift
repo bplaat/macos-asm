@@ -113,6 +113,13 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.terminate(nil)
             return
         }
+        var metalVersion = "2 or earlier"
+        if #available(macOS 26.0, *), device.supportsFamily(.metal4) {
+            metalVersion = "4"
+        } else if #available(macOS 13.0, *), device.supportsFamily(.metal3) {
+            metalVersion = "3"
+        }
+        NSLog("Metal version: \(metalVersion), device: \(device.name)")
 
         let metalView = MTKView(frame: window.contentView!.bounds, device: device)
         metalView.autoresizingMask = [.width, .height]

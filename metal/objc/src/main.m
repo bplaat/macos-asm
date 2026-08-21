@@ -124,6 +124,20 @@ static const Vertex vertices[] = {
         [NSApp terminate:nil];
         return;
     }
+    NSString* metalVersion = @"2 or earlier";
+    if (@available(macOS 26.0, *)) {
+        if ([device supportsFamily:MTLGPUFamilyMetal4]) {
+            metalVersion = @"4";
+        }
+    }
+    if ([metalVersion isEqualToString:@"2 or earlier"]) {
+        if (@available(macOS 13.0, *)) {
+            if ([device supportsFamily:MTLGPUFamilyMetal3]) {
+                metalVersion = @"3";
+            }
+        }
+    }
+    NSLog(@"Metal version: %@, device: %@", metalVersion, device.name);
 
     MTKView* metalView = [[MTKView alloc] initWithFrame:self.window.contentView.bounds device:device];
     metalView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
