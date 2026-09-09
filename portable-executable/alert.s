@@ -51,8 +51,8 @@ section_text
 ; Windows code
 _windows_start:
     mov ecx, MB_OK
-    lea rdx, [rel message_title]
-    lea rsi, [rel message_text]
+    lea rdx, [message_title]
+    lea rsi, [message_text]
     mov edi, HWND_DESKTOP
     call MessageBoxA
 
@@ -72,10 +72,10 @@ _macos_start:
     sub rsp, 32
 
     ; app = objc_msgSend(objc_getClass("NSApplication"), sel_registerName("sharedApplication"));
-    lea rdi, [rel sharedApplication]
+    lea rdi, [sharedApplication]
     call sel_registerName
     push rax
-    lea rdi, [rel NSApplication]
+    lea rdi, [NSApplication]
     call objc_getClass
     pop rsi
     mov rdi, rax
@@ -83,7 +83,7 @@ _macos_start:
     mov qword [rbp - 8], rax
 
     ; objc_msgSend(app, sel_registerName("setActivationPolicy:"), NSApplicationActivationPolicyRegular);
-    lea rdi, [rel setActivationPolicy]
+    lea rdi, [setActivationPolicy]
     call sel_registerName
     mov rdx, NSApplicationActivationPolicyRegular
     mov rsi, rax
@@ -91,7 +91,7 @@ _macos_start:
     call objc_msgSend
 
     ; objc_msgSend(app, sel_registerName("activateIgnoringOtherApps:"), YES);
-    lea rdi, [rel activateIgnoringOtherApps]
+    lea rdi, [activateIgnoringOtherApps]
     call sel_registerName
     mov rdx, YES
     mov rsi, rax
@@ -99,11 +99,11 @@ _macos_start:
     call objc_msgSend
 
     ; alert = objc_msgSend(objc_getClass("NSAlert"), sel_registerName("new"));
-    lea rdi, [rel new]
+    lea rdi, [new]
     call sel_registerName
     push rax
 
-    lea rdi, [rel NSAlert]
+    lea rdi, [NSAlert]
     call objc_getClass
 
     pop rsi
@@ -112,19 +112,19 @@ _macos_start:
     mov qword [rbp - 16], rax
 
     ; messageTitle = objc_msgSend(objc_getClass("NSString"), sel_registerName("stringWithUTF8String:"), "Hello Cocoa from x86_64 assembly");
-    lea rdi, [rel stringWithUTF8String]
+    lea rdi, [stringWithUTF8String]
     call sel_registerName
     push rax
-    lea rdi, [rel NSString]
+    lea rdi, [NSString]
     call objc_getClass
-    lea rdx, [rel message_title]
+    lea rdx, [message_title]
     pop rsi
     mov rdi, rax
     call objc_msgSend
     mov qword [rbp - 24], rax
 
     ; objc_msgSend(alert, sel_registerName("setMessageText:"), messageTitle);
-    lea rdi, [rel setMessageText]
+    lea rdi, [setMessageText]
     call sel_registerName
     mov rdx, qword [rbp - 24]
     mov rsi, rax
@@ -132,19 +132,19 @@ _macos_start:
     call objc_msgSend
 
     ; messageText = objc_msgSend(objc_getClass("NSString"), sel_registerName("stringWithUTF8String:"), "Hello Cocoa from x86_64 assembly");
-    lea rdi, [rel stringWithUTF8String]
+    lea rdi, [stringWithUTF8String]
     call sel_registerName
     push rax
-    lea rdi, [rel NSString]
+    lea rdi, [NSString]
     call objc_getClass
-    lea rdx, [rel message_text]
+    lea rdx, [message_text]
     pop rsi
     mov rdi, rax
     call objc_msgSend
     mov qword [rbp - 32], rax
 
     ; objc_msgSend(alert, sel_registerName("setInformativeText:"), messageText);
-    lea rdi, [rel setInformativeText]
+    lea rdi, [setInformativeText]
     call sel_registerName
     mov rdx, qword [rbp - 32]
     mov rsi, rax
@@ -152,7 +152,7 @@ _macos_start:
     call objc_msgSend
 
     ; objc_msgSend(alert, sel_registerName("runModal:"));
-    lea rdi, [rel runModal]
+    lea rdi, [runModal]
     call sel_registerName
     mov rsi, rax
     mov rdi, qword [rbp - 16]
@@ -163,9 +163,9 @@ _macos_start:
     leave
     ret
 
-objc_getClass: jmp [rel _objc_getClass]
-objc_msgSend: jmp [rel _objc_msgSend]
-sel_registerName: jmp [rel _sel_registerName]
+objc_getClass: jmp [_objc_getClass]
+objc_msgSend: jmp [_objc_msgSend]
+sel_registerName: jmp [_sel_registerName]
 
 ; ########################################################################################
 

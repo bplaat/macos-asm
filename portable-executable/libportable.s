@@ -11,7 +11,6 @@
 %define IMAGE_FILE_LINE_NUMS_STRIPPED 0x0004
 %define IMAGE_FILE_LOCAL_SYMS_STRIPPED 0x0008
 %define IMAGE_FILE_LARGE_ADDRESS_AWARE 0x0020
-%define IMAGE_FILE_DEBUG_STRIPPED 0x0200
 
 %define IMAGE_SUBSYSTEM_WINDOWS_CUI 3
 
@@ -109,12 +108,13 @@
 
 %macro header 1
     _header_flags equ %1
-    _pe_origin equ 0x0000000000400000
+    _pe_origin equ 0x0000000140000000
     _macho_origin equ 0x0000000100000000
     _elf_origin equ 0x0000000000400000
     _alignment equ 0x4000
 
-    bits 64
+    [bits 64]
+    [default rel]
 
 _header:
 
@@ -198,7 +198,7 @@ _pe_header:
     dd 0                        ; PointerToSymbolTable
     dd 0                        ; NumberOfSymbols
     dw _pe_optional_header_size ; SizeOfOptionalHeader
-    dw IMAGE_FILE_RELOCS_STRIPPED | IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_LINE_NUMS_STRIPPED | IMAGE_FILE_LOCAL_SYMS_STRIPPED | IMAGE_FILE_LARGE_ADDRESS_AWARE | IMAGE_FILE_DEBUG_STRIPPED ; Characteristics
+    dw IMAGE_FILE_RELOCS_STRIPPED | IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_LINE_NUMS_STRIPPED | IMAGE_FILE_LOCAL_SYMS_STRIPPED | IMAGE_FILE_LARGE_ADDRESS_AWARE ; Characteristics
 
 _pe_optional_header:
     dw 0x020b                      ; Magic
@@ -212,12 +212,12 @@ _pe_optional_header:
     dq _pe_origin                  ; ImageBase
     dd _alignment                  ; SectionAlignment
     dd _alignment                  ; FileAlignment
-    dw 4                           ; MajorOperatingSystemVersion
-    dw 0                           ; MinorOperatingSystemVersion
+    dw 5                           ; MajorOperatingSystemVersion
+    dw 2                           ; MinorOperatingSystemVersion
     dw 0                           ; MajorImageVersion
     dw 0                           ; MinorImageVersion
-    dw 4                           ; MajorSubsystemVersion
-    dw 0                           ; MinorSubsystemVersion
+    dw 5                           ; MajorSubsystemVersion
+    dw 2                           ; MinorSubsystemVersion
     dd 0                           ; Win32VersionValue
     dd _header_raw_size + _section_text_raw_size + _section_data_raw_size + _section_linkedit_raw_size ; SizeOfImage
     dd _header_raw_size            ; SizeOfHeaders
@@ -233,7 +233,9 @@ _pe_optional_header:
 
     dd 0, 0
     dd _pe_import_table, _pe_import_table_size
-    times 14 dd 0, 0
+    times 10 dd 0, 0
+    dd _pe_import_table, _pe_import_table_size
+    times 3 dd 0, 0
 _pe_optional_header_size equ $ - _pe_optional_header
 
 _pe_sections:
@@ -750,7 +752,7 @@ _section_text_raw_size equ $ - _section_text
     %if %2 >= 1
         mov rcx, rdi
     %endif
-    call [rel @%1]
+    call [@%1]
     add rsp, (((%2 > 4 ? %2 : 4) * 8) + 15) & (~15)
     ret
 %endmacro

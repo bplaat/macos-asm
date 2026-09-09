@@ -25,10 +25,10 @@ section_text
 
 ; Windows code
 _windows_start:
-    lea rax, qword [rel windows_print]
-    mov qword [rel print], rax
-    lea rax, qword [rel ExitProcess]
-    mov qword [rel exit], rax
+    lea rax, [windows_print]
+    mov [print], rax
+    lea rax, [ExitProcess]
+    mov [exit], rax
     jmp _start
 
 windows_print:
@@ -55,10 +55,10 @@ ms_abi_stub WriteConsoleA, 5
 
 ; macOS code
 _macos_start:
-    lea rax, qword [rel macos_print]
-    mov qword [rel print], rax
-    lea rax, qword [rel macos_exit]
-    mov qword [rel exit], rax
+    lea rax, [macos_print]
+    mov [print], rax
+    lea rax, [macos_exit]
+    mov [exit], rax
     jmp _start
 
 macos_print:
@@ -81,10 +81,10 @@ macos_exit:
 
 ; Linux code
 _linux_start:
-    lea rax, qword [rel linux_print]
-    mov qword [rel print], rax
-    lea rax, qword [rel linux_exit]
-    mov qword [rel exit], rax
+    lea rax, [linux_print]
+    mov [print], rax
+    lea rax, [linux_exit]
+    mov [exit], rax
     jmp _start
 
 linux_print:
@@ -107,11 +107,11 @@ linux_exit:
 
 ; Shared code
 _start:
-    lea rdi, [rel message]
+    lea rdi, [message]
     call println
 
     xor edi, edi
-    jmp [rel exit]
+    jmp [exit]
 
 strlen:
     mov rax, rdi
@@ -125,9 +125,9 @@ strlen:
     ret
 
 println:
-    call [rel print]
-    lea rdi, [rel newline]
-    call [rel print]
+    call [print]
+    lea rdi, [newline]
+    call [print]
     ret
 
 ; ########################################################################################

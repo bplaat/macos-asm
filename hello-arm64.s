@@ -6,8 +6,9 @@
     origin equ 0x100000000
     alignment equ 0x4000
 
-    bits 64
-    org origin
+    [bits 64]
+    [default rel]
+    [org origin]
 
     %ifndef SIGNATURE_IDENTIFIER_SIZE
         %error "Build with build-arm64.py"

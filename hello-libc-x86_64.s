@@ -4,8 +4,9 @@
     origin equ 0x100000000
     alignment equ 0x1000
 
-    bits 64
-    org origin
+    [bits 64]
+    [default rel]
+    [org origin]
 
     %define MH_MAGIC_64 0xfeedfacf
     %define MH_EXECUTE 2
@@ -204,21 +205,21 @@ _start:
     push rbp
     mov rbp, rsp
 
-    lea rdi, [rel hello_string]
+    lea rdi, [hello_string]
     call printf
 
     xor rdi, rdi
     call time
     mov rsi, rax
-    lea rdi, [rel time_string]
+    lea rdi, [time_string]
     call printf
 
     xor eax, eax
     leave
     ret
 
-printf: jmp [rel _printf]
-time: jmp [rel _time]
+printf: jmp [_printf]
+time: jmp [_time]
 
 text_end:
     align alignment, db 0

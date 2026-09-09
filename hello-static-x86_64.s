@@ -4,8 +4,9 @@
     origin equ 0x100000000
     alignment equ 0x1000
 
-    bits 64
-    org origin
+    [bits 64]
+    [default rel]
+    [org origin]
 
     %define MH_MAGIC_64 0xfeedfacf
     %define MH_EXECUTE 2
@@ -129,10 +130,10 @@ commands_end:
 text_start:
 
 _start:
-    lea rdi, [rel hello]
+    lea rdi, [hello]
     call strlen
     mov edx, eax
-    lea rsi, [rel hello]
+    lea rsi, [hello]
     mov edi, stdout
     mov eax, sys_write
     syscall

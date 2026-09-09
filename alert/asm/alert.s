@@ -3,8 +3,9 @@
     origin equ 0x100000000
     alignment equ 0x1000
 
-    bits 64
-    org origin
+    [bits 64]
+    [default rel]
+    [org origin]
 
     %define MH_MAGIC_64 0xfeedfacf
     %define MH_EXECUTE 2
@@ -248,11 +249,11 @@ _start:
     %define message qword [rbp - 16]
 
     ; tmp = sel_registerName("new");
-    lea rdi, [rel new]
+    lea rdi, [new]
     call sel_registerName
     push rax
     ; alert = objc_msgSend(objc_getClass("NSAlert"), tmp);
-    lea rdi, [rel NSAlert]
+    lea rdi, [NSAlert]
     call objc_getClass
     pop rsi
     mov rdi, rax
@@ -260,20 +261,20 @@ _start:
     mov alert, rax
 
     ; tmp = sel_registerName("stringWithUTF8String:")
-    lea rdi, [rel stringWithUTF8String]
+    lea rdi, [stringWithUTF8String]
     call sel_registerName
     push rax
     ; message = objc_msgSend(objc_getClass("NSString"), tmp, "Hello Cocoa from x86_64 assembly");
-    lea rdi, [rel NSString]
+    lea rdi, [NSString]
     call objc_getClass
-    lea rdx, [rel hello_string]
+    lea rdx, [hello_string]
     pop rsi
     mov rdi, rax
     call objc_msgSend
     mov message, rax
 
     ; objc_msgSend(alert, sel_registerName("setMessageText:"), message);
-    lea rdi, [rel setMessageText]
+    lea rdi, [setMessageText]
     call sel_registerName
     mov rdx, message
     mov rsi, rax
@@ -281,7 +282,7 @@ _start:
     call objc_msgSend
 
     ; objc_msgSend(alert, sel_registerName("runModal:"));
-    lea rdi, [rel runModal]
+    lea rdi, [runModal]
     call sel_registerName
     mov rsi, rax
     mov rdi, alert
@@ -292,9 +293,9 @@ _start:
     leave
     ret
 
-objc_getClass: jmp [rel _objc_getClass]
-objc_msgSend: jmp [rel _objc_msgSend]
-sel_registerName: jmp [rel _sel_registerName]
+objc_getClass: jmp [_objc_getClass]
+objc_msgSend: jmp [_objc_msgSend]
+sel_registerName: jmp [_sel_registerName]
 
 text_end:
     align alignment, db 0
