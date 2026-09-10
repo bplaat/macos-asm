@@ -22,9 +22,8 @@ struct BassieTestApp: App {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(.dark)
-                .frame(minWidth: 320, minHeight: 240)
+                .frame(minWidth: 320, idealWidth: 1024, minHeight: 240, idealHeight: 768)
         }
-        .defaultSize(width: 1024, height: 768)
         .windowStyle(HiddenTitleBarWindowStyle())
     }
 }

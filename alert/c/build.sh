@@ -1,9 +1,10 @@
 #!/bin/sh
 set -e
+name=$(plutil -extract CFBundleExecutable raw Info.plist)
+minimum_version=$(plutil -extract LSMinimumSystemVersion raw Info.plist)
 
-name=Alert
 mkdir -p "$name.app/Contents/MacOS"
-clang -Wall -Wextra -Werror -Wno-cast-function-type-mismatch \
+clang -mmacosx-version-min="$minimum_version" -Wall -Wextra -Werror -Wno-cast-function-type-mismatch \
     src/main.c -framework Cocoa -o "$name.app/Contents/MacOS/$name"
 plutil -convert binary1 -o "$name.app/Contents/Info.plist" Info.plist
 codesign --force --sign - --entitlements Entitlements.plist --options runtime "$name.app"

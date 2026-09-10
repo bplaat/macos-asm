@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
-
 name=BassieTest
 bundle_id=nl.plaatsoft.BassieTest
+
 mkdir -p "$name.app"
 cargo build --target aarch64-apple-ios-sim
 cp "target/aarch64-apple-ios-sim/debug/$name" "$name.app/$name"

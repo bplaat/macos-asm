@@ -1,9 +1,11 @@
 #!/bin/sh
 set -e
+name=$(plutil -extract CFBundleExecutable raw Info.plist)
+minimum_version=$(plutil -extract LSMinimumSystemVersion raw Info.plist)
 
-name=Triangle
 mkdir -p "$name.app/Contents/MacOS"
-clang -x objective-c -std=c23 -fobjc-arc -Wall -Wextra -Werror -Wno-deprecated-declarations \
+clang -x objective-c -std=c23 -fobjc-arc -mmacosx-version-min="$minimum_version" \
+    -Wall -Wextra -Werror -Wno-deprecated-declarations \
     src/main.m -framework Cocoa -framework OpenGL \
     -o "$name.app/Contents/MacOS/$name"
 plutil -convert binary1 -o "$name.app/Contents/Info.plist" Info.plist

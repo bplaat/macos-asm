@@ -1,6 +1,5 @@
 #!/bin/sh
 set -e
-
 name=BassieTest
 bundle_id=nl.plaatsoft.BassieTest
 entitlements="/tmp/$name.Entitlements.plist"
