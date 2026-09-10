@@ -17,6 +17,8 @@ Rust, Swift, and SwiftUI.
 - `metal-triangle/` contains graphics examples built with Apple's Metal API. The C,
   Objective-C, Rust, and Swift examples open a Cocoa window and render a
   rainbow triangle with vertex and fragment shaders.
+- `metal-cubes/objc/` renders 1,000 animated textured cubes with Metal instancing in
+  a game loop with an FPS overlay.
 - `opengl-triangle/` contains Cocoa C, Objective-C, Rust, and Swift examples that render the
   same rainbow triangle with an 'modern' OpenGL 4.1 Core context and GLSL shaders.
 - `ios/` contains equivalent UIKit or SwiftUI applications for C,
