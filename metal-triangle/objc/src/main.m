@@ -2,6 +2,10 @@
 #import <MetalKit/MetalKit.h>
 #import <simd/simd.h>
 
+static const unsigned char embeddedMetallib[] = {
+#embed "default.metallib"
+};
+
 typedef struct {
     vector_float2 position;
     vector_float4 color;
@@ -30,8 +34,9 @@ static const Vertex vertices[] = {
 
     id<MTLDevice> device = view.device;
     NSError* error = nil;
-    NSURL* libraryURL = [NSBundle.mainBundle URLForResource:@"default" withExtension:@"metallib"];
-    id<MTLLibrary> library = [device newLibraryWithURL:libraryURL error:&error];
+    dispatch_data_t libraryData = dispatch_data_create(embeddedMetallib, sizeof(embeddedMetallib),
+                                                       dispatch_get_main_queue(), ^{});
+    id<MTLLibrary> library = [device newLibraryWithData:libraryData error:&error];
     if (library == nil) {
         NSLog(@"Could not load Metal library: %@", error);
         return nil;

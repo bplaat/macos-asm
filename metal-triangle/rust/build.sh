@@ -3,9 +3,9 @@ set -e
 
 name=Triangle
 mkdir -p target
-mkdir -p "$name.app/Contents/MacOS" "$name.app/Contents/Resources"
+mkdir -p "$name.app/Contents/MacOS"
 xcrun --sdk macosx metal -c src/Shaders.metal -o target/Shaders.air
-xcrun --sdk macosx metal target/Shaders.air -o "$name.app/Contents/Resources/default.metallib"
+xcrun --sdk macosx metallib target/Shaders.air -o target/default.metallib
 cargo build
 cp target/debug/triangle "$name.app/Contents/MacOS/$name"
 plutil -convert binary1 -o "$name.app/Contents/Info.plist" target/Info.plist

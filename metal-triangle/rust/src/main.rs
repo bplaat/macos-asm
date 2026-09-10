@@ -1,22 +1,24 @@
 use std::cell::OnceCell;
-use std::ffi::{CStr, c_void};
+use std::ffi::{c_void, CStr};
 use std::mem::size_of_val;
-use std::ptr::null;
+use std::ptr::{null, null_mut};
 
-use objc2::rc::{Allocated, Retained, autoreleasepool};
+use objc2::rc::{autoreleasepool, Allocated, Retained};
 use objc2::runtime::{AnyObject as Object, Bool, NSObject};
-use objc2::{ClassType, DefinedClass, class, define_class, msg_send, sel};
+use objc2::{class, define_class, msg_send, sel, ClassType, DefinedClass};
 
 use crate::cocoa::{
-    MTL_PIXEL_FORMAT_BGRA8_UNORM, MTL_PRIMITIVE_TYPE_TRIANGLE, MTLClearColor,
-    MTLCreateSystemDefaultDevice, NS_APPLICATION_ACTIVATION_POLICY_REGULAR,
+    dispatch_data_create, ns_string, MTLClearColor, MTLCreateSystemDefaultDevice, NSApp,
+    NSAppearanceNameDarkAqua, NSPoint, NSRect, NSSize, MTL_PIXEL_FORMAT_BGRA8_UNORM,
+    MTL_PRIMITIVE_TYPE_TRIANGLE, NS_APPLICATION_ACTIVATION_POLICY_REGULAR,
     NS_BACKING_STORE_BUFFERED, NS_VIEW_HEIGHT_SIZABLE, NS_VIEW_WIDTH_SIZABLE,
     NS_WINDOW_STYLE_MASK_CLOSABLE, NS_WINDOW_STYLE_MASK_MINIATURIZABLE,
-    NS_WINDOW_STYLE_MASK_RESIZABLE, NS_WINDOW_STYLE_MASK_TITLED, NSApp, NSAppearanceNameDarkAqua,
-    NSPoint, NSRect, NSSize, ns_string,
+    NS_WINDOW_STYLE_MASK_RESIZABLE, NS_WINDOW_STYLE_MASK_TITLED,
 };
 
 mod cocoa;
+
+static EMBEDDED_METALLIB: &[u8] = include_bytes!("../target/default.metallib");
 
 #[repr(C, align(16))]
 struct Vertex {
@@ -83,17 +85,19 @@ impl Renderer {
                 eprintln!("Metal view has no device");
                 return false;
             };
-            let bundle: Retained<Object> = msg_send![class!(NSBundle), mainBundle];
-            let library_url: Option<Retained<Object>> = msg_send![&bundle,
-                URLForResource:ns_string!("default"),
-                withExtension:ns_string!("metallib")];
-            let Some(library_url) = library_url else {
-                eprintln!("Could not find Metal library");
+            let library_data = Retained::from_raw(dispatch_data_create(
+                EMBEDDED_METALLIB.as_ptr().cast::<c_void>(),
+                EMBEDDED_METALLIB.len(),
+                null_mut(),
+                null_mut(),
+            ));
+            let Some(library_data) = library_data else {
+                eprintln!("Could not create Metal library data");
                 return false;
             };
             let mut library_error: Option<Retained<Object>> = None;
             let library: Option<Retained<Object>> =
-                msg_send![&device, newLibraryWithURL:&*library_url, error:&mut library_error];
+                msg_send![&device, newLibraryWithData:&*library_data, error:&mut library_error];
             let Some(library) = library else {
                 eprintln!("Could not load Metal library: {library_error:?}");
                 return false;

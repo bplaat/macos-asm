@@ -115,6 +115,16 @@ unsafe extern "C" {
 #[link(name = "MetalKit", kind = "framework")]
 unsafe extern "C" {}
 
+#[link(name = "System")]
+unsafe extern "C" {
+    pub(crate) fn dispatch_data_create(
+        buffer: *const c_void,
+        size: usize,
+        queue: *mut c_void,
+        destructor: *mut c_void,
+    ) -> *mut Object;
+}
+
 #[repr(C)]
 pub(crate) struct CFConstString {
     pub(crate) isa: *const c_void,

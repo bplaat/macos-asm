@@ -83,17 +83,18 @@ extern void objc_autoreleasePoolPop(void* pool);
 #endif
 
 // MARK: CoreFoundation headers
-typedef const void* CFTypeRef;
-typedef CFTypeRef CFBundleRef;
-typedef CFTypeRef CFStringRef;
-typedef CFTypeRef CFURLRef;
-
-extern CFBundleRef CFBundleGetMainBundle(void);
-extern CFURLRef CFBundleCopyResourceURL(CFBundleRef bundle, CFStringRef resource_name, CFStringRef resource_type,
-                                        CFStringRef subdirectory_name);
-extern void CFRelease(CFTypeRef object);
+typedef const void* CFStringRef;
 
 #define CFSTR(c_string) ((CFStringRef)__builtin___CFStringMakeConstantString("" c_string ""))
+
+// MARK: libdispatch headers
+typedef void* dispatch_data_t;
+typedef void* dispatch_queue_t;
+typedef void (*dispatch_function_t)(void* context);
+
+extern dispatch_data_t dispatch_data_create(const void* buffer, size_t size, dispatch_queue_t queue,
+                                            dispatch_function_t destructor);
+extern void dispatch_release(void* object);
 
 // MARK: Cocoa and Metal headers
 typedef struct NSSize {
@@ -136,6 +137,10 @@ typedef struct __attribute__((aligned(16))) Vertex {
 #define MTLGPUFamilyMetal3 5001
 #define MTLGPUFamilyMetal4 5002
 
+static const unsigned char embedded_metallib[] = {
+#embed "default.metallib"
+};
+
 static const Vertex vertices[] = {
     {.position = {0.0f, 0.75f}, .color = {1.0f, 0.1f, 0.1f, 1.0f}},
     {.position = {-0.7f, -0.6f}, .color = {0.1f, 1.0f, 0.2f, 1.0f}},
@@ -169,17 +174,17 @@ bool renderer_configure(id self, id view) {
     id fragment_function = NULL;
     id pipeline_state = NULL;
     id command_queue = NULL;
-    CFURLRef library_url = NULL;
+    dispatch_data_t library_data = NULL;
     bool success = false;
 
-    library_url = CFBundleCopyResourceURL(CFBundleGetMainBundle(), CFSTR("default"), CFSTR("metallib"), NULL);
-    if (library_url == NULL) {
-        print_error("Could not find Metal library", NULL);
+    library_data = dispatch_data_create(embedded_metallib, sizeof(embedded_metallib), NULL, NULL);
+    if (library_data == NULL) {
+        print_error("Could not create Metal library data", NULL);
         goto cleanup;
     }
 
     id error = NULL;
-    library = msg_id_id_id_ptr(device, sel("newLibraryWithURL:error:"), (id)library_url, &error);
+    library = msg_id_id_id_ptr(device, sel("newLibraryWithData:error:"), (id)library_data, &error);
     if (library == NULL) {
         print_error("Could not load Metal library", error);
         goto cleanup;
@@ -220,8 +225,8 @@ bool renderer_configure(id self, id view) {
     success = true;
 
 cleanup:
-    if (library_url != NULL) {
-        CFRelease(library_url);
+    if (library_data != NULL) {
+        dispatch_release(library_data);
     }
     if (command_queue != NULL) {
         msg_void(command_queue, sel("release"));
