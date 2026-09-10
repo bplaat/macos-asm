@@ -14,10 +14,10 @@ Rust, Swift, and SwiftUI.
   Cocoa through the Objective-C runtime, while the other versions use their
   language's usual Cocoa bindings. The Rust example also demonstrates a small
   hand-written Cocoa bridge.
-- `metal/` contains graphics examples built with Apple's Metal API. The C,
+- `metal-triangle/` contains graphics examples built with Apple's Metal API. The C,
   Objective-C, Rust, and Swift examples open a Cocoa window and render a
   rainbow triangle with vertex and fragment shaders.
-- `opengl/` contains Cocoa C, Objective-C, Rust, and Swift examples that render the
+- `opengl-triangle/` contains Cocoa C, Objective-C, Rust, and Swift examples that render the
   same rainbow triangle with an 'modern' OpenGL 4.1 Core context and GLSL shaders.
 - `ios/` contains equivalent UIKit or SwiftUI applications for C,
   Objective-C, Rust, Swift, and SwiftUI. Their build scripts target an iOS
