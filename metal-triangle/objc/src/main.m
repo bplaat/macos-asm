@@ -1,15 +1,11 @@
 #import <Cocoa/Cocoa.h>
 #import <MetalKit/MetalKit.h>
-#import <simd/simd.h>
+
+#import "ShaderTypes.h"
 
 static const unsigned char embeddedMetallib[] = {
 #embed "default.metallib"
 };
-
-typedef struct {
-    vector_float2 position;
-    vector_float4 color;
-} Vertex;
 
 static const Vertex vertices[] = {
     {.position = {0.0f, 0.75f}, .color = {1.0f, 0.1f, 0.1f, 1.0f}},
@@ -76,7 +72,7 @@ static const Vertex vertices[] = {
         id<MTLRenderCommandEncoder> encoder = [commandBuffer renderCommandEncoderWithDescriptor:renderPass];
         encoder.label = @"Triangle Render Pass";
         [encoder setRenderPipelineState:_pipelineState];
-        [encoder setVertexBytes:vertices length:sizeof(vertices) atIndex:0];
+        [encoder setVertexBytes:vertices length:sizeof(vertices) atIndex:BufferIndexVertices];
         [encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:3];
         [encoder endEncoding];
 

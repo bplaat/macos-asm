@@ -1,11 +1,6 @@
 import Cocoa
 import MetalKit
 
-private struct Vertex {
-    let position: SIMD2<Float>
-    let color: SIMD4<Float>
-}
-
 private let vertices = [
     Vertex(position: SIMD2(0.0, 0.75), color: SIMD4(1.0, 0.1, 0.1, 1.0)),
     Vertex(position: SIMD2(-0.7, -0.6), color: SIMD4(0.1, 1.0, 0.2, 1.0)),
@@ -63,7 +58,7 @@ private final class Renderer: NSObject, MTKViewDelegate {
             encoder.setVertexBytes(
                 buffer.baseAddress!,
                 length: buffer.count * MemoryLayout<Vertex>.stride,
-                index: 0
+                index: Int(BufferIndexVertices.rawValue)
             )
         }
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertices.count)

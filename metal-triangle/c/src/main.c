@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "ShaderTypes.h"
+
 // MARK: Objective-C runtime headers
 typedef void* id;
 typedef id Class;
@@ -115,12 +117,6 @@ typedef struct MTLClearColor {
     double blue;
     double alpha;
 } MTLClearColor;
-
-typedef struct __attribute__((aligned(16))) Vertex {
-    float position[2];
-    float padding[2];
-    float color[4];
-} Vertex;
 
 #define NSApplicationActivationPolicyRegular 0
 
@@ -278,7 +274,8 @@ void renderer_draw(id self, SEL cmd, id view) {
     id encoder = msg_id_id(command_buffer, sel("renderCommandEncoderWithDescriptor:"), render_pass);
     msg_void_id(encoder, sel("setLabel:"), (id)CFSTR("Triangle Render Pass"));
     msg_void_id(encoder, sel("setRenderPipelineState:"), pipeline_state);
-    msg_void_ptr_uint_uint(encoder, sel("setVertexBytes:length:atIndex:"), vertices, sizeof(vertices), 0);
+    msg_void_ptr_uint_uint(encoder, sel("setVertexBytes:length:atIndex:"), vertices, sizeof(vertices),
+                           BufferIndexVertices);
     msg_void_uint_uint_uint(encoder, sel("drawPrimitives:vertexStart:vertexCount:"), MTLPrimitiveTypeTriangle, 0,
                             sizeof(vertices) / sizeof(vertices[0]));
     msg_void(encoder, sel("endEncoding"));
