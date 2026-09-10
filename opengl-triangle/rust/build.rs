@@ -17,7 +17,7 @@ fn main() {
 	<key>CFBundleDisplayName</key>
 	<string>OpenGL Triangle</string>
 	<key>CFBundleIdentifier</key>
-	<string>nl.plaatsoft.OpenGLTriangle</string>
+	<string>nl.plaatsoft.Triangle</string>
 	<key>CFBundleVersion</key>
 	<string>{version}</string>
 	<key>CFBundleShortVersionString</key>
