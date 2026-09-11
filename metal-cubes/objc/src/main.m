@@ -55,14 +55,13 @@ static const uint16_t indices[] = {
 };
 
 static matrix_float4x4 matrix_perspective(float verticalFieldOfView, float aspectRatio, float nearZ, float farZ) {
-    float yScale = 1.0f / tanf(verticalFieldOfView * 0.5f);
-    float xScale = yScale / aspectRatio;
-    float zScale = farZ / (nearZ - farZ);
+    float f = tanf((float)M_PI * 0.5f - verticalFieldOfView * 0.5f);
+    float rangeInverse = 1.0f / (nearZ - farZ);
     return (matrix_float4x4){
-        .columns[0] = {xScale, 0, 0, 0},
-        .columns[1] = {0, yScale, 0, 0},
-        .columns[2] = {0, 0, zScale, -1},
-        .columns[3] = {0, 0, nearZ * zScale, 0},
+        .columns[0] = {f / aspectRatio, 0, 0, 0},
+        .columns[1] = {0, f, 0, 0},
+        .columns[2] = {0, 0, farZ * rangeInverse, -1},
+        .columns[3] = {0, 0, nearZ * farZ * rangeInverse, 0},
     };
 }
 
@@ -259,7 +258,6 @@ static CVReturn legacy_display_link_callback(CVDisplayLinkRef displayLink, const
     CFTimeInterval _lastFrameTime;
     CFTimeInterval _fpsSampleTime;
     NSUInteger _fpsFrameCount;
-    BOOL _paused;
 }
 
 - (nullable instancetype)initWithView:(MetalView*)view fpsView:(FPSView*)fpsView {
@@ -325,7 +323,7 @@ static CVReturn legacy_display_link_callback(CVDisplayLinkRef displayLink, const
             -distance,
         };
         vector_float3 touchingAxis = {0, 0, 0};
-        touchingAxis[random_next(&randomState) % 3] = scale;
+        touchingAxis[random_next(&randomState) % 3] = scale * sqrtf(3.0f);
         float phase = random_float(&randomState, 0, 2.0f * (float)M_PI);
         vector_float4 positionAndScale = {position.x, position.y, position.z, scale};
         vector_float4 axisAndSpeed = {axis.x, axis.y, axis.z, speed};
@@ -409,18 +407,20 @@ static CVReturn legacy_display_link_callback(CVDisplayLinkRef displayLink, const
 }
 
 - (void)setPaused:(BOOL)paused {
-    if (_paused == paused) {
-        return;
-    }
-    _paused = paused;
     if (@available(macOS 14.0, *)) {
         CAMetalDisplayLink* displayLink = _displayLink;
+        if (displayLink.paused == paused) {
+            return;
+        }
         displayLink.paused = paused;
         _lastFrameTime = 0;
         _fpsSampleTime = 0;
         _fpsFrameCount = 0;
     } else {
         BOOL running = CVDisplayLinkIsRunning(_legacyDisplayLink);
+        if (running == !paused) {
+            return;
+        }
         CVReturn result = kCVReturnSuccess;
         if (paused && running) {
             result = CVDisplayLinkStop(_legacyDisplayLink);
@@ -557,7 +557,6 @@ static CVReturn legacy_display_link_callback(CVDisplayLinkRef displayLink, const
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate>
 @property(nonatomic, strong) NSWindow* window;
 @property(nonatomic, strong) MetalView* metalView;
-@property(nonatomic, strong) FPSView* fpsView;
 @property(nonatomic, strong) Renderer* renderer;
 - (void)updateRendererPausedState;
 @end
@@ -606,14 +605,14 @@ static CVReturn legacy_display_link_callback(CVDisplayLinkRef displayLink, const
     self.metalView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     [contentView addSubview:self.metalView];
 
-    self.fpsView = [[FPSView alloc]
+    FPSView* fpsView = [[FPSView alloc]
         initWithFrame:NSMakeRect(NSWidth(contentView.bounds) - 80, NSHeight(contentView.bounds) - 24, 80, 24)];
-    self.fpsView.autoresizingMask = NSViewMinXMargin | NSViewMinYMargin;
-    [contentView addSubview:self.fpsView];
+    fpsView.autoresizingMask = NSViewMinXMargin | NSViewMinYMargin;
+    [contentView addSubview:fpsView];
     self.window.contentView = contentView;
     [self.metalView synchronizeWithScreen];
 
-    self.renderer = [[Renderer alloc] initWithView:self.metalView fpsView:self.fpsView];
+    self.renderer = [[Renderer alloc] initWithView:self.metalView fpsView:fpsView];
     if (self.renderer == nil) {
         [NSApp terminate:nil];
         return;
@@ -636,19 +635,9 @@ static CVReturn legacy_display_link_callback(CVDisplayLinkRef displayLink, const
     [self updateRendererPausedState];
 }
 
-- (void)applicationDidBecomeActive:(NSNotification*)notification {
-    (void)notification;
-    [self updateRendererPausedState];
-}
-
-- (void)applicationDidResignActive:(NSNotification*)notification {
-    (void)notification;
-    [self updateRendererPausedState];
-}
-
 - (void)updateRendererPausedState {
     BOOL visible = (self.window.occlusionState & NSWindowOcclusionStateVisible) != 0;
-    [self.renderer setPaused:!NSApp.active || !visible];
+    [self.renderer setPaused:!visible];
 }
 
 - (void)applicationWillTerminate:(NSNotification*)notification {

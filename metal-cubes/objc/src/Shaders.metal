@@ -19,8 +19,9 @@ vertex RasterizerData vertex_main(const device Vertex* vertices [[buffer(BufferI
     float sine = sin(angle);
     float cosine = cos(angle);
     float3 axis = instance.axisAndSpeed.xyz;
-    float3 point = input.position.xyz * instance.positionAndScale.w + instance.localOffsetAndPhase.xyz;
+    float3 point = input.position.xyz * instance.positionAndScale.w;
     point = point * cosine + cross(axis, point) * sine + axis * dot(axis, point) * (1.0 - cosine);
+    point += instance.localOffsetAndPhase.xyz;
     float3 center = instance.positionAndScale.xyz;
     float distance = -center.z;
     center.x *= distance / uniforms.projectionMatrix[0][0];
