@@ -232,10 +232,8 @@ _pe_optional_header:
     dd 16                          ; NumberOfRvaAndSizes
 
     dd 0, 0
-    dd _pe_import_table, _pe_import_table_size
-    times 10 dd 0, 0
-    dd _pe_import_table, _pe_import_table_size
-    times 3 dd 0, 0
+    dd _pe_import_table, _pe_import_descriptors_size
+    times 14 dd 0, 0
 _pe_optional_header_size equ $ - _pe_optional_header
 
 _pe_sections:
@@ -791,6 +789,7 @@ _pe_import_table_size equ $ - _pe_import_table
         %rotate 2
     %endrep
     dd 0, 0, 0, 0, 0
+    _pe_import_descriptors_size equ $ - _pe_import_table
 
     %rep %0 / 2
         _%1 db %2, 0
