@@ -7,17 +7,17 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleName</key>
-	<string>Metal Cubes</string>
+	<string>Blocks</string>
 	<key>CFBundleDisplayName</key>
-	<string>Metal Cubes</string>
+	<string>Blocks</string>
 	<key>CFBundleIdentifier</key>
-	<string>nl.plaatsoft.Cubes</string>
+	<string>nl.plaatsoft.Blocks</string>
 	<key>CFBundleVersion</key>
 	<string>0.1.0</string>
 	<key>CFBundleShortVersionString</key>
 	<string>0.1.0</string>
 	<key>CFBundleExecutable</key>
-	<string>Cubes</string>
+	<string>Blocks</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>11.0</string>
 	<key>NSHumanReadableCopyright</key>
