@@ -42,8 +42,8 @@ static VERTICES: [Vertex; 3] = [
     },
 ];
 
-static VERTEX_SHADER_SOURCE: &[u8] = concat!(include_str!("Shaders.vert"), "\0").as_bytes();
-static FRAGMENT_SHADER_SOURCE: &[u8] = concat!(include_str!("Shaders.frag"), "\0").as_bytes();
+static VERTEX_SHADER_SOURCE: &[u8] = concat!(include_str!("shader.vert"), "\0").as_bytes();
+static FRAGMENT_SHADER_SOURCE: &[u8] = concat!(include_str!("shader.frag"), "\0").as_bytes();
 
 unsafe fn compile_shader(shader_type: GLenum, source: &[u8]) -> GLuint {
     unsafe {
@@ -356,7 +356,7 @@ impl AppDelegate {
 
             let window: Allocated<Object> = msg_send![class!(NSWindow), alloc];
             let window: Retained<Object> = msg_send![window,
-                initWithContentRect:NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(900.0, 650.0)),
+                initWithContentRect:NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(1024.0, 768.0)),
                 styleMask:NS_WINDOW_STYLE_MASK_TITLED | NS_WINDOW_STYLE_MASK_CLOSABLE | NS_WINDOW_STYLE_MASK_MINIATURIZABLE | NS_WINDOW_STYLE_MASK_RESIZABLE,
                 backing:NS_BACKING_STORE_BUFFERED,
                 defer:Bool::NO];

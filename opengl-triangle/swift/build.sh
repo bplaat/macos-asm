@@ -4,7 +4,7 @@ name=$(plutil -extract CFBundleExecutable raw Info.plist)
 minimum_version=$(plutil -extract LSMinimumSystemVersion raw Info.plist)
 
 mkdir -p "$name.app/Contents/MacOS" "$name.app/Contents/Resources"
-cp src/Shaders.vert src/Shaders.frag "$name.app/Contents/Resources"
+cp src/shader.vert src/shader.frag "$name.app/Contents/Resources"
 swiftc -target "$(uname -m)-apple-macosx$minimum_version" -Xcc -DGL_SILENCE_DEPRECATION \
     src/main.swift -o "$name.app/Contents/MacOS/$name"
 plutil -convert binary1 -o "$name.app/Contents/Info.plist" Info.plist

@@ -13,11 +13,11 @@ static const Vertex vertices[] = {
 };
 
 static const GLchar vertexShaderSource[] = {
-#embed "Shaders.vert"
+#embed "shader.vert"
     , 0};
 
 static const GLchar fragmentShaderSource[] = {
-#embed "Shaders.frag"
+#embed "shader.frag"
     , 0};
 
 static GLuint compileShader(GLenum type, const GLchar* source) {
@@ -198,7 +198,7 @@ static GLuint createProgram(void) {
                                                 action:@selector(terminate:)
                                          keyEquivalent:@"q"]];
 
-    NSRect frame = NSMakeRect(0, 0, 900, 650);
+    NSRect frame = NSMakeRect(0, 0, 1024, 768);
     self.window = [[NSWindow alloc] initWithContentRect:frame
                                               styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
                                                         NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable

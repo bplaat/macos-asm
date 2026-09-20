@@ -112,8 +112,8 @@ private final class RendererView: NSOpenGLView {
         var swapInterval: GLint = 1
         openGLContext?.setValues(&swapInterval, for: .swapInterval)
 
-        guard let vertexSource = loadShader(name: "Shaders", extension: "vert"),
-              let fragmentSource = loadShader(name: "Shaders", extension: "frag")
+        guard let vertexSource = loadShader(name: "shader", extension: "vert"),
+              let fragmentSource = loadShader(name: "shader", extension: "frag")
         else {
             NSApp.terminate(nil)
             return
@@ -216,7 +216,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 900, height: 650),
+            contentRect: NSRect(x: 0, y: 0, width: 1024, height: 768),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false

@@ -139,11 +139,11 @@ static const Vertex vertices[] = {
 };
 
 static const GLchar vertex_shader_source[] = {
-#embed "Shaders.vert"
+#embed "shader.vert"
     , 0};
 
 static const GLchar fragment_shader_source[] = {
-#embed "Shaders.frag"
+#embed "shader.frag"
     , 0};
 
 static GLuint compile_shader(GLenum type, const GLchar* source) {
@@ -323,7 +323,7 @@ void app_delegate_did_finish_launching(id self, SEL cmd, id notification) {
 
     id window = ((id (*)(id, SEL, NSRect, NSUInteger, NSUInteger, BOOL))objc_msgSend)(
         msg_cls(cls("NSWindow"), sel("alloc")), sel("initWithContentRect:styleMask:backing:defer:"),
-        (NSRect){0, 0, 900, 650},
+        (NSRect){0, 0, 1024, 768},
         NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable |
             NSWindowStyleMaskResizable,
         NSBackingStoreBuffered, NO);
