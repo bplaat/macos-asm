@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "ShaderTypes.h"
+#include "shader_types.h"
 
 // MARK: Objective-C runtime headers
 typedef void* id;
@@ -325,7 +325,7 @@ void app_delegate_did_finish_launching(id self, SEL cmd, id notification) {
 
     id window =
         msg_id_rect_uint_uint_bool(msg_cls(cls("NSWindow"), sel("alloc")),
-                                   sel("initWithContentRect:styleMask:backing:defer:"), (NSRect){0, 0, 900, 650},
+                                   sel("initWithContentRect:styleMask:backing:defer:"), (NSRect){0, 0, 1024, 768},
                                    NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
                                        NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable,
                                    NSBackingStoreBuffered, NO);

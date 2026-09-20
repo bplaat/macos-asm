@@ -1,6 +1,6 @@
 #include <metal_stdlib>
 
-#include "ShaderTypes.h"
+#include "shader_types.h"
 
 using namespace metal;
 

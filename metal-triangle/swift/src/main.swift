@@ -91,7 +91,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 900, height: 650),
+            contentRect: NSRect(x: 0, y: 0, width: 1024, height: 768),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false

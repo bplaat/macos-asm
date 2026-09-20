@@ -1,7 +1,7 @@
 #import <Cocoa/Cocoa.h>
 #import <MetalKit/MetalKit.h>
 
-#import "ShaderTypes.h"
+#import "shader_types.h"
 
 static const unsigned char embeddedMetallib[] = {
 #embed "default.metallib"
@@ -105,7 +105,7 @@ static const Vertex vertices[] = {
                                                 action:@selector(terminate:)
                                          keyEquivalent:@"q"]];
 
-    NSRect frame = NSMakeRect(0, 0, 900, 650);
+    NSRect frame = NSMakeRect(0, 0, 1024, 768);
     self.window = [[NSWindow alloc] initWithContentRect:frame
                                               styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
                                                         NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
