@@ -31,7 +31,7 @@ fn main() {
 	<key>CFBundleExecutable</key>
 	<string>BassieTest</string>
 	<key>MinimumOSVersion</key>
-	<string>14.0</string>
+	<string>15.0</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2024-2026 Bastiaan van der Plaat</string>
 	<key>LSRequiresIPhoneOS</key>
