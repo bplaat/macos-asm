@@ -10,6 +10,8 @@ swiftc -target arm64-apple-ios15-simulator \
     -sdk "$sdk" \
     -parse-as-library src/main.swift -o "$name.app/$name"
 
-xcrun simctl uninstall booted "$bundle_id"
+if xcrun simctl get_app_container booted "$bundle_id" app >/dev/null 2>&1; then
+    xcrun simctl uninstall booted "$bundle_id"
+fi
 xcrun simctl install booted "$name.app"
 xcrun simctl launch --console booted "$bundle_id"
