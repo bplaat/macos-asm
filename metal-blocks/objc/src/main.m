@@ -497,6 +497,7 @@ static id<MTLTexture> load_materials(id<MTLDevice> device, id<MTLCommandQueue> c
                                                         NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
                                                 backing:NSBackingStoreBuffered
                                                   defer:NO];
+    self.window.releasedWhenClosed = NO;
     self.window.title = @"Blocks";
     self.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
     self.window.delegate = self;

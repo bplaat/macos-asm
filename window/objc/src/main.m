@@ -20,6 +20,7 @@
 
 // MARK: AppDelegate
 @interface AppDelegate : NSObject <NSApplicationDelegate>
+@property(nonatomic, strong) NSWindow* window;
 @end
 
 @implementation AppDelegate
@@ -54,6 +55,7 @@
                                               NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
                                       backing:NSBackingStoreBuffered
                                         defer:NO];
+    window.releasedWhenClosed = NO;
     window.title = @"BassieTest";
     window.titlebarAppearsTransparent = YES;
     window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
@@ -66,6 +68,7 @@
 
     // Create canvas
     window.contentView = [CanvasView new];
+    self.window = window;
 
     // Show window
     NSApp.activationPolicy = NSApplicationActivationPolicyRegular;

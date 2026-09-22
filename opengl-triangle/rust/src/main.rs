@@ -360,6 +360,7 @@ impl AppDelegate {
                 styleMask:NS_WINDOW_STYLE_MASK_TITLED | NS_WINDOW_STYLE_MASK_CLOSABLE | NS_WINDOW_STYLE_MASK_MINIATURIZABLE | NS_WINDOW_STYLE_MASK_RESIZABLE,
                 backing:NS_BACKING_STORE_BUFFERED,
                 defer:Bool::NO];
+            let _: () = msg_send![&window, setReleasedWhenClosed:Bool::NO];
             let _: () = msg_send![&window, setTitle:ns_string!("OpenGL Triangle")];
             let appearance: Option<Retained<Object>> =
                 msg_send![class!(NSAppearance), appearanceNamed:NSAppearanceNameDarkAqua];

@@ -221,6 +221,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
             backing: .buffered,
             defer: false
         )
+        window.isReleasedWhenClosed = false
         window.title = "OpenGL Triangle"
         window.appearance = NSAppearance(named: .darkAqua)
         let windowX = (window.screen!.frame.width - window.frame.width) / 2

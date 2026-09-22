@@ -111,6 +111,7 @@ static const Vertex vertices[] = {
                                                         NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
                                                 backing:NSBackingStoreBuffered
                                                   defer:NO];
+    self.window.releasedWhenClosed = NO;
     self.window.title = @"Triangle";
     self.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
     CGFloat windowX = (NSWidth(self.window.screen.frame) - NSWidth(self.window.frame)) / 2;

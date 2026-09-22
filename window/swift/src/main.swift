@@ -19,6 +19,8 @@ class CanvasView : NSView {
 
 // MARK: AppDelegate
 class AppDelegate: NSObject, NSApplicationDelegate {
+    private var window: NSWindow?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Create menu
         let menubar = NSMenu()
@@ -38,6 +40,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false)
+        window.isReleasedWhenClosed = false
         window.title = "BassieTest"
         window.titlebarAppearsTransparent = true
         window.appearance = NSAppearance(named: .darkAqua)
@@ -50,6 +53,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Create canvas
         window.contentView = CanvasView()
+        self.window = window
 
         // Show window
         NSApp.setActivationPolicy(.regular)
