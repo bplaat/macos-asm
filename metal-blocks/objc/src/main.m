@@ -106,6 +106,7 @@ static id<MTLTexture> load_materials(id<MTLDevice> device, id<MTLCommandQueue> c
         CGImageRef image = create_material_image(layer);
         if (image == NULL) {
             NSLog(@"Could not decode block texture %lu", (unsigned long)layer);
+            materials = nil;
             break;
         }
         size_t width = CGImageGetWidth(image);
@@ -513,7 +514,20 @@ static id<MTLTexture> load_materials(id<MTLDevice> device, id<MTLCommandQueue> c
         [NSApp terminate:nil];
         return;
     }
-    NSLog(@"Metal device: %@", device.name);
+    NSString* metalVersion = @"2 or earlier";
+    if (@available(macOS 26.0, *)) {
+        if ([device supportsFamily:MTLGPUFamilyMetal4]) {
+            metalVersion = @"4";
+        }
+    }
+    if ([metalVersion isEqualToString:@"2 or earlier"]) {
+        if (@available(macOS 13.0, *)) {
+            if ([device supportsFamily:MTLGPUFamilyMetal3]) {
+                metalVersion = @"3";
+            }
+        }
+    }
+    NSLog(@"Metal version: %@, device: %@", metalVersion, device.name);
 
     NSView* contentView = [[NSView alloc] initWithFrame:self.window.contentView.bounds];
     contentView.wantsLayer = YES;

@@ -17,9 +17,14 @@ Rust, Swift, and SwiftUI.
 - `metal-triangle/` contains graphics examples built with Apple's Metal API. The C,
   Objective-C, Rust, and Swift examples open a Cocoa window and render a
   rainbow triangle with vertex and fragment shaders.
-- `metal-blocks/objc/` renders a 64x64x64 blocks diorama with Metal instancing.
 - `opengl-triangle/` contains Cocoa C, Objective-C, Rust, and Swift examples that render the
-  same rainbow triangle with an 'modern' OpenGL 4.1 Core context and GLSL shaders.
+  same rainbow triangle with an OpenGL 4.1 Core context and GLSL shaders.
+- `metal-blocks/objc/` renders a 64x64x64 blocks diorama with Metal. It generates
+  only exposed cube faces, then draws them as instances using a mipmapped texture
+  array, with opaque terrain before blended water and a full-screen sky pass.
+- `opengl-blocks/objc/` renders the same generated diorama with an OpenGL 4.1 Core
+  context. It uploads the visible faces once and draws opaque and translucent
+  instances in separate passes, sampling one mipmapped texture array.
 - `ios/` contains equivalent UIKit or SwiftUI applications for C,
   Objective-C, Rust, Swift, and SwiftUI. Their build scripts target an iOS
   simulator; selected examples can also use a local provisioning configuration
