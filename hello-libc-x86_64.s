@@ -152,10 +152,13 @@ commands:
     dysymtab:
         dd LC_DYSYMTAB             ; command
         dd dysymtab_end - dysymtab ; command size
-        times 2 dd 0               ; ?
+        dd 0                       ; local symbols index
+        dd 0                       ; local symbols count
         dd 0                       ; external symbols index
-        dd 3                       ; external symbols size
-        times 14 dd 0              ; ?
+        dd 3                       ; external symbols count
+        dd 3                       ; undefined symbols index
+        dd 0                       ; undefined symbols count
+        times 12 dd 0              ; ?
     dysymtab_end:
 
     load_dylinker:
