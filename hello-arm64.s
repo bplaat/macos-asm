@@ -225,8 +225,8 @@ commands:
     code_signature:
         dd LC_CODE_SIGNATURE                   ; command
         dd code_signature_end - code_signature ; command size
-        dd linkedit_start - origin             ; signature offset
-        dd linkedit_raw_end - linkedit_start   ; signature size
+        dd signature_start - origin            ; signature offset
+        dd signature_end - signature_start     ; signature size
     code_signature_end:
 commands_end:
 

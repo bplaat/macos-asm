@@ -208,7 +208,7 @@ commands:
         dd 3                       ; external symbols count
         dd 3                       ; undefined symbols index
         dd 0                       ; undefined symbols count
-        times 12 dd 0              ; ?
+        times 12 dd 0              ; remaining table offsets and counts
     dysymtab_end:
 
     load_dylinker:
@@ -252,7 +252,7 @@ commands:
         dd LC_CODE_SIGNATURE                   ; command
         dd code_signature_end - code_signature ; command size
         dd signature_start - origin            ; signature offset
-        dd linkedit_raw_end - signature_start   ; signature size
+        dd signature_end - signature_start     ; signature size
     code_signature_end:
 commands_end:
 

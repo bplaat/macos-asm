@@ -7,6 +7,13 @@
     [default rel]
     [org origin]
 
+    %ifndef SIGNATURE_IDENTIFIER_SIZE
+        %error "Build with build.py"
+    %endif
+    %ifndef SIGNATURE_ENTITLEMENTS_SIZE
+        %error "Build with build.py"
+    %endif
+
     %define MH_MAGIC_64 0xfeedfacf
     %define MH_EXECUTE 2
     %define MH_NOUNDEFS 0x00000001
@@ -24,6 +31,7 @@
     %define LC_DYLD_INFO_ONLY (0x22 | LC_REQ_DYLD)
     %define LC_MAIN (0x28 | LC_REQ_DYLD)
     %define LC_BUILD_VERSION 0x32
+    %define LC_CODE_SIGNATURE 0x1d
 
     %define VM_PROT_NONE 0x0
     %define VM_PROT_READ 0x1
@@ -35,7 +43,7 @@
     %define S_ATTR_SOME_INSTRUCTIONS 0x00000400
 
     %define PLATFORM_MACOS 1
-    %define TOOL_LD 1
+    %define TOOL_LD 3
 
     %define BIND_TYPE_POINTER 1
     %define BIND_OPCODE_SET_DYLIB_ORDINAL_IMM 0x10
@@ -54,7 +62,7 @@ macho_header:
     dd CPU_TYPE_X86_64                    ; cpu type
     dd CPU_SUBTYPE_X86_64_ALL             ; cpu subtype
     dd MH_EXECUTE                         ; file type
-    dd 13                                 ; number of load commands
+    dd 14                                 ; number of load commands
     dd commands_end - commands            ; size of load commands
     dd MH_NOUNDEFS | MH_DYLDLINK | MH_PIE ; flags
     dd 0                                  ; reserved
@@ -161,7 +169,7 @@ commands:
         dd 4                       ; external symbols count
         dd 4                       ; undefined symbols index
         dd 0                       ; undefined symbols count
-        times 12 dd 0              ; ?
+        times 12 dd 0              ; remaining table offsets and counts
     dysymtab_end:
 
     build_version:
@@ -235,6 +243,13 @@ commands:
         dq _start - origin ; entry point offset
         dq 0               ; init stack size
     main_end:
+
+    code_signature:
+        dd LC_CODE_SIGNATURE                   ; command
+        dd code_signature_end - code_signature ; command size
+        dd signature_start - origin            ; signature offset
+        dd signature_end - signature_start     ; signature size
+    code_signature_end:
 commands_end:
 
     align 256, db 0
@@ -365,6 +380,17 @@ strings:
     Lsel_registerName db 'sel_registerName', 0
 strings_end:
     align 8, db 0
+
+signature_start:
+    signature_code_slots equ (signature_start - macho_header + alignment - 1) / alignment
+    signature_content_size equ 28 + 88 + SIGNATURE_IDENTIFIER_SIZE + 5 * 32 + signature_code_slots * 32 + 8 + SIGNATURE_ENTITLEMENTS_SIZE
+    signature_size equ (signature_content_size + 15) & ~15
+%ifdef SIGNATURE_FILE
+    incbin SIGNATURE_FILE
+%else
+    times signature_size db 0
+%endif
+signature_end:
 
 linkedit_end:
     align alignment, db 0

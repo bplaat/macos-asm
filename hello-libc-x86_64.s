@@ -158,7 +158,7 @@ commands:
         dd 3                       ; external symbols count
         dd 3                       ; undefined symbols index
         dd 0                       ; undefined symbols count
-        times 12 dd 0              ; ?
+        times 12 dd 0              ; remaining table offsets and counts
     dysymtab_end:
 
     load_dylinker:

@@ -19,7 +19,6 @@ CS_ADHOC = 0x00002
 CS_LINKER_SIGNED = 0x20000
 CS_EXECSEG_MAIN_BINARY = 0x1
 CS_HASHTYPE_SHA256 = 2
-PLATFORM_MACOS = 1
 
 PAGE_SIZE = 0x4000
 HASH_SIZE = hashlib.sha256().digest_size
@@ -51,9 +50,9 @@ def assemble(
 
 
 def read_layout(macho: bytes) -> tuple[int, int, int]:
-    magic, _, _, _, command_count, _, _, _ = struct.unpack_from("<8I", macho)
-    if magic != 0xFEEDFACF:
-        raise ValueError("input is not a 64-bit Mach-O executable")
+    magic, cpu_type, _, _, command_count, _, _, _ = struct.unpack_from("<8I", macho)
+    if magic != 0xFEEDFACF or cpu_type != 0x0100000C:
+        raise ValueError("input is not an ARM64 Mach-O executable")
 
     offset = 32
     signature_layout = None
@@ -101,7 +100,7 @@ def make_signature(
         code_limit,
         HASH_SIZE,
         CS_HASHTYPE_SHA256,
-        PLATFORM_MACOS,
+        0,
         PAGE_SIZE.bit_length() - 1,
         0,
         0,
