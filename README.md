@@ -25,6 +25,9 @@ Rust, Swift, and SwiftUI.
 - `opengl-blocks/objc/` renders the same generated diorama with an OpenGL 4.1 Core
   context. It uploads the visible faces once and draws opaque and translucent
   instances in separate passes, sampling one mipmapped texture array.
+- `ios-blocks/objc/` ports the Metal diorama to iPhone and iPad. It keeps the
+  visible-face instancing and texture array, and fits the renderer and frame counter
+  to the device screen.
 - `ios/` contains equivalent UIKit or SwiftUI applications for C,
   Objective-C, Rust, Swift, and SwiftUI. Their build scripts target an iOS
   simulator; selected examples can also use a local provisioning configuration
