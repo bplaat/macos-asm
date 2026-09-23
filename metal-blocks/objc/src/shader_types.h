@@ -38,9 +38,7 @@ typedef struct {
     float fogEnd;
 } Uniforms;
 
-// One visible cube face: only the faces that touch open space become instances,
-// so the interior of the world costs nothing to draw.
 typedef struct {
-    vector_short4 position;  // xyz grid cell, w baked ambient occlusion
-    vector_uchar4 face;      // x cube face, y texture layer, z instance flags
+    vector_short4 position;
+    vector_uchar4 face;
 } VoxelInstance;
