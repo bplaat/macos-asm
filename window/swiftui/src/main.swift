@@ -4,7 +4,7 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         ZStack {
-            Color(red: 5/255, green: 0x44/255, blue: 0x5e/255)
+            Color(red: 5 / 255, green: 0x44 / 255, blue: 0x5e / 255)
                 .ignoresSafeArea()
 
             Text("Hello macOS!")

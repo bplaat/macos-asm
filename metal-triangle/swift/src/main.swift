@@ -13,8 +13,8 @@ private final class Renderer: NSObject, MTKViewDelegate {
 
     init?(view: MTKView) {
         guard let device = view.device,
-              let commandQueue = device.makeCommandQueue(),
-              let libraryURL = Bundle.main.url(forResource: "default", withExtension: "metallib")
+            let commandQueue = device.makeCommandQueue(),
+            let libraryURL = Bundle.main.url(forResource: "default", withExtension: "metallib")
         else {
             NSLog("Could not initialize Metal")
             return nil
@@ -44,9 +44,9 @@ private final class Renderer: NSObject, MTKViewDelegate {
 
     func draw(in view: MTKView) {
         guard let renderPass = view.currentRenderPassDescriptor,
-              let drawable = view.currentDrawable,
-              let commandBuffer = commandQueue.makeCommandBuffer(),
-              let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPass)
+            let drawable = view.currentDrawable,
+            let commandBuffer = commandQueue.makeCommandBuffer(),
+            let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPass)
         else {
             return
         }

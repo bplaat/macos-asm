@@ -113,7 +113,7 @@ private final class RendererView: NSOpenGLView {
         openGLContext?.setValues(&swapInterval, for: .swapInterval)
 
         guard let vertexSource = loadShader(name: "shader", extension: "vert"),
-              let fragmentSource = loadShader(name: "shader", extension: "frag")
+            let fragmentSource = loadShader(name: "shader", extension: "frag")
         else {
             NSApp.terminate(nil)
             return
@@ -241,7 +241,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
             0,
         ]
         guard let pixelFormat = NSOpenGLPixelFormat(attributes: &attributes),
-              let rendererView = RendererView(frame: window.contentView!.bounds, pixelFormat: pixelFormat)
+            let rendererView = RendererView(frame: window.contentView!.bounds, pixelFormat: pixelFormat)
         else {
             NSLog("Could not create an OpenGL 4.1 Core renderer view")
             NSApp.terminate(nil)

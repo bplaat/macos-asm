@@ -24,7 +24,10 @@ class ViewController: UIViewController {
 class AppDelegate: NSObject, UIApplicationDelegate {
     var window: UIWindow?
 
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+    ) -> Bool {
         let win = UIWindow(frame: UIScreen.main.bounds)
         win.overrideUserInterfaceStyle = .dark
         win.rootViewController = ViewController()

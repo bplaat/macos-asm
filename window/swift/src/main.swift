@@ -1,15 +1,16 @@
 import Cocoa
 
 // MARK: CanvasView
-class CanvasView : NSView {
+class CanvasView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         let text = "Hello macOS!"
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 48),
-            .foregroundColor: NSColor.white
+            .foregroundColor: NSColor.white,
         ]
         let size = text.size(withAttributes: attributes)
-        let rect = NSRect(x: (self.frame.width - size.width) / 2,
+        let rect = NSRect(
+            x: (self.frame.width - size.width) / 2,
             y: (self.frame.height - size.height) / 2,
             width: size.width,
             height: size.height)
@@ -31,12 +32,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let appMenu = NSMenu()
         menuBarItem.submenu = appMenu
-        appMenu.addItem(NSMenuItem(title: "About BassieTest", action: #selector(AppDelegate.openAbout(_:)), keyEquivalent: "a"))
+        appMenu.addItem(
+            NSMenuItem(title: "About BassieTest", action: #selector(AppDelegate.openAbout(_:)), keyEquivalent: "a"))
         appMenu.addItem(NSMenuItem.separator())
-        appMenu.addItem(NSMenuItem(title: "Quit BassieTest", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        appMenu.addItem(
+            NSMenuItem(title: "Quit BassieTest", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         // Create window
-        let window = NSWindow(contentRect: NSMakeRect(0, 0, 1024, 768),
+        let window = NSWindow(
+            contentRect: NSMakeRect(0, 0, 1024, 768),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false)
