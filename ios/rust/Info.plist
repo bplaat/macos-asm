@@ -1,16 +1,4 @@
-use std::env;
-use std::fs::File;
-use std::io::Write;
-
-fn main() {
-    // Link with Foundation & UIKit framework
-    println!("cargo:rustc-link-lib=framework=Foundation");
-    println!("cargo:rustc-link-lib=framework=UIKit");
-
-    // Generate Info.plist with cargo version
-    let version = env::var("CARGO_PKG_VERSION").unwrap();
-    let plist = format!(
-        r#"<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -25,9 +13,9 @@ fn main() {
 	<key>CFBundleIdentifier</key>
 	<string>nl.plaatsoft.BassieTest</string>
 	<key>CFBundleVersion</key>
-	<string>{}</string>
+	<string>0.1.0</string>
 	<key>CFBundleShortVersionString</key>
-	<string>{}</string>
+	<string>0.1.0</string>
 	<key>CFBundleExecutable</key>
 	<string>BassieTest</string>
 	<key>MinimumOSVersion</key>
@@ -58,9 +46,3 @@ fn main() {
 	</array>
 </dict>
 </plist>
-"#,
-        version, version
-    );
-    let mut plist_file = File::create("target/Info.plist").unwrap();
-    plist_file.write_all(plist.as_bytes()).unwrap();
-}

@@ -1,10 +1,4 @@
-use std::env;
-use std::fs;
-
-fn main() {
-    let version = env::var("CARGO_PKG_VERSION").expect("CARGO_PKG_VERSION should be set by Cargo");
-    let plist = format!(
-        r#"<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -15,13 +9,13 @@ fn main() {
 	<key>CFBundleName</key>
 	<string>Triangle</string>
 	<key>CFBundleDisplayName</key>
-	<string>OpenGL Triangle</string>
+	<string>Triangle</string>
 	<key>CFBundleIdentifier</key>
 	<string>nl.plaatsoft.Triangle</string>
 	<key>CFBundleVersion</key>
-	<string>{version}</string>
+	<string>0.1.0</string>
 	<key>CFBundleShortVersionString</key>
-	<string>{version}</string>
+	<string>0.1.0</string>
 	<key>CFBundleExecutable</key>
 	<string>Triangle</string>
 	<key>LSMinimumSystemVersion</key>
@@ -32,9 +26,3 @@ fn main() {
 	<true/>
 </dict>
 </plist>
-"#
-    );
-
-    fs::create_dir_all("target").expect("failed to create target directory");
-    fs::write("target/Info.plist", plist).expect("failed to write target/Info.plist");
-}
