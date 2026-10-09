@@ -1,4 +1,3 @@
 *.app/
 target/
 .DS_Store
-provision.sh

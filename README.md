@@ -29,9 +29,7 @@ Rust, Swift, and SwiftUI.
   visible-face instancing and texture array, and fits the renderer and frame counter
   to the device screen.
 - `ios/` contains equivalent UIKit or SwiftUI applications for C,
-  Objective-C, Rust, Swift, and SwiftUI. Their build scripts target an iOS
-  simulator; selected examples can also use a local provisioning configuration
-  to run on a physical device.
+  Objective-C, Rust, Swift, and SwiftUI. These examples target the iOS Simulator.
 - `hello-*.s` contains focused Mach-O experiments for arm64 and x86_64,
   including static-style binaries, dynamic libSystem calls, symbol tables, and
   ad-hoc code signing.
@@ -47,7 +45,5 @@ Rust, Swift, and SwiftUI.
 - Rust and the required Apple targets for the Rust examples
 - A booted iOS Simulator for the simulator examples
 
-Physical iOS devices additionally require a signing identity, provisioning
-profile, and device configuration. Copy `provision.sh.example` to
-`provision.sh` in an example that supports device deployment and fill in the
-local values. The resulting file is ignored by version control.
+Run `make` to build, `make run` to launch, and `make clean` to remove build
+outputs inside an example directory.
